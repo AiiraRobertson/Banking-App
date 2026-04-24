@@ -10,8 +10,8 @@ function seedDatabase() {
   const userHash = bcrypt.hashSync('User1234!', 12);
 
   const insertUser = db.prepare(`
-    INSERT INTO users (email, password_hash, first_name, last_name, phone, address, city, state, zip_code, role)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO users (email, password_hash, first_name, last_name, phone, address, city, state, zip_code, nationality, date_of_birth, terms_accepted, role)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const insertAccount = db.prepare(`
@@ -32,12 +32,12 @@ function seedDatabase() {
   const seed = db.transaction(() => {
     const admin = insertUser.run(
       'admin@bank.com', adminHash, 'Admin', 'User', '555-0100',
-      '100 Bank Street', 'New York', 'NY', '10001', 'admin'
+      '100 Bank Street', 'New York', 'NY', '10001', 'US', '1985-03-15', 1, 'admin'
     );
 
     const demoUser = insertUser.run(
       'john@example.com', userHash, 'John', 'Doe', '555-0123',
-      '456 Oak Avenue', 'San Francisco', 'CA', '94102', 'user'
+      '456 Oak Avenue', 'San Francisco', 'CA', '94102', 'US', '1990-01-15', 1, 'user'
     );
 
     insertAccount.run(admin.lastInsertRowid, '1000000001', 'checking', 50000.00);

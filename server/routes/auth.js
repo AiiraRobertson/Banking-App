@@ -6,6 +6,7 @@ const db = require('../db/database');
 const { handleValidation } = require('../middleware/validate');
 const { authenticate } = require('../middleware/auth');
 const { generateAccountNumber } = require('../utils/accountNumber');
+const { countries } = require('../utils/currencies');
 const rateLimit = require('express-rate-limit');
 
 const router = express.Router();
@@ -15,6 +16,8 @@ const authLimiter = rateLimit({
   max: 10,
   message: { error: 'Too many attempts, please try again later' }
 });
+
+const validCountryCodes = countries.map(c => c.code);
 
 const registerValidation = [
   body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
@@ -26,6 +29,22 @@ const registerValidation = [
     .matches(/[!@#$%^&*]/).withMessage('Password must contain a special character'),
   body('first_name').trim().notEmpty().withMessage('First name is required'),
   body('last_name').trim().notEmpty().withMessage('Last name is required'),
+  body('nationality').isIn(validCountryCodes).withMessage('Valid nationality is required'),
+  body('date_of_birth').isDate().withMessage('Valid date of birth is required')
+    .custom(value => {
+      const dob = new Date(value);
+      const today = new Date();
+      const age = today.getFullYear() - dob.getFullYear();
+      const monthDiff = today.getMonth() - dob.getMonth();
+      if (age < 18 || (age === 18 && (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())))) {
+        throw new Error('You must be at least 18 years old');
+      }
+      return true;
+    }),
+  body('address').trim().notEmpty().withMessage('Home address is required'),
+  body('city').trim().notEmpty().withMessage('City is required'),
+  body('zip_code').trim().notEmpty().withMessage('Postal code is required'),
+  body('terms_accepted').equals('true').withMessage('You must accept the terms and conditions'),
   handleValidation
 ];
 
@@ -49,7 +68,7 @@ function sanitizeUser(user) {
 }
 
 router.post('/register', authLimiter, registerValidation, (req, res) => {
-  const { email, password, first_name, last_name } = req.body;
+  const { email, password, first_name, last_name, nationality, date_of_birth, address, city, zip_code } = req.body;
 
   const existing = db.prepare('SELECT 1 FROM users WHERE email = ?').get(email);
   if (existing) {
@@ -60,8 +79,8 @@ router.post('/register', authLimiter, registerValidation, (req, res) => {
 
   const register = db.transaction(() => {
     const result = db.prepare(
-      'INSERT INTO users (email, password_hash, first_name, last_name) VALUES (?, ?, ?, ?)'
-    ).run(email, passwordHash, first_name, last_name);
+      'INSERT INTO users (email, password_hash, first_name, last_name, nationality, date_of_birth, address, city, zip_code, terms_accepted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(email, passwordHash, first_name, last_name, nationality, date_of_birth, address, city, zip_code, 1);
 
     const userId = result.lastInsertRowid;
     const accountNumber = generateAccountNumber('checking');
