@@ -22,6 +22,41 @@ router.get('/rates', (req, res) => {
   res.json({ rates: exchangeRates, baseCurrency: 'USD' });
 });
 
+router.get('/lookup-account', [
+  query('account_number').trim().notEmpty().withMessage('Account number is required'),
+  handleValidation
+], (req, res) => {
+  const { account_number } = req.query;
+
+  const account = db.prepare(
+    'SELECT a.account_number, a.account_type, u.first_name, u.last_name FROM accounts a JOIN users u ON a.user_id = u.id WHERE a.account_number = ? AND a.is_active = 1'
+  ).get(account_number);
+
+  if (account) {
+    const holderHint = account.first_name[0] + '***' + ' ' + account.last_name[0] + '***';
+    return res.json({
+      found: true,
+      bank_name: 'SecureBank',
+      account_type: account.account_type,
+      holder_hint: holderHint
+    });
+  }
+
+  const prefix = account_number.slice(0, 2);
+  const prefixNum = parseInt(prefix, 10);
+  let bank_name = 'Unknown Bank';
+  if (prefixNum >= 10 && prefixNum <= 29) bank_name = 'SecureBank (Inactive)';
+  else if (prefixNum >= 30 && prefixNum <= 39) bank_name = 'National Trust Bank';
+  else if (prefixNum >= 40 && prefixNum <= 49) bank_name = 'Pacific Commerce Bank';
+  else if (prefixNum >= 50 && prefixNum <= 59) bank_name = 'Heritage Savings Bank';
+  else if (prefixNum >= 60 && prefixNum <= 69) bank_name = 'Continental Federal Bank';
+  else if (prefixNum >= 70 && prefixNum <= 79) bank_name = 'Atlantic Union Bank';
+  else if (prefixNum >= 80 && prefixNum <= 89) bank_name = 'Global Finance Bank';
+  else if (prefixNum >= 90 && prefixNum <= 99) bank_name = 'Premier Credit Bank';
+
+  res.json({ found: false, bank_name, note: 'External account' });
+});
+
 router.post('/quote', [
   body('amount').isFloat({ min: 1, max: 1000000 }).withMessage('Amount must be between $1 and $1,000,000'),
   body('country_code').isString().isLength({ min: 2, max: 2 }),

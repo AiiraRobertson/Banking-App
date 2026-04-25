@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import PasswordInput from '../components/ui/PasswordInput';
+import PasswordRequirements from '../components/ui/PasswordRequirements';
 
 const nationalities = [
   { code: 'US', name: 'United States', flag: '\u{1F1FA}\u{1F1F8}' },
@@ -152,12 +154,18 @@ export default function RegisterPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-              <input type="password" name="password" value={form.password} onChange={handleChange} className={inputClass} placeholder="Min 8 chars, uppercase, lowercase, number, special" required />
+              <PasswordInput name="password" value={form.password} onChange={handleChange} className={inputClass} placeholder="Min 8 chars, uppercase, lowercase, number, special" required />
+              <PasswordRequirements password={form.password} mode="checklist" />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-              <input type="password" name="confirm_password" value={form.confirm_password} onChange={handleChange} className={inputClass} required />
+              <PasswordInput name="confirm_password" value={form.confirm_password} onChange={handleChange} className={inputClass} required />
+              {form.confirm_password && (
+                <p className={`text-xs mt-1.5 ${form.password === form.confirm_password ? 'text-green-600' : 'text-red-500'}`}>
+                  {form.password === form.confirm_password ? 'Passwords match' : 'Passwords do not match'}
+                </p>
+              )}
             </div>
 
             <div className="flex items-start gap-2 pt-1">

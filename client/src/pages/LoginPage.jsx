@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import PasswordInput from '../components/ui/PasswordInput';
+import PasswordRequirements from '../components/ui/PasswordRequirements';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -59,14 +61,14 @@ export default function LoginPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-              <input
-                type="password"
+              <PasswordInput
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors text-sm"
                 placeholder="Enter your password"
                 required
               />
+              <PasswordRequirements password={password} mode="hint" />
             </div>
 
             <button

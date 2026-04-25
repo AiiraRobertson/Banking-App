@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -8,13 +9,23 @@ const { seedDatabase } = require('./db/seed');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3001;
 
 initializeDatabase();
 seedDatabase();
 
 app.use(helmet());
-app.use(cors({ origin: 'http://localhost:5173' }));
+app.use(cors({
+  origin: [
+    'http://localhost:3001',
+    'http://localhost:5173',
+    'http://localhost:5500',
+    'http://localhost:5501',
+    'http://127.0.0.1:5500',
+    'http://127.0.0.1:5501'
+  ],
+  credentials: true
+}));
 app.use(express.json({ limit: '10kb' }));
 
 const globalLimiter = rateLimit({
@@ -35,6 +46,12 @@ app.use('/api/calculator', require('./routes/calculator'));
 app.use('/api/wire', require('./routes/wire'));
 
 app.use(errorHandler);
+
+const clientDist = path.join(__dirname, '..', 'client', 'dist');
+app.use(express.static(clientDist));
+app.get('/{*splat}', (req, res) => {
+  res.sendFile(path.join(clientDist, 'index.html'));
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

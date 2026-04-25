@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { getAccounts } from '../services/accountService';
-import { getCountries, getQuote, sendWire, getWireHistory } from '../services/wireService';
+import { getCountries, getQuote, sendWire, getWireHistory, lookupAccount } from '../services/wireService';
 import { formatCurrency } from '../utils/formatCurrency';
 import { formatDate } from '../utils/formatDate';
+import { generateBic } from '../utils/generateBic';
 
 const regionLabels = { north_america: 'North America', europe: 'Europe', africa: 'Africa' };
 
@@ -19,6 +20,10 @@ export default function WireTransferPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(null);
+
+  const [bankLookup, setBankLookup] = useState(null);
+  const [bankLookupLoading, setBankLookupLoading] = useState(false);
+  const [bicAutoFilled, setBicAutoFilled] = useState(false);
 
   const [form, setForm] = useState({
     region: '',
@@ -51,6 +56,23 @@ export default function WireTransferPage() {
       .then(res => { setHistory(res.data.transfers); setHistoryPagination(res.data.pagination); })
       .catch(() => {});
   }, [historyPage, success]);
+
+  useEffect(() => {
+    if (form.recipient_account.length < 6) { setBankLookup(null); return; }
+    setBankLookupLoading(true);
+    const timer = setTimeout(() => {
+      lookupAccount(form.recipient_account)
+        .then(res => {
+          setBankLookup(res.data);
+          if (res.data.bank_name && !form.recipient_bank) {
+            setForm(f => ({ ...f, recipient_bank: res.data.bank_name }));
+          }
+        })
+        .catch(() => setBankLookup(null))
+        .finally(() => setBankLookupLoading(false));
+    }, 500);
+    return () => { clearTimeout(timer); setBankLookupLoading(false); };
+  }, [form.recipient_account]);
 
   const selectedCountry = countriesData
     ? Object.values(countriesData).flat().find(c => c.code === form.country_code)
@@ -103,6 +125,8 @@ export default function WireTransferPage() {
     setQuote(null);
     setSuccess(null);
     setError('');
+    setBankLookup(null);
+    setBicAutoFilled(false);
   };
 
   if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>;
@@ -203,25 +227,67 @@ export default function WireTransferPage() {
                 placeholder="John Smith" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Bank Name</label>
-              <input type="text" value={form.recipient_bank} onChange={e => setForm({ ...form, recipient_bank: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                placeholder="Deutsche Bank, Barclays, GTBank..." required />
-            </div>
-            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
               <input type="text" value={form.recipient_account} onChange={e => setForm({ ...form, recipient_account: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
                 placeholder="Recipient's bank account number" required />
+              {bankLookupLoading && (
+                <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                  <span className="inline-block w-3 h-3 border-2 border-gray-300 border-t-indigo-500 rounded-full animate-spin" />
+                  Looking up account...
+                </p>
+              )}
+              {bankLookup && !bankLookupLoading && (
+                <div className={`mt-1.5 text-xs px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1.5 ${
+                  bankLookup.found
+                    ? 'bg-green-50 text-green-700 border border-green-200'
+                    : 'bg-gray-50 text-gray-600 border border-gray-200'
+                }`}>
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21" />
+                  </svg>
+                  <span className="font-medium">{bankLookup.bank_name}</span>
+                  {bankLookup.found && <span>- {bankLookup.account_type} ({bankLookup.holder_hint})</span>}
+                  {!bankLookup.found && bankLookup.note && <span>({bankLookup.note})</span>}
+                </div>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Bank Name</label>
+              <input type="text" value={form.recipient_bank}
+                onChange={e => {
+                  const bankName = e.target.value;
+                  const updates = { recipient_bank: bankName };
+                  if (selectedCountry?.requiresSwift && bankName.length >= 2) {
+                    updates.swift_code = generateBic(bankName, form.country_code);
+                    setBicAutoFilled(true);
+                  } else if (!bankName) {
+                    updates.swift_code = '';
+                    setBicAutoFilled(false);
+                  }
+                  setForm(f => ({ ...f, ...updates }));
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                placeholder="Deutsche Bank, Barclays, GTBank..." required />
             </div>
 
             {selectedCountry.requiresSwift && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">SWIFT / BIC Code <span className="text-red-500">*</span></label>
-                <input type="text" value={form.swift_code} onChange={e => setForm({ ...form, swift_code: e.target.value.toUpperCase() })}
+                <input type="text" value={form.swift_code}
+                  onChange={e => { setForm({ ...form, swift_code: e.target.value.toUpperCase() }); setBicAutoFilled(false); }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-mono"
                   placeholder="e.g. DEUTDEFF" maxLength={11} required />
-                <p className="text-xs text-gray-400 mt-1">8 or 11 character bank identifier code</p>
+                {bicAutoFilled ? (
+                  <p className="text-xs text-indigo-500 mt-1 flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                    </svg>
+                    Auto-generated from bank name. You can edit if needed.
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-400 mt-1">8 or 11 character bank identifier code</p>
+                )}
               </div>
             )}
 
