@@ -1,0 +1,150 @@
+name: Deploy to Azure
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  AZURE_RESOURCE_GROUP: bank-app-rg
+  AZURE_LOCATION: eastus
+  ENVIRONMENT_NAME: prod
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Create Resource Group
+        run: |
+          az group create \
+            --name ${{ env.AZURE_RESOURCE_GROUP }} \
+            --location ${{ env.AZURE_LOCATION }}
+
+      - name: Deploy Infrastructure (Bicep)
+        run: |
+          az deployment group create \
+            --name "bank-app-deployment-${{ github.run_number }}" \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --template-file .azure/infra/main.bicep \
+            --parameters .azure/infra/main.parameters.json \
+            --parameters environmentName=${{ env.ENVIRONMENT_NAME }} location=${{ env.AZURE_LOCATION }}
+
+      - name: Get Deployment Outputs
+        id: deployment
+        run: |
+          OUTPUTS=$(az deployment group show \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --name $(az deployment group list --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --query '[0].name' -o tsv) \
+            --query 'properties.outputs' -o json)
+          
+          BACKEND_URL=$(echo $OUTPUTS | jq -r '.backendAppServiceUrl.value')
+          FRONTEND_URL=$(echo $OUTPUTS | jq -r '.frontendAppServiceUrl.value')
+          BACKEND_APP=$(az resource list --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --query "[?type=='Microsoft.Web/sites' && contains(name, 'backend')].name" -o tsv | head -1)
+          FRONTEND_APP=$(az resource list --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --query "[?type=='Microsoft.Web/sites' && contains(name, 'frontend')].name" -o tsv | head -1)
+          
+          echo "backend_url=$BACKEND_URL" >> $GITHUB_OUTPUT
+          echo "frontend_url=$FRONTEND_URL" >> $GITHUB_OUTPUT
+          echo "backend_app=$BACKEND_APP" >> $GITHUB_OUTPUT
+          echo "frontend_app=$FRONTEND_APP" >> $GITHUB_OUTPUT
+
+      - name: Install Backend Dependencies
+        run: |
+          cd server
+          npm ci
+          cd ..
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd client
+          npm ci
+          cd ..
+
+      - name: Build Frontend
+        run: |
+          cd client
+          npm run build
+          cd ..
+
+      - name: Create Backend Deployment Package
+        run: |
+          cd server
+          zip -r ../backend-deploy.zip \
+            -x "node_modules/*" \
+            -x ".git/*" \
+            -x "*.env" \
+            .
+          cd ..
+
+      - name: Deploy Backend App Service
+        run: |
+          az webapp deployment source config-zip \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --name ${{ steps.deployment.outputs.backend_app }} \
+            --src backend-deploy.zip
+
+      - name: Create Frontend Deployment Package
+        run: |
+          cd client/dist
+          zip -r ../../frontend-deploy.zip .
+          cd ../..
+
+      - name: Deploy Frontend App Service
+        run: |
+          az webapp deployment source config-zip \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --name ${{ steps.deployment.outputs.frontend_app }} \
+            --src frontend-deploy.zip
+
+      - name: Health Check - Backend
+        run: |
+          echo "Waiting for backend to be healthy..."
+          for i in {1..30}; do
+            if curl -sf "${{ steps.deployment.outputs.backend_url }}/health" > /dev/null 2>&1; then
+              echo "✅ Backend is healthy"
+              break
+            fi
+            echo "Attempt $i/30 - Waiting for backend..."
+            sleep 10
+          done
+
+      - name: Health Check - Frontend
+        run: |
+          echo "Waiting for frontend to be accessible..."
+          for i in {1..30}; do
+            if curl -sf "${{ steps.deployment.outputs.frontend_url }}" > /dev/null 2>&1; then
+              echo "✅ Frontend is accessible"
+              break
+            fi
+            echo "Attempt $i/30 - Waiting for frontend..."
+            sleep 10
+          done
+
+      - name: Post Deployment Summary
+        if: always()
+        run: |
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Backend URL:** ${{ steps.deployment.outputs.backend_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Frontend URL:** ${{ steps.deployment.outputs.frontend_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Resource Group:** ${{ env.AZURE_RESOURCE_GROUP }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployment ID:** ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Azure Logout
+        if: always()
+        run: az logout
