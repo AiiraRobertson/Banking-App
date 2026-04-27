@@ -12,6 +12,8 @@ const features = [
 const regions = [
   {
     name: 'North America',
+    icon: '\u{1F30E}',
+    gradient: 'from-blue-500 to-indigo-600',
     countries: [
       { flag: '\u{1F1FA}\u{1F1F8}', name: 'United States' },
       { flag: '\u{1F1E8}\u{1F1E6}', name: 'Canada' },
@@ -19,6 +21,8 @@ const regions = [
   },
   {
     name: 'Europe',
+    icon: '\u{1F30D}',
+    gradient: 'from-indigo-500 to-purple-600',
     countries: [
       { flag: '\u{1F1EC}\u{1F1E7}', name: 'United Kingdom' },
       { flag: '\u{1F1E9}\u{1F1EA}', name: 'Germany' },
@@ -38,6 +42,8 @@ const regions = [
   },
   {
     name: 'Africa',
+    icon: '\u{1F30D}',
+    gradient: 'from-emerald-500 to-teal-600',
     countries: [
       { flag: '\u{1F1F3}\u{1F1EC}', name: 'Nigeria' },
       { flag: '\u{1F1F0}\u{1F1EA}', name: 'Kenya' },
@@ -55,14 +61,120 @@ const regions = [
   }
 ];
 
+function GlobeSection() {
+  return (
+    <div className="relative w-full max-w-lg mx-auto aspect-square">
+      {/* Outer glow ring */}
+      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-indigo-200/40 to-blue-200/40 blur-2xl animate-pulse" />
+
+      {/* Globe SVG */}
+      <svg viewBox="0 0 400 400" className="w-full h-full relative z-10">
+        {/* Globe circle with gradient */}
+        <defs>
+          <radialGradient id="globeGrad" cx="40%" cy="35%" r="60%">
+            <stop offset="0%" stopColor="#c7d2fe" />
+            <stop offset="50%" stopColor="#a5b4fc" />
+            <stop offset="100%" stopColor="#6366f1" />
+          </radialGradient>
+          <radialGradient id="globeShine" cx="30%" cy="25%" r="50%">
+            <stop offset="0%" stopColor="white" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="white" stopOpacity="0" />
+          </radialGradient>
+          <linearGradient id="arcNA" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#6366f1" />
+            <stop offset="100%" stopColor="#3b82f6" />
+          </linearGradient>
+          <linearGradient id="arcEU" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#8b5cf6" />
+            <stop offset="100%" stopColor="#6366f1" />
+          </linearGradient>
+          <linearGradient id="arcAF" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#10b981" />
+            <stop offset="100%" stopColor="#6366f1" />
+          </linearGradient>
+        </defs>
+
+        {/* Globe body */}
+        <circle cx="200" cy="200" r="150" fill="url(#globeGrad)" opacity="0.15" />
+        <circle cx="200" cy="200" r="150" fill="none" stroke="#6366f1" strokeWidth="1.5" opacity="0.3" />
+        <circle cx="200" cy="200" r="150" fill="url(#globeShine)" />
+
+        {/* Latitude lines */}
+        <ellipse cx="200" cy="200" rx="150" ry="40" fill="none" stroke="#6366f1" strokeWidth="0.5" opacity="0.2" />
+        <ellipse cx="200" cy="160" rx="130" ry="30" fill="none" stroke="#6366f1" strokeWidth="0.5" opacity="0.15" />
+        <ellipse cx="200" cy="240" rx="130" ry="30" fill="none" stroke="#6366f1" strokeWidth="0.5" opacity="0.15" />
+
+        {/* Longitude lines */}
+        <ellipse cx="200" cy="200" rx="40" ry="150" fill="none" stroke="#6366f1" strokeWidth="0.5" opacity="0.2" />
+        <ellipse cx="200" cy="200" rx="100" ry="150" fill="none" stroke="#6366f1" strokeWidth="0.5" opacity="0.15" />
+
+        {/* Simplified continent outlines */}
+        {/* North America */}
+        <path d="M120 130 Q130 110 145 115 Q155 100 170 110 Q175 120 165 135 Q155 140 150 155 Q140 165 125 160 Q115 150 120 130Z" fill="#6366f1" opacity="0.3" />
+        {/* Europe */}
+        <path d="M220 120 Q235 110 250 115 Q260 120 255 135 Q250 145 240 140 Q230 145 220 140 Q215 130 220 120Z" fill="#8b5cf6" opacity="0.3" />
+        {/* Africa */}
+        <path d="M230 170 Q245 165 250 180 Q255 200 250 225 Q245 245 235 250 Q225 245 220 230 Q215 210 220 190 Q225 175 230 170Z" fill="#10b981" opacity="0.3" />
+
+        {/* Connection arcs */}
+        <path d="M150 140 Q200 80 240 125" fill="none" stroke="url(#arcNA)" strokeWidth="2" opacity="0.6" className="animate-dash-draw" />
+        <path d="M240 135 Q245 160 240 175" fill="none" stroke="url(#arcEU)" strokeWidth="2" opacity="0.6" className="animate-dash-draw delay-300" />
+        <path d="M150 145 Q180 200 225 185" fill="none" stroke="url(#arcAF)" strokeWidth="2" opacity="0.6" className="animate-dash-draw delay-500" />
+
+        {/* Region dots with pulse — North America */}
+        <circle cx="145" cy="135" r="6" fill="#6366f1" opacity="0.9" />
+        <circle cx="145" cy="135" r="6" fill="#6366f1" className="animate-ping-slow" opacity="0.4" />
+
+        {/* Europe */}
+        <circle cx="240" cy="125" r="6" fill="#8b5cf6" opacity="0.9" />
+        <circle cx="240" cy="125" r="6" fill="#8b5cf6" className="animate-ping-slow" opacity="0.4" style={{ animationDelay: '1s' }} />
+
+        {/* Africa */}
+        <circle cx="235" cy="200" r="6" fill="#10b981" opacity="0.9" />
+        <circle cx="235" cy="200" r="6" fill="#10b981" className="animate-ping-slow" opacity="0.4" style={{ animationDelay: '2s' }} />
+
+        {/* Orbiting ring */}
+        <ellipse cx="200" cy="200" rx="175" ry="60" fill="none" stroke="#6366f1" strokeWidth="0.5" opacity="0.15" transform="rotate(-20 200 200)" />
+      </svg>
+
+      {/* Floating currency labels */}
+      <div className="absolute top-4 left-4 animate-float">
+        <div className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg shadow-indigo-100/50 border border-indigo-100 text-xs font-semibold text-indigo-700 flex items-center gap-1.5">
+          <span className="text-base">{"\u{1F1FA}\u{1F1F8}"}</span> USD
+        </div>
+      </div>
+      <div className="absolute top-12 right-6 animate-float-delayed">
+        <div className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg shadow-purple-100/50 border border-purple-100 text-xs font-semibold text-purple-700 flex items-center gap-1.5">
+          <span className="text-base">{"\u{1F1EA}\u{1F1FA}"}</span> EUR
+        </div>
+      </div>
+      <div className="absolute bottom-16 left-2 animate-float-delayed" style={{ animationDelay: '0.5s' }}>
+        <div className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg shadow-green-100/50 border border-green-100 text-xs font-semibold text-green-700 flex items-center gap-1.5">
+          <span className="text-base">{"\u{1F1F3}\u{1F1EC}"}</span> NGN
+        </div>
+      </div>
+      <div className="absolute bottom-8 right-8 animate-float" style={{ animationDelay: '1.5s' }}>
+        <div className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg shadow-blue-100/50 border border-blue-100 text-xs font-semibold text-blue-700 flex items-center gap-1.5">
+          <span className="text-base">{"\u{1F1EC}\u{1F1E7}"}</span> GBP
+        </div>
+      </div>
+      <div className="absolute top-1/2 right-0 animate-float" style={{ animationDelay: '2s' }}>
+        <div className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg shadow-amber-100/50 border border-amber-100 text-xs font-semibold text-amber-700 flex items-center gap-1.5">
+          <span className="text-base">{"\u{1F1E8}\u{1F1ED}"}</span> CHF
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white overflow-hidden">
       {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 z-50">
+      <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 z-50 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-xl flex items-center justify-center">
+            <div className="w-9 h-9 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-md shadow-indigo-200 transition-transform duration-300 hover:scale-110">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
@@ -70,8 +182,8 @@ export default function LandingPage() {
             <span className="text-xl font-bold text-gray-900">SecureBank</span>
           </div>
           <div className="flex items-center gap-3">
-            <Link to="/login" className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">Sign In</Link>
-            <Link to="/register" className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">Get Started</Link>
+            <Link to="/login" className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors duration-200">Sign In</Link>
+            <Link to="/register" className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-200 hover:-translate-y-0.5 transition-all duration-300 shadow-sm">Get Started</Link>
           </div>
         </div>
       </nav>
@@ -79,40 +191,45 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="relative pt-32 pb-20 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-blue-50" />
-        <div className="absolute top-20 left-1/4 w-72 h-72 bg-indigo-200/30 rounded-full blur-3xl" />
-        <div className="absolute bottom-10 right-1/4 w-96 h-96 bg-blue-200/20 rounded-full blur-3xl" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-50 border border-indigo-100 rounded-full text-sm text-indigo-700 font-medium mb-6">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            Supporting 28+ countries worldwide
-          </div>
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900 leading-tight tracking-tight">
-            International Banking<br />
-            <span className="bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">Made Simple</span>
-          </h1>
-          <p className="mt-6 text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Send and receive money across borders with competitive exchange rates, low fees, and bank-grade security. Your money, anywhere in the world.
-          </p>
-          <div className="mt-10 flex items-center justify-center gap-4">
-            <Link to="/register" className="px-8 py-3.5 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-semibold rounded-xl hover:from-indigo-700 hover:to-indigo-800 transition-all shadow-lg shadow-indigo-200 text-lg">
-              Open an Account
-            </Link>
-            <Link to="/login" className="px-8 py-3.5 bg-white text-gray-700 font-semibold rounded-xl border border-gray-200 hover:bg-gray-50 transition-all text-lg">
-              Sign In
-            </Link>
-          </div>
-          <div className="mt-12 flex items-center justify-center gap-8 text-sm text-gray-500">
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-              No monthly fees
+        <div className="absolute top-20 left-1/4 w-72 h-72 bg-indigo-200/30 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-10 right-1/4 w-96 h-96 bg-blue-200/20 rounded-full blur-3xl animate-float-delayed" />
+        <div className="absolute top-40 right-10 w-48 h-48 bg-purple-200/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div className="text-center lg:text-left">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-50 border border-indigo-100 rounded-full text-sm text-indigo-700 font-medium mb-6 animate-fade-in-up">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                Supporting 28+ countries worldwide
+              </div>
+              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900 leading-tight tracking-tight animate-fade-in-up delay-100">
+                International Banking<br />
+                <span className="bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">Made Simple</span>
+              </h1>
+              <p className="mt-6 text-lg sm:text-xl text-gray-600 max-w-2xl leading-relaxed animate-fade-in-up delay-200">
+                Send and receive money across borders with competitive exchange rates, low fees, and bank-grade security. Your money, anywhere in the world.
+              </p>
+              <div className="mt-10 flex items-center justify-center lg:justify-start gap-4 animate-fade-in-up delay-300">
+                <Link to="/register" className="px-8 py-3.5 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-semibold rounded-xl hover:from-indigo-700 hover:to-indigo-800 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-200 transition-all duration-300 shadow-lg shadow-indigo-200 text-lg animate-pulse-glow">
+                  Open an Account
+                </Link>
+                <Link to="/login" className="px-8 py-3.5 bg-white text-gray-700 font-semibold rounded-xl border border-gray-200 hover:bg-gray-50 hover:border-indigo-200 hover:-translate-y-1 hover:shadow-lg transition-all duration-300 text-lg">
+                  Sign In
+                </Link>
+              </div>
+              <div className="mt-12 flex items-center justify-center lg:justify-start gap-8 text-sm text-gray-500 animate-fade-in-up delay-500">
+                {['No monthly fees', '$1,000 welcome bonus', 'Instant setup'].map(text => (
+                  <div key={text} className="flex items-center gap-2">
+                    <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    {text}
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-              $1,000 welcome bonus
-            </div>
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-              Instant setup
+
+            {/* Globe visual on the right */}
+            <div className="hidden lg:block animate-fade-in delay-300">
+              <GlobeSection />
             </div>
           </div>
         </div>
@@ -126,14 +243,14 @@ export default function LandingPage() {
             <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">Powerful features designed for modern banking, accessible from anywhere in the world.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map(f => (
-              <div key={f.title} className="bg-white rounded-2xl p-6 border border-gray-100 hover:shadow-lg hover:shadow-gray-100/50 transition-all group">
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${f.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+            {features.map((f, i) => (
+              <div key={f.title} className="bg-white rounded-2xl p-6 border border-gray-100 hover:shadow-xl hover:shadow-indigo-100/30 hover:-translate-y-1.5 hover:border-indigo-100 transition-all duration-300 group cursor-default" style={{ animationDelay: `${i * 100}ms` }}>
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${f.color} flex items-center justify-center mb-4 group-hover:scale-110 group-hover:shadow-lg transition-all duration-300`}>
                   <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={f.icon} />
                   </svg>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{f.title}</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-indigo-700 transition-colors duration-200">{f.title}</h3>
                 <p className="text-gray-600 text-sm leading-relaxed">{f.desc}</p>
               </div>
             ))}
@@ -141,20 +258,38 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Supported Countries */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Global Reach — Countries with Globe */}
+      <section className="py-20 relative overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-indigo-50/50 rounded-full blur-3xl" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-50 border border-indigo-100 rounded-full text-sm text-indigo-700 font-medium mb-4">
+              <span className="text-base">{"\u{1F30D}"}</span> Global Coverage
+            </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">Send money to 28+ countries</h2>
             <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">Transfer funds across North America, Europe, and Africa with competitive rates.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {regions.map(r => (
-              <div key={r.name} className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-shadow">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-100">{r.name}</h3>
-                <div className="space-y-2.5">
+
+          {/* Globe for mobile */}
+          <div className="lg:hidden mb-12">
+            <GlobeSection />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {regions.map((r, ri) => (
+              <div key={r.name} className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-xl hover:shadow-indigo-100/30 hover:-translate-y-1 hover:border-indigo-100 transition-all duration-300 group" style={{ animationDelay: `${ri * 150}ms` }}>
+                <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
+                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${r.gradient} flex items-center justify-center text-white text-lg group-hover:scale-110 transition-transform duration-300`}>
+                    {r.icon}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 group-hover:text-indigo-700 transition-colors duration-200">{r.name}</h3>
+                    <p className="text-xs text-gray-400">{r.countries.length} countries</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
                   {r.countries.map(c => (
-                    <div key={c.name} className="flex items-center gap-3 text-sm">
+                    <div key={c.name} className="flex items-center gap-3 text-sm py-1 px-2 rounded-lg hover:bg-indigo-50/50 transition-colors duration-200">
                       <span className="text-lg">{c.flag}</span>
                       <span className="text-gray-700">{c.name}</span>
                     </div>
@@ -167,8 +302,12 @@ export default function LandingPage() {
       </section>
 
       {/* Stats */}
-      <section className="py-16 bg-gradient-to-r from-indigo-600 to-indigo-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-16 bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 relative overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-1/4 w-64 h-64 bg-white/5 rounded-full blur-2xl" />
+          <div className="absolute bottom-0 right-1/4 w-48 h-48 bg-white/5 rounded-full blur-2xl" />
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center text-white">
             {[
               ['28+', 'Countries Supported'],
@@ -176,9 +315,9 @@ export default function LandingPage() {
               ['$0', 'Monthly Fees'],
               ['24/7', 'Account Access'],
             ].map(([val, label]) => (
-              <div key={label}>
-                <p className="text-4xl font-bold">{val}</p>
-                <p className="mt-1 text-indigo-200 text-sm">{label}</p>
+              <div key={label} className="group hover:scale-110 transition-transform duration-300 cursor-default">
+                <p className="text-4xl lg:text-5xl font-bold group-hover:drop-shadow-lg transition-all duration-300">{val}</p>
+                <p className="mt-2 text-indigo-200 text-sm group-hover:text-white transition-colors duration-200">{label}</p>
               </div>
             ))}
           </div>
@@ -186,21 +325,24 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <section className="py-20 relative overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-50/60 rounded-full blur-3xl" />
+        </div>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">Ready to get started?</h2>
           <p className="mt-4 text-lg text-gray-600">Open your account in minutes and get a $1,000 welcome bonus. No hidden fees, no hassle.</p>
-          <Link to="/register" className="inline-block mt-8 px-10 py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-semibold rounded-xl hover:from-indigo-700 hover:to-indigo-800 transition-all shadow-lg shadow-indigo-200 text-lg">
+          <Link to="/register" className="inline-block mt-8 px-10 py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-semibold rounded-xl hover:from-indigo-700 hover:to-indigo-800 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-200 transition-all duration-300 shadow-lg shadow-indigo-200 text-lg animate-pulse-glow">
             Create Your Account
           </Link>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-gray-100 py-8">
+      <footer className="border-t border-gray-100 py-8 bg-gray-50/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center">
+          <div className="flex items-center gap-2 group">
+            <div className="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
               <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>

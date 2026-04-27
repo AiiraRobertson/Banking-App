@@ -36,19 +36,19 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-xl shadow-lg shadow-indigo-200/50 p-6 text-white">
+        <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-xl shadow-lg shadow-indigo-200/50 p-6 text-white hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-200/70 transition-all duration-300 cursor-default">
           <p className="text-sm text-indigo-100">Total Balance</p>
           <p className="text-2xl font-bold mt-1">{formatCurrency(totalBalance)}</p>
         </div>
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg shadow-blue-200/50 p-6 text-white">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg shadow-blue-200/50 p-6 text-white hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-200/70 transition-all duration-300 cursor-default">
           <p className="text-sm text-blue-100">Accounts</p>
           <p className="text-2xl font-bold mt-1">{accounts.length}</p>
         </div>
-        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-lg shadow-emerald-200/50 p-6 text-white">
+        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-lg shadow-emerald-200/50 p-6 text-white hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-200/70 transition-all duration-300 cursor-default">
           <p className="text-sm text-emerald-100">Recent Transactions</p>
           <p className="text-2xl font-bold mt-1">{transactions.length}</p>
         </div>
-        <div className="bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl shadow-lg shadow-purple-200/50 p-6 text-white">
+        <div className="bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl shadow-lg shadow-purple-200/50 p-6 text-white hover:-translate-y-1 hover:shadow-xl hover:shadow-purple-200/70 transition-all duration-300">
           <p className="text-sm text-violet-100">Quick Transfer</p>
           <Link to="/transfer" className="text-lg font-semibold mt-1 block hover:underline">
             Send Money &rarr;
@@ -67,7 +67,7 @@ export default function DashboardPage() {
               <Link
                 key={account.id}
                 to={`/accounts/${account.id}`}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:border-indigo-100 transition-all"
+                className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-lg hover:shadow-indigo-100/30 hover:border-indigo-100 hover:scale-[1.02] transition-all duration-300"
               >
                 <div className="flex items-center justify-between mb-3">
                   <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
@@ -93,8 +93,8 @@ export default function DashboardPage() {
               { to: '/transfer', label: 'Transfer', icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4', color: 'text-indigo-600 bg-indigo-50' },
               { to: '/bill-pay', label: 'Pay Bill', icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z', color: 'text-orange-600 bg-orange-50' },
             ].map(action => (
-              <Link key={action.label} to={action.to} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 text-center hover:shadow-md hover:border-indigo-100 transition-all">
-                <div className={`w-10 h-10 rounded-full ${action.color} flex items-center justify-center mx-auto mb-2`}>
+              <Link key={action.label} to={action.to} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 text-center hover:shadow-lg hover:shadow-indigo-100/30 hover:border-indigo-100 hover:-translate-y-1 transition-all duration-300 group">
+                <div className={`w-10 h-10 rounded-full ${action.color} flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform duration-300`}>
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={action.icon} />
                   </svg>
@@ -129,7 +129,7 @@ export default function DashboardPage() {
                   const isCredit = tx.transaction_type === 'deposit' ||
                     (tx.transaction_type === 'transfer' && tx.to_account_id && !tx.from_account_id);
                   return (
-                    <tr key={tx.id} className="hover:bg-gray-50">
+                    <tr key={tx.id} className="hover:bg-indigo-50/30 transition-colors duration-200">
                       <td className="px-6 py-4 text-sm text-gray-500">{formatDateTime(tx.created_at)}</td>
                       <td className="px-6 py-4">
                         <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
