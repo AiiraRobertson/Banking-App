@@ -14,7 +14,7 @@ export default function AdminLayout() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-3d">
       <header className="bg-slate-800 text-white px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button onClick={() => navigate('/')} className="text-slate-300 hover:text-white text-sm">
@@ -30,7 +30,7 @@ export default function AdminLayout() {
         </div>
       </header>
 
-      <nav className="bg-white border-b border-gray-200 px-6">
+      <nav className="bg-surface border-b border-b-primary px-6">
         <div className="flex gap-1">
           {adminNav.map(item => (
             <NavLink
@@ -39,7 +39,7 @@ export default function AdminLayout() {
               end={item.end}
               className={({ isActive }) =>
                 `px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  isActive ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+                  isActive ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-t-tertiary hover:text-t-secondary'
                 }`
               }
             >

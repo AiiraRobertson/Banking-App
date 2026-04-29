@@ -26,29 +26,29 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+      <h1 className="text-2xl font-bold text-t-primary">Admin Dashboard</h1>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map(c => (
-          <div key={c.label} className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-            <p className="text-sm text-gray-500">{c.label}</p>
+          <div key={c.label} className="bg-surface rounded-xl shadow-sm border border-b-secondary p-5">
+            <p className="text-sm text-t-tertiary">{c.label}</p>
             <p className={`text-2xl font-bold mt-1 ${c.color}`}>{c.value}</p>
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Link to="/admin/users" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center hover:shadow-md transition-shadow">
-          <p className="text-lg font-semibold text-gray-900">Manage Users</p>
-          <p className="text-sm text-gray-500 mt-1">View and manage all user accounts</p>
+        <Link to="/admin/users" className="bg-surface rounded-xl shadow-sm border border-b-secondary p-6 text-center hover:shadow-md transition-shadow">
+          <p className="text-lg font-semibold text-t-primary">Manage Users</p>
+          <p className="text-sm text-t-tertiary mt-1">View and manage all user accounts</p>
         </Link>
-        <Link to="/admin/transactions" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center hover:shadow-md transition-shadow">
-          <p className="text-lg font-semibold text-gray-900">All Transactions</p>
-          <p className="text-sm text-gray-500 mt-1">Monitor system-wide transactions</p>
+        <Link to="/admin/transactions" className="bg-surface rounded-xl shadow-sm border border-b-secondary p-6 text-center hover:shadow-md transition-shadow">
+          <p className="text-lg font-semibold text-t-primary">All Transactions</p>
+          <p className="text-sm text-t-tertiary mt-1">Monitor system-wide transactions</p>
         </Link>
-        <Link to="/admin/accounts" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center hover:shadow-md transition-shadow">
-          <p className="text-lg font-semibold text-gray-900">All Accounts</p>
-          <p className="text-sm text-gray-500 mt-1">View all bank accounts</p>
+        <Link to="/admin/accounts" className="bg-surface rounded-xl shadow-sm border border-b-secondary p-6 text-center hover:shadow-md transition-shadow">
+          <p className="text-lg font-semibold text-t-primary">All Accounts</p>
+          <p className="text-sm text-t-tertiary mt-1">View all bank accounts</p>
         </Link>
       </div>
     </div>

@@ -24,35 +24,35 @@ export default function AccountDetailPage() {
   }, [id, page]);
 
   if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>;
-  if (!account) return <div className="text-center py-20 text-gray-500">Account not found</div>;
+  if (!account) return <div className="text-center py-20 text-t-tertiary">Account not found</div>;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Link to="/accounts" className="text-gray-400 hover:text-gray-600">&larr;</Link>
+        <Link to="/accounts" className="text-t-muted hover:text-t-secondary">&larr;</Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Account Details</h1>
-          <p className="text-gray-500">{account.account_number}</p>
+          <h1 className="text-2xl font-bold text-t-primary">Account Details</h1>
+          <p className="text-t-tertiary">{account.account_number}</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="bg-surface rounded-xl shadow-sm border border-b-secondary p-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
           <div>
-            <p className="text-sm text-gray-500">Type</p>
-            <p className="text-lg font-semibold text-gray-900 capitalize">{account.account_type}</p>
+            <p className="text-sm text-t-tertiary">Type</p>
+            <p className="text-lg font-semibold text-t-primary capitalize">{account.account_type}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-500">Balance</p>
-            <p className="text-lg font-semibold text-gray-900">{formatCurrency(account.balance)}</p>
+            <p className="text-sm text-t-tertiary">Balance</p>
+            <p className="text-lg font-semibold text-t-primary">{formatCurrency(account.balance)}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-500">Account Number</p>
-            <p className="text-lg font-semibold text-gray-900">{account.account_number}</p>
+            <p className="text-sm text-t-tertiary">Account Number</p>
+            <p className="text-lg font-semibold text-t-primary">{account.account_number}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-500">Opened</p>
-            <p className="text-lg font-semibold text-gray-900">{formatDate(account.created_at)}</p>
+            <p className="text-sm text-t-tertiary">Opened</p>
+            <p className="text-lg font-semibold text-t-primary">{formatDate(account.created_at)}</p>
           </div>
         </div>
         <div className="flex gap-3 mt-6">
@@ -63,27 +63,27 @@ export default function AccountDetailPage() {
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Transaction History</h2>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <h2 className="text-lg font-semibold text-t-primary mb-4">Transaction History</h2>
+        <div className="bg-surface rounded-xl shadow-sm border border-b-secondary overflow-hidden">
           {transactions.length === 0 ? (
-            <div className="p-8 text-center text-gray-400">No transactions for this account</div>
+            <div className="p-8 text-center text-t-muted">No transactions for this account</div>
           ) : (
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-elevated">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Balance</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Type</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Description</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-t-tertiary uppercase">Amount</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-t-tertiary uppercase">Balance</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-b-secondary">
                 {transactions.map(tx => {
                   const isDebit = tx.from_account_id === account.id;
                   return (
-                    <tr key={tx.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm text-gray-500">{formatDateTime(tx.created_at)}</td>
+                    <tr key={tx.id} className="hover:bg-hover">
+                      <td className="px-6 py-4 text-sm text-t-tertiary">{formatDateTime(tx.created_at)}</td>
                       <td className="px-6 py-4">
                         <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
                           tx.transaction_type === 'deposit' ? 'bg-green-50 text-green-700' :
@@ -93,11 +93,11 @@ export default function AccountDetailPage() {
                           'bg-orange-50 text-orange-700'
                         }`}>{tx.transaction_type.replace('_', ' ')}</span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-700">{tx.description}</td>
+                      <td className="px-6 py-4 text-sm text-t-secondary">{tx.description}</td>
                       <td className={`px-6 py-4 text-sm font-medium text-right ${isDebit ? 'text-red-600' : 'text-green-600'}`}>
                         {isDebit ? '-' : '+'}{formatCurrency(tx.amount)}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-700 text-right font-mono">{formatCurrency(tx.balance_after)}</td>
+                      <td className="px-6 py-4 text-sm text-t-secondary text-right font-mono">{formatCurrency(tx.balance_after)}</td>
                     </tr>
                   );
                 })}
@@ -107,9 +107,9 @@ export default function AccountDetailPage() {
         </div>
         {pagination.pages > 1 && (
           <div className="flex items-center justify-center gap-2 mt-4">
-            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 hover:bg-gray-50">Prev</button>
-            <span className="text-sm text-gray-500">Page {page} of {pagination.pages}</span>
-            <button onClick={() => setPage(p => Math.min(pagination.pages, p + 1))} disabled={page === pagination.pages} className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 hover:bg-gray-50">Next</button>
+            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 text-sm border border-b-input rounded-lg disabled:opacity-50 hover:bg-hover">Prev</button>
+            <span className="text-sm text-t-tertiary">Page {page} of {pagination.pages}</span>
+            <button onClick={() => setPage(p => Math.min(pagination.pages, p + 1))} disabled={page === pagination.pages} className="px-3 py-1.5 text-sm border border-b-input rounded-lg disabled:opacity-50 hover:bg-hover">Next</button>
           </div>
         )}
       </div>

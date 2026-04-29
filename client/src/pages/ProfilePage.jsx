@@ -60,15 +60,15 @@ export default function ProfilePage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
-        <p className="text-gray-500">Manage your personal information</p>
+        <h1 className="text-2xl font-bold text-t-primary">Profile</h1>
+        <p className="text-t-tertiary">Manage your personal information</p>
       </div>
 
       {success && <div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">{success}</div>}
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="bg-surface rounded-xl shadow-sm border border-b-secondary p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-gray-900">Personal Information</h2>
+          <h2 className="text-lg font-semibold text-t-primary">Personal Information</h2>
           {!editing && (
             <button onClick={() => setEditing(true)} className="px-4 py-2 text-sm text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50">Edit</button>
           )}
@@ -80,49 +80,49 @@ export default function ProfilePage() {
           <form onSubmit={handleSave} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                <label className="block text-sm font-medium text-t-secondary mb-1">First Name</label>
                 <input type="text" value={form.first_name || ''} onChange={e => setForm({ ...form, first_name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" required />
+                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" required />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                <label className="block text-sm font-medium text-t-secondary mb-1">Last Name</label>
                 <input type="text" value={form.last_name || ''} onChange={e => setForm({ ...form, last_name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" required />
+                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" required />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input type="email" value={profile.email} disabled className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500" />
+              <label className="block text-sm font-medium text-t-secondary mb-1">Email</label>
+              <input type="email" value={profile.email} disabled className="w-full px-3 py-2 border border-b-primary rounded-lg bg-elevated text-t-tertiary" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+              <label className="block text-sm font-medium text-t-secondary mb-1">Phone</label>
               <input type="text" value={form.phone || ''} onChange={e => setForm({ ...form, phone: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+                className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+              <label className="block text-sm font-medium text-t-secondary mb-1">Address</label>
               <input type="text" value={form.address || ''} onChange={e => setForm({ ...form, address: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+                className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                <label className="block text-sm font-medium text-t-secondary mb-1">City</label>
                 <input type="text" value={form.city || ''} onChange={e => setForm({ ...form, city: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                <label className="block text-sm font-medium text-t-secondary mb-1">State</label>
                 <input type="text" value={form.state || ''} onChange={e => setForm({ ...form, state: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">ZIP Code</label>
+                <label className="block text-sm font-medium text-t-secondary mb-1">ZIP Code</label>
                 <input type="text" value={form.zip_code || ''} onChange={e => setForm({ ...form, zip_code: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
               </div>
             </div>
             <div className="flex gap-3 justify-end">
-              <button type="button" onClick={() => { setEditing(false); setForm(profile); }} className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">Cancel</button>
+              <button type="button" onClick={() => { setEditing(false); setForm(profile); }} className="px-4 py-2 text-t-secondary bg-elevated rounded-lg hover:bg-hover">Cancel</button>
               <button type="submit" disabled={saving} className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>
@@ -137,34 +137,34 @@ export default function ProfilePage() {
               ['State', profile.state || '-'], ['ZIP Code', profile.zip_code || '-'],
             ].map(([label, value]) => (
               <div key={label}>
-                <p className="text-sm text-gray-500">{label}</p>
-                <p className="font-medium text-gray-900">{value}</p>
+                <p className="text-sm text-t-tertiary">{label}</p>
+                <p className="font-medium text-t-primary">{value}</p>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Change Password</h2>
+      <div className="bg-surface rounded-xl shadow-sm border border-b-secondary p-6">
+        <h2 className="text-lg font-semibold text-t-primary mb-4">Change Password</h2>
         {pwError && <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{pwError}</div>}
         {pwSuccess && <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">{pwSuccess}</div>}
         <form onSubmit={handlePasswordChange} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+            <label className="block text-sm font-medium text-t-secondary mb-1">Current Password</label>
             <input type="password" value={pwForm.current_password} onChange={e => setPwForm({ ...pwForm, current_password: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" required />
+              className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" required />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+            <label className="block text-sm font-medium text-t-secondary mb-1">New Password</label>
             <input type="password" value={pwForm.new_password} onChange={e => setPwForm({ ...pwForm, new_password: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
               placeholder="Min 8 chars, uppercase, lowercase, number, special" required />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+            <label className="block text-sm font-medium text-t-secondary mb-1">Confirm New Password</label>
             <input type="password" value={pwForm.confirm_password} onChange={e => setPwForm({ ...pwForm, confirm_password: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" required />
+              className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" required />
           </div>
           <button type="submit" disabled={pwSaving} className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
             {pwSaving ? 'Changing...' : 'Change Password'}

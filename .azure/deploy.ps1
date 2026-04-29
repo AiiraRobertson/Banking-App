@@ -62,18 +62,18 @@ Write-Host "`n[Step 6] Building applications..." -ForegroundColor Yellow
 
 # Build frontend
 Write-Host "Building frontend..." -ForegroundColor Cyan
-cd client
+Set-Location client
 npm install
 npm run build
 $frontendDist = (Get-Location).Path + "\dist"
-cd ..
+Set-Location ..
 
 # Step 7: Deploy backend
 Write-Host "`n[Step 7] Deploying backend..." -ForegroundColor Yellow
 $backendAppName = (az resource list --resource-group $resourceGroupName --query "[?type=='Microsoft.Web/sites' && contains(name, 'backend')].name" -o tsv)[0]
 
 Write-Host "Backend App: $backendAppName"
-cd server
+Set-Location server
 npm install
 # Create deployment zip
 $compress = @{
@@ -82,7 +82,7 @@ $compress = @{
     Update = $true
 }
 Compress-Archive @compress
-cd ..
+Set-Location ..
 
 # Deploy backend
 az webapp deployment source config-zip `

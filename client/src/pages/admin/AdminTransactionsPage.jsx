@@ -21,11 +21,11 @@ export default function AdminTransactionsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">All Transactions</h1>
+      <h1 className="text-2xl font-bold text-t-primary">All Transactions</h1>
 
       <div className="flex gap-3">
         <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(1); }}
-          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+          className="px-3 py-2 border border-b-input rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
           <option value="">All Types</option>
           <option value="deposit">Deposit</option>
           <option value="withdrawal">Withdrawal</option>
@@ -35,27 +35,27 @@ export default function AdminTransactionsPage() {
         </select>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-surface rounded-xl shadow-sm border border-b-secondary overflow-hidden">
         {loading ? (
           <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-elevated">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">From</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">To</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Date</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Type</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-t-tertiary uppercase">From</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-t-tertiary uppercase">To</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Description</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-t-tertiary uppercase">Amount</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-b-secondary">
                 {transactions.map(tx => (
-                  <tr key={tx.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">{formatDateTime(tx.created_at)}</td>
+                  <tr key={tx.id} className="hover:bg-hover">
+                    <td className="px-4 py-3 text-sm text-t-tertiary whitespace-nowrap">{formatDateTime(tx.created_at)}</td>
                     <td className="px-4 py-3">
                       <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
                         tx.transaction_type === 'deposit' ? 'bg-green-50 text-green-700' :
@@ -65,16 +65,16 @@ export default function AdminTransactionsPage() {
                         'bg-orange-50 text-orange-700'
                       }`}>{tx.transaction_type.replace('_', ' ')}</span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
-                      {tx.from_user_name && <span className="block text-gray-700">{tx.from_user_name}</span>}
+                    <td className="px-4 py-3 text-sm text-t-tertiary">
+                      {tx.from_user_name && <span className="block text-t-secondary">{tx.from_user_name}</span>}
                       {tx.from_account_number && <span className="text-xs">****{tx.from_account_number.slice(-4)}</span>}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
-                      {tx.to_user_name && <span className="block text-gray-700">{tx.to_user_name}</span>}
+                    <td className="px-4 py-3 text-sm text-t-tertiary">
+                      {tx.to_user_name && <span className="block text-t-secondary">{tx.to_user_name}</span>}
                       {tx.to_account_number && <span className="text-xs">****{tx.to_account_number.slice(-4)}</span>}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{tx.description}</td>
-                    <td className="px-4 py-3 text-sm font-medium text-right text-gray-900">{formatCurrency(tx.amount)}</td>
+                    <td className="px-4 py-3 text-sm text-t-secondary">{tx.description}</td>
+                    <td className="px-4 py-3 text-sm font-medium text-right text-t-primary">{formatCurrency(tx.amount)}</td>
                     <td className="px-4 py-3">
                       <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
                         tx.status === 'completed' ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'
@@ -90,10 +90,10 @@ export default function AdminTransactionsPage() {
 
       {pagination.pages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-500">Page {page} of {pagination.pages} ({pagination.total} total)</p>
+          <p className="text-sm text-t-tertiary">Page {page} of {pagination.pages} ({pagination.total} total)</p>
           <div className="flex gap-2">
-            <button onClick={() => setPage(p => p - 1)} disabled={page === 1} className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 hover:bg-gray-50">Prev</button>
-            <button onClick={() => setPage(p => p + 1)} disabled={page === pagination.pages} className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 hover:bg-gray-50">Next</button>
+            <button onClick={() => setPage(p => p - 1)} disabled={page === 1} className="px-3 py-1.5 text-sm border border-b-input rounded-lg disabled:opacity-50 hover:bg-hover">Prev</button>
+            <button onClick={() => setPage(p => p + 1)} disabled={page === pagination.pages} className="px-3 py-1.5 text-sm border border-b-input rounded-lg disabled:opacity-50 hover:bg-hover">Next</button>
           </div>
         </div>
       )}

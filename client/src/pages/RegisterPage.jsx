@@ -82,10 +82,10 @@ export default function RegisterPage() {
     }
   };
 
-  const inputClass = "w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors text-sm";
+  const inputClass = "w-full px-3 py-2.5 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors text-sm";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-white to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-auth flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-2xl mb-4 shadow-lg shadow-indigo-200">
@@ -93,11 +93,11 @@ export default function RegisterPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Create Account</h1>
-          <p className="text-gray-500 mt-1">Join SecureBank — Banking without borders</p>
+          <h1 className="text-3xl font-bold text-t-primary">Create Account</h1>
+          <p className="text-t-tertiary mt-1">Join SecureBank — Banking without borders</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 p-8">
+        <div className="bg-surface rounded-2xl shadow-xl shadow-[var(--color-shadow)] border border-b-secondary p-8">
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
               {error}
@@ -107,22 +107,22 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                <label className="block text-sm font-medium text-t-secondary mb-1">First Name</label>
                 <input type="text" name="first_name" value={form.first_name} onChange={handleChange} className={inputClass} required />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                <label className="block text-sm font-medium text-t-secondary mb-1">Last Name</label>
                 <input type="text" name="last_name" value={form.last_name} onChange={handleChange} className={inputClass} required />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <label className="block text-sm font-medium text-t-secondary mb-1">Email</label>
               <input type="email" name="email" value={form.email} onChange={handleChange} className={inputClass} placeholder="you@example.com" required />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nationality</label>
+              <label className="block text-sm font-medium text-t-secondary mb-1">Nationality</label>
               <select name="nationality" value={form.nationality} onChange={handleChange} className={inputClass} required>
                 <option value="">Select your country</option>
                 {nationalities.map(n => (
@@ -132,34 +132,34 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+              <label className="block text-sm font-medium text-t-secondary mb-1">Date of Birth</label>
               <input type="date" name="date_of_birth" value={form.date_of_birth} onChange={handleChange} max={maxDobStr} className={inputClass} required />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Home Address</label>
+              <label className="block text-sm font-medium text-t-secondary mb-1">Home Address</label>
               <input type="text" name="address" value={form.address} onChange={handleChange} className={inputClass} placeholder="123 Main Street" required />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                <label className="block text-sm font-medium text-t-secondary mb-1">City</label>
                 <input type="text" name="city" value={form.city} onChange={handleChange} className={inputClass} required />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
+                <label className="block text-sm font-medium text-t-secondary mb-1">Postal Code</label>
                 <input type="text" name="zip_code" value={form.zip_code} onChange={handleChange} className={inputClass} required />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <label className="block text-sm font-medium text-t-secondary mb-1">Password</label>
               <PasswordInput name="password" value={form.password} onChange={handleChange} className={inputClass} placeholder="Min 8 chars, uppercase, lowercase, number, special" required />
               <PasswordRequirements password={form.password} mode="checklist" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+              <label className="block text-sm font-medium text-t-secondary mb-1">Confirm Password</label>
               <PasswordInput name="confirm_password" value={form.confirm_password} onChange={handleChange} className={inputClass} required />
               {form.confirm_password && (
                 <p className={`text-xs mt-1.5 ${form.password === form.confirm_password ? 'text-green-600' : 'text-red-500'}`}>
@@ -170,8 +170,8 @@ export default function RegisterPage() {
 
             <div className="flex items-start gap-2 pt-1">
               <input type="checkbox" name="terms_accepted" checked={form.terms_accepted} onChange={handleChange}
-                className="mt-0.5 h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" />
-              <label className="text-sm text-gray-600">
+                className="mt-0.5 h-4 w-4 text-indigo-600 border-b-input rounded focus:ring-indigo-500" />
+              <label className="text-sm text-t-secondary">
                 I agree to the <span className="text-indigo-600 font-medium cursor-pointer hover:text-indigo-700">Terms and Conditions</span> and <span className="text-indigo-600 font-medium cursor-pointer hover:text-indigo-700">Privacy Policy</span>
               </label>
             </div>
@@ -182,7 +182,7 @@ export default function RegisterPage() {
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-gray-500">
+          <p className="mt-6 text-center text-sm text-t-tertiary">
             Already have an account?{' '}
             <Link to="/login" className="text-indigo-600 font-medium hover:text-indigo-700">Sign in</Link>
           </p>

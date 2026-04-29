@@ -58,17 +58,17 @@ export default function TransferPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Transactions</h1>
-        <p className="text-gray-500">Deposit, withdraw, or transfer funds</p>
+        <h1 className="text-2xl font-bold text-t-primary">Transactions</h1>
+        <p className="text-t-tertiary">Deposit, withdraw, or transfer funds</p>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="flex border-b border-gray-200">
+      <div className="bg-surface rounded-xl shadow-sm border border-b-secondary">
+        <div className="flex border-b border-b-primary">
           {tabs.map(tab => (
             <button
               key={tab}
               onClick={() => { setActiveTab(tab); reset(); }}
-              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-t-tertiary hover:text-t-secondary'}`}
             >
               {tab}
             </button>
@@ -83,9 +83,9 @@ export default function TransferPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">{success.message}</h3>
-              <p className="text-sm text-gray-500">Reference: {success.referenceId}</p>
-              <p className="text-sm text-gray-500">New balance: {formatCurrency(success.newBalance)}</p>
+              <h3 className="text-lg font-semibold text-t-primary">{success.message}</h3>
+              <p className="text-sm text-t-tertiary">Reference: {success.referenceId}</p>
+              <p className="text-sm text-t-tertiary">New balance: {formatCurrency(success.newBalance)}</p>
               <button onClick={reset} className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700">
                 New Transaction
               </button>
@@ -95,13 +95,13 @@ export default function TransferPage() {
               {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-t-secondary mb-1">
                   {activeTab === 'Transfer' ? 'From Account' : 'Account'}
                 </label>
                 <select
                   value={form.account_id}
                   onChange={e => setForm({ ...form, account_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
                   required
                 >
                   {accounts.map(a => (
@@ -110,19 +110,19 @@ export default function TransferPage() {
                     </option>
                   ))}
                 </select>
-                {selectedAccount && <p className="text-xs text-gray-400 mt-1">Available: {formatCurrency(selectedAccount.balance)}</p>}
+                {selectedAccount && <p className="text-xs text-t-muted mt-1">Available: {formatCurrency(selectedAccount.balance)}</p>}
               </div>
 
               {activeTab === 'Transfer' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Transfer To</label>
+                  <label className="block text-sm font-medium text-t-secondary mb-1">Transfer To</label>
                   <div className="flex gap-2 mb-2">
                     <button type="button" onClick={() => setForm({ ...form, transferMode: 'own' })}
-                      className={`px-3 py-1 text-xs rounded-full ${form.transferMode === 'own' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                      className={`px-3 py-1 text-xs rounded-full ${form.transferMode === 'own' ? 'bg-indigo-600 text-white' : 'bg-elevated text-t-secondary'}`}>
                       My Account
                     </button>
                     <button type="button" onClick={() => setForm({ ...form, transferMode: 'other' })}
-                      className={`px-3 py-1 text-xs rounded-full ${form.transferMode === 'other' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                      className={`px-3 py-1 text-xs rounded-full ${form.transferMode === 'other' ? 'bg-indigo-600 text-white' : 'bg-elevated text-t-secondary'}`}>
                       Other Account
                     </button>
                   </div>
@@ -130,7 +130,7 @@ export default function TransferPage() {
                     <select
                       value={form.to_account_id}
                       onChange={e => setForm({ ...form, to_account_id: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                      className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
                       required
                     >
                       <option value="">Select destination account</option>
@@ -146,7 +146,7 @@ export default function TransferPage() {
                       value={form.to_account_number}
                       onChange={e => setForm({ ...form, to_account_number: e.target.value })}
                       placeholder="Enter 10-digit account number"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                      className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
                       maxLength={10}
                       required
                     />
@@ -155,12 +155,12 @@ export default function TransferPage() {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Amount ($)</label>
+                <label className="block text-sm font-medium text-t-secondary mb-1">Amount ($)</label>
                 <input
                   type="number"
                   value={form.amount}
                   onChange={e => setForm({ ...form, amount: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
                   placeholder="0.00"
                   min="0.01"
                   step="0.01"
@@ -169,12 +169,12 @@ export default function TransferPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description (optional)</label>
+                <label className="block text-sm font-medium text-t-secondary mb-1">Description (optional)</label>
                 <input
                   type="text"
                   value={form.description}
                   onChange={e => setForm({ ...form, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
                   placeholder="What's this for?"
                 />
               </div>

@@ -54,8 +54,8 @@ export default function NotificationsPage() {
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
-          <p className="text-gray-500">Stay updated on your account activity</p>
+          <h1 className="text-2xl font-bold text-t-primary">Notifications</h1>
+          <p className="text-t-tertiary">Stay updated on your account activity</p>
         </div>
         <button onClick={handleMarkAllRead} className="px-4 py-2 text-sm text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50">
           Mark All Read
@@ -65,7 +65,7 @@ export default function NotificationsPage() {
       <div className="flex gap-2 flex-wrap">
         {['all', 'unread', 'transaction', 'alert', 'info', 'security'].map(f => (
           <button key={f} onClick={() => { setFilter(f); setPage(1); }}
-            className={`px-3 py-1.5 text-sm rounded-full capitalize ${filter === f ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+            className={`px-3 py-1.5 text-sm rounded-full capitalize ${filter === f ? 'bg-indigo-600 text-white' : 'bg-elevated text-t-secondary hover:bg-hover'}`}>
             {f}
           </button>
         ))}
@@ -74,15 +74,15 @@ export default function NotificationsPage() {
       {loading ? (
         <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>
       ) : notifications.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center text-gray-400">No notifications</div>
+        <div className="bg-surface rounded-xl shadow-sm border border-b-secondary p-12 text-center text-t-muted">No notifications</div>
       ) : (
         <div className="space-y-3">
           {notifications.map(n => (
             <div
               key={n.id}
               onClick={() => !n.is_read && handleMarkRead(n.id)}
-              className={`bg-white rounded-xl shadow-sm border p-4 flex items-start gap-4 cursor-pointer transition-colors ${
-                n.is_read ? 'border-gray-100' : 'border-l-4 border-l-indigo-500 border-gray-100 bg-indigo-50/30'
+              className={`bg-surface rounded-xl shadow-sm border p-4 flex items-start gap-4 cursor-pointer transition-colors ${
+                n.is_read ? 'border-b-secondary' : 'border-l-4 border-l-indigo-500 border-b-secondary bg-indigo-50/30'
               }`}
             >
               <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${typeColors[n.type]}`}>
@@ -92,10 +92,10 @@ export default function NotificationsPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className={`text-sm font-semibold ${n.is_read ? 'text-gray-700' : 'text-gray-900'}`}>{n.title}</h3>
-                  <span className="text-xs text-gray-400 whitespace-nowrap">{timeAgo(n.created_at)}</span>
+                  <h3 className={`text-sm font-semibold ${n.is_read ? 'text-t-secondary' : 'text-t-primary'}`}>{n.title}</h3>
+                  <span className="text-xs text-t-muted whitespace-nowrap">{timeAgo(n.created_at)}</span>
                 </div>
-                <p className="text-sm text-gray-500 mt-0.5">{n.message}</p>
+                <p className="text-sm text-t-tertiary mt-0.5">{n.message}</p>
               </div>
               {!n.is_read && <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full shrink-0 mt-1.5"></div>}
             </div>
@@ -106,10 +106,10 @@ export default function NotificationsPage() {
       {pagination.pages > 1 && (
         <div className="flex items-center justify-center gap-2">
           <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-            className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 hover:bg-gray-50">Prev</button>
-          <span className="text-sm text-gray-500">Page {page} of {pagination.pages}</span>
+            className="px-3 py-1.5 text-sm border border-b-input rounded-lg disabled:opacity-50 hover:bg-hover">Prev</button>
+          <span className="text-sm text-t-tertiary">Page {page} of {pagination.pages}</span>
           <button onClick={() => setPage(p => Math.min(pagination.pages, p + 1))} disabled={page === pagination.pages}
-            className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 hover:bg-gray-50">Next</button>
+            className="px-3 py-1.5 text-sm border border-b-input rounded-lg disabled:opacity-50 hover:bg-hover">Next</button>
         </div>
       )}
     </div>

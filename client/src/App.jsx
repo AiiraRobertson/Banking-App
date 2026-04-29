@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -33,6 +34,7 @@ function CatchAllRedirect() {
 
 export default function App() {
   return (
+    <ThemeProvider>
     <AuthProvider>
       <NotificationProvider>
         <BrowserRouter>
@@ -67,5 +69,6 @@ export default function App() {
         </BrowserRouter>
       </NotificationProvider>
     </AuthProvider>
+    </ThemeProvider>
   );
 }
