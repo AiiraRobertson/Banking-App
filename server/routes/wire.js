@@ -5,6 +5,8 @@ const db = require('../db/database');
 const { authenticate } = require('../middleware/auth');
 const { handleValidation } = require('../middleware/validate');
 const { countries, exchangeRates, fees, calculateFee, convertCurrency, getCountry, getDeliveryEstimate } = require('../utils/currencies');
+const { getRates, convertLive } = require('../utils/liveRates');
+const { getBanksForCountry } = require('../utils/banks');
 
 const router = express.Router();
 router.use(authenticate);
@@ -18,8 +20,19 @@ router.get('/countries', (req, res) => {
   res.json({ countries: grouped, fees });
 });
 
-router.get('/rates', (req, res) => {
-  res.json({ rates: exchangeRates, baseCurrency: 'USD' });
+router.get('/rates', async (req, res) => {
+  const { rates, fetchedAt, source } = await getRates();
+  res.json({ rates, baseCurrency: 'USD', fetchedAt, source });
+});
+
+router.get('/banks', [
+  query('country_code').isString().isLength({ min: 2, max: 2 }),
+  handleValidation
+], (req, res) => {
+  const code = req.query.country_code.toUpperCase();
+  const country = getCountry(code);
+  if (!country) return res.status(400).json({ error: 'Unsupported country' });
+  res.json({ country: country.name, banks: getBanksForCountry(code) });
 });
 
 router.get('/lookup-account', [
@@ -61,14 +74,14 @@ router.post('/quote', [
   body('amount').isFloat({ min: 1, max: 1000000 }).withMessage('Amount must be between $1 and $1,000,000'),
   body('country_code').isString().isLength({ min: 2, max: 2 }),
   handleValidation
-], (req, res) => {
+], async (req, res) => {
   const { amount, country_code } = req.body;
   const country = getCountry(country_code);
   if (!country) return res.status(400).json({ error: 'Unsupported country' });
 
   const amt = Math.round(amount * 100) / 100;
   const feeAmount = calculateFee(amt, country.region);
-  const { rate, converted } = convertCurrency(amt, country.currency);
+  const { rate, converted, fetchedAt, source } = await convertLive(amt, country.currency);
   const totalDeducted = Math.round((amt + feeAmount) * 100) / 100;
   const deliveryEstimate = getDeliveryEstimate(country.region);
 
@@ -82,7 +95,9 @@ router.post('/quote', [
     deliveryEstimate,
     deliveryDays: fees[country.region].deliveryDays,
     country: country.name,
-    region: country.region
+    region: country.region,
+    rateFetchedAt: fetchedAt,
+    rateSource: source
   });
 });
 
@@ -98,7 +113,7 @@ router.post('/send', [
   body('routing_number').optional().trim(),
   body('description').optional().trim(),
   handleValidation
-], (req, res) => {
+], async (req, res) => {
   const {
     from_account_id, amount, country_code,
     recipient_name, recipient_bank, recipient_account,
@@ -121,7 +136,7 @@ router.post('/send', [
   const amt = Math.round(amount * 100) / 100;
   const feeAmount = calculateFee(amt, country.region);
   const totalDeducted = Math.round((amt + feeAmount) * 100) / 100;
-  const { rate, converted } = convertCurrency(amt, country.currency);
+  const { rate, converted } = await convertLive(amt, country.currency);
   const deliveryEstimate = getDeliveryEstimate(country.region);
 
   const account = db.prepare(
@@ -129,12 +144,18 @@ router.post('/send', [
   ).get(from_account_id, req.user.id);
 
   if (!account) return res.status(404).json({ error: 'Account not found' });
-  if (account.balance < totalDeducted) {
-    return res.status(400).json({ error: `Insufficient funds. You need ${totalDeducted.toFixed(2)} (${amt.toFixed(2)} + ${feeAmount.toFixed(2)} fee)` });
-  }
+
+  const insufficientMsg = `Insufficient funds. You need ${totalDeducted.toFixed(2)} (${amt.toFixed(2)} + ${feeAmount.toFixed(2)} fee)`;
 
   const sendWire = db.transaction(() => {
-    db.prepare('UPDATE accounts SET balance = balance - ? WHERE id = ?').run(totalDeducted, account.id);
+    const debit = db.prepare(
+      'UPDATE accounts SET balance = balance - ? WHERE id = ? AND balance >= ?'
+    ).run(totalDeducted, account.id, totalDeducted);
+    if (debit.changes === 0) {
+      const err = new Error(insufficientMsg);
+      err.status = 400;
+      throw err;
+    }
     const newBalance = db.prepare('SELECT balance FROM accounts WHERE id = ?').get(account.id).balance;
 
     const refId = uuidv4();
@@ -174,15 +195,20 @@ router.post('/send', [
     return { referenceId: refId, newBalance, converted, feeAmount, totalDeducted, deliveryEstimate };
   });
 
-  const result = sendWire();
-  res.json({
-    message: 'Wire transfer initiated successfully',
-    ...result,
-    currency: country.currency,
-    exchangeRate: rate,
-    country: country.name,
-    deliveryDays: fees[country.region].deliveryDays
-  });
+  try {
+    const result = sendWire();
+    res.json({
+      message: 'Wire transfer initiated successfully',
+      ...result,
+      currency: country.currency,
+      exchangeRate: rate,
+      country: country.name,
+      deliveryDays: fees[country.region].deliveryDays
+    });
+  } catch (err) {
+    if (err.status === 400) return res.status(400).json({ error: err.message });
+    throw err;
+  }
 });
 
 router.get('/history', [

@@ -214,12 +214,6 @@ resource backendDiagnosticsSettings 'Microsoft.Insights/diagnosticSettings@2017-
         enabled: true
       }
     ]
-    metrics: [
-      {
-        category: 'AllMetrics'
-        enabled: true
-      }
-    ]
   }
 }
 
@@ -304,12 +298,6 @@ resource frontendDiagnosticsSettings 'Microsoft.Insights/diagnosticSettings@2017
       }
       {
         category: 'AppServiceTooManyInstancesCount'
-        enabled: true
-      }
-    ]
-    metrics: [
-      {
-        category: 'AllMetrics'
         enabled: true
       }
     ]

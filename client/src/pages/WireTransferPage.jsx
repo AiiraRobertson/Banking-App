@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAccounts } from '../services/accountService';
-import { getCountries, getQuote, sendWire, getWireHistory, lookupAccount } from '../services/wireService';
+import { getCountries, getQuote, sendWire, getWireHistory, lookupAccount, getBanksForCountry } from '../services/wireService';
 import { formatCurrency } from '../utils/formatCurrency';
 import { formatDate } from '../utils/formatDate';
 import { generateBic } from '../utils/generateBic';
@@ -24,6 +24,8 @@ export default function WireTransferPage() {
   const [bankLookup, setBankLookup] = useState(null);
   const [bankLookupLoading, setBankLookupLoading] = useState(false);
   const [bicAutoFilled, setBicAutoFilled] = useState(false);
+  const [countryBanks, setCountryBanks] = useState([]);
+  const [bankMode, setBankMode] = useState('select');
 
   const [form, setForm] = useState({
     region: '',
@@ -56,6 +58,16 @@ export default function WireTransferPage() {
       .then(res => { setHistory(res.data.transfers); setHistoryPagination(res.data.pagination); })
       .catch(() => {});
   }, [historyPage, success]);
+
+  useEffect(() => {
+    if (!form.country_code) { setCountryBanks([]); return; }
+    getBanksForCountry(form.country_code)
+      .then(res => setCountryBanks(res.data.banks || []))
+      .catch(() => setCountryBanks([]));
+    setBankMode('select');
+    setForm(f => ({ ...f, recipient_bank: '', swift_code: '' }));
+    setBicAutoFilled(false);
+  }, [form.country_code]);
 
   useEffect(() => {
     if (form.recipient_account.length < 6) { setBankLookup(null); return; }
@@ -253,22 +265,61 @@ export default function WireTransferPage() {
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-t-secondary mb-1">Bank Name</label>
-              <input type="text" value={form.recipient_bank}
-                onChange={e => {
-                  const bankName = e.target.value;
-                  const updates = { recipient_bank: bankName };
-                  if (selectedCountry?.requiresSwift && bankName.length >= 2) {
-                    updates.swift_code = generateBic(bankName, form.country_code);
-                    setBicAutoFilled(true);
-                  } else if (!bankName) {
-                    updates.swift_code = '';
-                    setBicAutoFilled(false);
-                  }
-                  setForm(f => ({ ...f, ...updates }));
-                }}
-                className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                placeholder="Deutsche Bank, Barclays, GTBank..." required />
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-t-secondary">Recipient Bank</label>
+                {countryBanks.length > 0 && (
+                  <button type="button"
+                    onClick={() => {
+                      const next = bankMode === 'select' ? 'manual' : 'select';
+                      setBankMode(next);
+                      setForm(f => ({ ...f, recipient_bank: '', swift_code: '' }));
+                      setBicAutoFilled(false);
+                    }}
+                    className="text-xs text-indigo-600 hover:text-indigo-700">
+                    {bankMode === 'select' ? 'Enter bank manually' : 'Pick from list'}
+                  </button>
+                )}
+              </div>
+
+              {bankMode === 'select' && countryBanks.length > 0 ? (
+                <select value={form.recipient_bank}
+                  onChange={e => {
+                    const bankName = e.target.value;
+                    const match = countryBanks.find(b => b.name === bankName);
+                    const updates = { recipient_bank: bankName };
+                    if (match && selectedCountry?.requiresSwift) {
+                      updates.swift_code = match.swift;
+                      setBicAutoFilled(true);
+                    } else if (!bankName) {
+                      updates.swift_code = '';
+                      setBicAutoFilled(false);
+                    }
+                    setForm(f => ({ ...f, ...updates }));
+                  }}
+                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-surface"
+                  required>
+                  <option value="">Select a bank...</option>
+                  {countryBanks.map(b => (
+                    <option key={b.name} value={b.name}>{b.name}</option>
+                  ))}
+                </select>
+              ) : (
+                <input type="text" value={form.recipient_bank}
+                  onChange={e => {
+                    const bankName = e.target.value;
+                    const updates = { recipient_bank: bankName };
+                    if (selectedCountry?.requiresSwift && bankName.length >= 2) {
+                      updates.swift_code = generateBic(bankName, form.country_code);
+                      setBicAutoFilled(true);
+                    } else if (!bankName) {
+                      updates.swift_code = '';
+                      setBicAutoFilled(false);
+                    }
+                    setForm(f => ({ ...f, ...updates }));
+                  }}
+                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                  placeholder="Deutsche Bank, Barclays, GTBank..." required />
+              )}
             </div>
 
             {selectedCountry.requiresSwift && (
@@ -372,7 +423,17 @@ export default function WireTransferPage() {
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div><p className="text-t-tertiary">You Send</p><p className="font-semibold text-t-primary">{formatCurrency(quote.originalAmount)}</p></div>
                   <div><p className="text-t-tertiary">Recipient Gets</p><p className="font-semibold text-green-600">{quote.currency} {quote.convertedAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p></div>
-                  <div><p className="text-t-tertiary">Exchange Rate</p><p className="font-medium text-t-secondary">1 USD = {quote.exchangeRate} {quote.currency}</p></div>
+                  <div>
+                    <p className="text-t-tertiary">Exchange Rate</p>
+                    <p className="font-medium text-t-secondary">1 USD = {quote.exchangeRate} {quote.currency}</p>
+                    {quote.rateSource && (
+                      <p className={`text-[10px] mt-0.5 inline-flex items-center gap-1 ${quote.rateSource === 'live' ? 'text-green-600' : 'text-amber-600'}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${quote.rateSource === 'live' ? 'bg-green-500 animate-pulse' : 'bg-amber-500'}`} />
+                        {quote.rateSource === 'live' ? 'Live rate' : 'Cached rate'}
+                        {quote.rateFetchedAt ? ` \u00B7 ${Math.max(0, Math.floor((Date.now() - quote.rateFetchedAt) / 1000))}s ago` : ''}
+                      </p>
+                    )}
+                  </div>
                   <div><p className="text-t-tertiary">Transfer Fee</p><p className="font-medium text-orange-600">{formatCurrency(quote.feeAmount)}</p></div>
                   <div><p className="text-t-tertiary">Total Deducted</p><p className="font-bold text-t-primary">{formatCurrency(quote.totalDeducted)}</p></div>
                   <div><p className="text-t-tertiary">Est. Delivery</p><p className="font-medium text-t-secondary">{quote.deliveryDays}</p></div>

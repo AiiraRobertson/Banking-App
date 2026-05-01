@@ -25,6 +25,17 @@ import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminUserDetailPage from './pages/admin/AdminUserDetailPage';
 import AdminTransactionsPage from './pages/admin/AdminTransactionsPage';
 import AdminAccountsPage from './pages/admin/AdminAccountsPage';
+import TermsPage from './pages/resources/TermsPage';
+import FAQPage from './pages/resources/FAQPage';
+import MissionPage from './pages/resources/MissionPage';
+import PolicyPage from './pages/resources/PolicyPage';
+import InnovationPage from './pages/resources/InnovationPage';
+import InvestmentPage from './pages/resources/InvestmentPage';
+import CareerPage from './pages/resources/CareerPage';
+import ContactPage from './pages/resources/ContactPage';
+import ComplaintPage from './pages/resources/ComplaintPage';
+import FeedbackPage from './pages/resources/FeedbackPage';
+import ReviewsPage from './pages/resources/ReviewsPage';
 
 function CatchAllRedirect() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -43,6 +54,18 @@ export default function App() {
             <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
             <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
             <Route path="/loan-calculator" element={<LoanCalculatorPage />} />
+
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/faq" element={<FAQPage />} />
+            <Route path="/mission" element={<MissionPage />} />
+            <Route path="/policy" element={<PolicyPage />} />
+            <Route path="/innovation" element={<InnovationPage />} />
+            <Route path="/investment" element={<InvestmentPage />} />
+            <Route path="/careers" element={<CareerPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/complaint" element={<ComplaintPage />} />
+            <Route path="/feedback" element={<FeedbackPage />} />
+            <Route path="/reviews" element={<ReviewsPage />} />
 
             <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
               <Route index element={<DashboardPage />} />

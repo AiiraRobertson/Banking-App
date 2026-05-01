@@ -59,10 +59,16 @@ router.post('/withdraw', [accountValidation, amountValidation, handleValidation]
 
   const account = getUserAccount(account_id, req.user.id);
   if (!account) return res.status(404).json({ error: 'Account not found' });
-  if (account.balance < amt) return res.status(400).json({ error: 'Insufficient funds' });
 
   const withdraw = db.transaction(() => {
-    db.prepare('UPDATE accounts SET balance = balance - ? WHERE id = ?').run(amt, account_id);
+    const update = db.prepare(
+      'UPDATE accounts SET balance = balance - ? WHERE id = ? AND balance >= ?'
+    ).run(amt, account_id, amt);
+    if (update.changes === 0) {
+      const err = new Error('Insufficient funds');
+      err.status = 400;
+      throw err;
+    }
     const newBalance = db.prepare('SELECT balance FROM accounts WHERE id = ?').get(account_id).balance;
 
     const refId = uuidv4();
@@ -82,8 +88,13 @@ router.post('/withdraw', [accountValidation, amountValidation, handleValidation]
     return { referenceId: refId, newBalance };
   });
 
-  const result = withdraw();
-  res.json({ message: 'Withdrawal successful', ...result });
+  try {
+    const result = withdraw();
+    res.json({ message: 'Withdrawal successful', ...result });
+  } catch (err) {
+    if (err.status === 400) return res.status(400).json({ error: err.message });
+    throw err;
+  }
 });
 
 router.post('/transfer', [
@@ -98,20 +109,34 @@ router.post('/transfer', [
 
   const fromAccount = getUserAccount(from_account_id, req.user.id);
   if (!fromAccount) return res.status(404).json({ error: 'Source account not found' });
-  if (fromAccount.balance < amt) return res.status(400).json({ error: 'Insufficient funds' });
+
+  if (!to_account_id && !to_account_number) {
+    return res.status(400).json({ error: 'Destination account is required' });
+  }
 
   let toAccount;
-  if (to_account_number) {
-    toAccount = db.prepare('SELECT * FROM accounts WHERE account_number = ? AND is_active = 1').get(to_account_number);
-  } else if (to_account_id) {
-    toAccount = db.prepare('SELECT * FROM accounts WHERE id = ? AND is_active = 1').get(to_account_id);
+  if (to_account_id) {
+    toAccount = db.prepare(
+      'SELECT * FROM accounts WHERE id = ? AND user_id = ? AND is_active = 1'
+    ).get(to_account_id, req.user.id);
+  } else {
+    toAccount = db.prepare(
+      'SELECT * FROM accounts WHERE account_number = ? AND is_active = 1'
+    ).get(to_account_number);
   }
 
   if (!toAccount) return res.status(404).json({ error: 'Destination account not found' });
   if (fromAccount.id === toAccount.id) return res.status(400).json({ error: 'Cannot transfer to the same account' });
 
   const transfer = db.transaction(() => {
-    db.prepare('UPDATE accounts SET balance = balance - ? WHERE id = ?').run(amt, fromAccount.id);
+    const debit = db.prepare(
+      'UPDATE accounts SET balance = balance - ? WHERE id = ? AND balance >= ?'
+    ).run(amt, fromAccount.id, amt);
+    if (debit.changes === 0) {
+      const err = new Error('Insufficient funds');
+      err.status = 400;
+      throw err;
+    }
     db.prepare('UPDATE accounts SET balance = balance + ? WHERE id = ?').run(amt, toAccount.id);
 
     const newFromBalance = db.prepare('SELECT balance FROM accounts WHERE id = ?').get(fromAccount.id).balance;
@@ -138,8 +163,13 @@ router.post('/transfer', [
     return { referenceId: refId, newBalance: newFromBalance };
   });
 
-  const result = transfer();
-  res.json({ message: 'Transfer successful', ...result });
+  try {
+    const result = transfer();
+    res.json({ message: 'Transfer successful', ...result });
+  } catch (err) {
+    if (err.status === 400) return res.status(400).json({ error: err.message });
+    throw err;
+  }
 });
 
 router.get('/', [
