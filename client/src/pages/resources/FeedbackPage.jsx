@@ -48,7 +48,7 @@ export default function FeedbackPage() {
         {status.error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{status.error}</div>}
 
         <div>
-          <label className="block text-sm font-medium text-t-secondary mb-2">Overall, how do you rate SecureBank?</label>
+          <label className="block text-sm font-medium text-t-secondary mb-2">Overall, how do you rate Kapita?</label>
           <StarRating value={form.rating} onChange={r => setForm({ ...form, rating: r })} />
         </div>
 

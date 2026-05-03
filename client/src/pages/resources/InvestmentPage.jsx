@@ -17,7 +17,7 @@ export default function InvestmentPage() {
       <div className="space-y-8">
         <section className="text-t-secondary space-y-3">
           <h2 className="text-xl font-semibold text-t-primary">Our philosophy</h2>
-          <p>We don't try to beat the market. Decades of evidence show that disciplined, low-cost, diversified portfolios outperform active stock-picking after fees. SecureBank Invest builds globally diversified portfolios using index ETFs, automatically rebalances them, and harvests tax losses where applicable.</p>
+          <p>We don't try to beat the market. Decades of evidence show that disciplined, low-cost, diversified portfolios outperform active stock-picking after fees. Kapita Invest builds globally diversified portfolios using index ETFs, automatically rebalances them, and harvests tax losses where applicable.</p>
         </section>
 
         <section>
@@ -43,7 +43,7 @@ export default function InvestmentPage() {
 
         <section className="bg-elevated rounded-xl p-6 text-sm text-t-secondary">
           <p className="font-semibold text-t-primary mb-2">Important disclosure</p>
-          <p>Past performance does not guarantee future results. All investments carry risk including possible loss of principal. Target returns are long-term averages, not guarantees. Speak with a licensed advisor before investing. SecureBank Invest is launching in select markets in Q3 2026.</p>
+          <p>Past performance does not guarantee future results. All investments carry risk including possible loss of principal. Target returns are long-term averages, not guarantees. Speak with a licensed advisor before investing. Kapita Invest is launching in select markets in Q3 2026.</p>
         </section>
       </div>
     </ResourcePageLayout>

@@ -50,7 +50,7 @@ router.get('/lookup-account', [
     const holderHint = account.first_name[0] + '***' + ' ' + account.last_name[0] + '***';
     return res.json({
       found: true,
-      bank_name: 'SecureBank',
+      bank_name: 'Kapita',
       account_type: account.account_type,
       holder_hint: holderHint
     });
@@ -59,7 +59,7 @@ router.get('/lookup-account', [
   const prefix = account_number.slice(0, 2);
   const prefixNum = parseInt(prefix, 10);
   let bank_name = 'Unknown Bank';
-  if (prefixNum >= 10 && prefixNum <= 29) bank_name = 'SecureBank (Inactive)';
+  if (prefixNum >= 10 && prefixNum <= 29) bank_name = 'Kapita (Inactive)';
   else if (prefixNum >= 30 && prefixNum <= 39) bank_name = 'National Trust Bank';
   else if (prefixNum >= 40 && prefixNum <= 49) bank_name = 'Pacific Commerce Bank';
   else if (prefixNum >= 50 && prefixNum <= 59) bank_name = 'Heritage Savings Bank';

@@ -36,7 +36,7 @@ export default function PolicyPage() {
 
         <section>
           <h2 className="text-xl font-semibold text-t-primary">Your rights</h2>
-          <p>Under GDPR, CCPA, and equivalent laws, you have the right to: access your data, correct inaccuracies, request deletion (subject to regulatory retention), export your data, and withdraw consent. Email <strong className="text-t-primary">privacy@securebank.example</strong> to exercise any of these rights.</p>
+          <p>Under GDPR, CCPA, and equivalent laws, you have the right to: access your data, correct inaccuracies, request deletion (subject to regulatory retention), export your data, and withdraw consent. Email <strong className="text-t-primary">privacy@kapita.example</strong> to exercise any of these rights.</p>
         </section>
 
         <section>

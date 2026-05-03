@@ -108,7 +108,7 @@ export default function TransferPage() {
             nickname: form.beneficiary_nickname || undefined,
             account_name: form.to_account_name || lookup.data?.account_name || form.beneficiary_nickname || `Account ${form.to_account_number}`,
             account_number: form.to_account_number,
-            bank_name: 'SecureBank',
+            bank_name: 'Kapita',
             type: 'external'
           });
         } catch {}
@@ -406,7 +406,7 @@ function ConfirmModal({ activeTab, form, accounts, selectedAccount, lookup, load
                   )}
                   <div className="flex justify-between gap-3">
                     <span className="text-t-tertiary">Method</span>
-                    <span className="text-t-secondary">{form.transferMode === 'own' ? 'Internal (own account)' : 'SecureBank account'}</span>
+                    <span className="text-t-secondary">{form.transferMode === 'own' ? 'Internal (own account)' : 'Kapita account'}</span>
                   </div>
                 </>
               )}
@@ -437,7 +437,7 @@ function ConfirmModal({ activeTab, form, accounts, selectedAccount, lookup, load
 
           {activeTab === 'Transfer' && form.transferMode === 'other' && lookup.status === 'found' && (
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800">
-              Verified recipient with SecureBank. Once you confirm, the transfer is final and cannot be reversed.
+              Verified recipient with Kapita. Once you confirm, the transfer is final and cannot be reversed.
             </div>
           )}
         </div>

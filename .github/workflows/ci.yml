@@ -35,19 +35,43 @@ jobs:
       - name: Build client
         run: cd client && npm run build
 
-      - name: Server smoke test
+      - name: Server functional tests (smoke + regression + sanity)
         run: |
           cp server/.env.example server/.env
-          cd server && node server.js &
+          # Start with a clean DB so seed data matches assertions in run-tests.js
+          rm -f server/db/bank.db server/db/bank.db-wal server/db/bank.db-shm
+          cd server && node server.js > server.log 2>&1 &
           SERVER_PID=$!
-          sleep 3
-          STATUS=$(curl -sf http://localhost:3001/health | jq -r '.status')
-          kill $SERVER_PID
-          if [ "$STATUS" != "ok" ]; then
-            echo "❌ Server health check failed"
-            exit 1
+          # Wait for /health to come up (max ~15s) instead of a fixed sleep
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:3001/health > /dev/null; then break; fi
+            sleep 0.5
+          done
+          if ! curl -sf http://127.0.0.1:3001/health > /dev/null; then
+            echo "Server failed to start"; cat server.log; kill $SERVER_PID || true; exit 1
           fi
-          echo "✅ Server boots and responds healthy"
+          set +e
+          node tests/run-tests.js
+          TEST_EXIT=$?
+          set -e
+          kill $SERVER_PID || true
+          # Surface the structured results in the workflow log
+          if [ -f tests/test-results.json ]; then
+            node -e "const r=require('./tests/test-results.json'); console.log(JSON.stringify(r.summary,null,2)); if (r.summary.fail>0) process.exit(1);"
+          else
+            echo "test-results.json missing"; exit 1
+          fi
+          exit $TEST_EXIT
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-test-results
+          path: |
+            server/tests/test-results.json
+            server/server.log
+          retention-days: 14
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4

@@ -19,7 +19,7 @@ function buildMessage({ direction, amount, accountNumber, balanceAfter, counterp
     counterparty ? `Counterparty: ${counterparty}` : null,
     balanceAfter !== undefined && balanceAfter !== null ? `Available balance: ${fmtAmount(balanceAfter)}` : null,
     `Time: ${new Date().toLocaleString()}`,
-    channel === 'sms' ? null : 'If you did not authorize this, contact SecureBank immediately.'
+    channel === 'sms' ? null : 'If you did not authorize this, contact Kapita immediately.'
   ].filter(Boolean);
   return { subject, body: lines.join(channel === 'sms' ? ' ' : '\n') };
 }

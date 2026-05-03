@@ -1,0 +1,193 @@
+{
+  "summary": [
+    {
+      "name": "/health @ c=10",
+      "concurrent": 10,
+      "totalRequests": 100,
+      "durationMs": 253,
+      "rps": 395.3,
+      "successRate": 100,
+      "p50": 12,
+      "p95": 31,
+      "p99": 33,
+      "max": 33,
+      "errorBreakdown": {}
+    },
+    {
+      "name": "/health @ c=25",
+      "concurrent": 25,
+      "totalRequests": 250,
+      "durationMs": 462,
+      "rps": 541.1,
+      "successRate": 100,
+      "p50": 24,
+      "p95": 43,
+      "p99": 72,
+      "max": 72,
+      "errorBreakdown": {}
+    },
+    {
+      "name": "/health @ c=50",
+      "concurrent": 50,
+      "totalRequests": 500,
+      "durationMs": 689,
+      "rps": 725.7,
+      "successRate": 100,
+      "p50": 33,
+      "p95": 107,
+      "p99": 157,
+      "max": 161,
+      "errorBreakdown": {}
+    },
+    {
+      "name": "/health @ c=100",
+      "concurrent": 100,
+      "totalRequests": 1000,
+      "durationMs": 966,
+      "rps": 1035.2,
+      "successRate": 100,
+      "p50": 50,
+      "p95": 85,
+      "p99": 89,
+      "max": 91,
+      "errorBreakdown": {}
+    },
+    {
+      "name": "/api/auth/login @ c=10 (bcrypt)",
+      "concurrent": 10,
+      "totalRequests": 50,
+      "durationMs": 4312,
+      "rps": 11.6,
+      "successRate": 16,
+      "p50": 9,
+      "p95": 4213,
+      "p99": 4216,
+      "max": 4216,
+      "errorBreakdown": {
+        "429": 42
+      }
+    },
+    {
+      "name": "/api/auth/login @ c=25 (bcrypt)",
+      "concurrent": 25,
+      "totalRequests": 125,
+      "durationMs": 142,
+      "rps": 880.3,
+      "successRate": 0,
+      "p50": 18,
+      "p95": 28,
+      "p99": 32,
+      "max": 32,
+      "errorBreakdown": {
+        "429": 125
+      }
+    },
+    {
+      "name": "/api/auth/login @ c=50 (bcrypt)",
+      "concurrent": 50,
+      "totalRequests": 250,
+      "durationMs": 298,
+      "rps": 838.9,
+      "successRate": 0,
+      "p50": 32,
+      "p95": 60,
+      "p99": 70,
+      "max": 72,
+      "errorBreakdown": {
+        "429": 250
+      }
+    },
+    {
+      "name": "/api/accounts @ c=10 (auth read)",
+      "concurrent": 10,
+      "totalRequests": 100,
+      "durationMs": 158,
+      "rps": 632.9,
+      "successRate": 100,
+      "p50": 8,
+      "p95": 19,
+      "p99": 25,
+      "max": 25,
+      "errorBreakdown": {}
+    },
+    {
+      "name": "/api/accounts @ c=25 (auth read)",
+      "concurrent": 25,
+      "totalRequests": 250,
+      "durationMs": 310,
+      "rps": 806.5,
+      "successRate": 100,
+      "p50": 14,
+      "p95": 27,
+      "p99": 29,
+      "max": 34,
+      "errorBreakdown": {}
+    },
+    {
+      "name": "/api/accounts @ c=50 (auth read)",
+      "concurrent": 50,
+      "totalRequests": 500,
+      "durationMs": 681,
+      "rps": 734.2,
+      "successRate": 100,
+      "p50": 28,
+      "p95": 57,
+      "p99": 68,
+      "max": 73,
+      "errorBreakdown": {}
+    },
+    {
+      "name": "/api/accounts @ c=100 (auth read)",
+      "concurrent": 100,
+      "totalRequests": 1000,
+      "durationMs": 1530,
+      "rps": 653.6,
+      "successRate": 100,
+      "p50": 69,
+      "p95": 131,
+      "p99": 148,
+      "max": 161,
+      "errorBreakdown": {}
+    },
+    {
+      "name": "/api/transactions/transfer @ c=10 (write)",
+      "concurrent": 10,
+      "totalRequests": 50,
+      "durationMs": 384,
+      "rps": 130.2,
+      "successRate": 100,
+      "p50": 60,
+      "p95": 122,
+      "p99": 130,
+      "max": 130,
+      "errorBreakdown": {}
+    },
+    {
+      "name": "/api/transactions/transfer @ c=25 (write)",
+      "concurrent": 25,
+      "totalRequests": 125,
+      "durationMs": 554,
+      "rps": 225.6,
+      "successRate": 100,
+      "p50": 50,
+      "p95": 117,
+      "p99": 128,
+      "max": 133,
+      "errorBreakdown": {}
+    },
+    {
+      "name": "/api/transactions/transfer @ c=50 (write)",
+      "concurrent": 50,
+      "totalRequests": 250,
+      "durationMs": 837,
+      "rps": 298.7,
+      "successRate": 100,
+      "p50": 83,
+      "p95": 193,
+      "p99": 222,
+      "max": 227,
+      "errorBreakdown": {}
+    }
+  ],
+  "timestamp": "2026-05-03T17:43:19.221Z"
+}

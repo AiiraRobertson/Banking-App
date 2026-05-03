@@ -4,13 +4,13 @@ export default function TermsPage() {
   return (
     <ResourcePageLayout
       title="Terms and Conditions"
-      subtitle="Last updated: April 2026. Please read these terms carefully before using SecureBank services."
+      subtitle="Last updated: April 2026. Please read these terms carefully before using Kapita services."
       icon="📜"
     >
       <div className="prose max-w-none text-t-secondary space-y-6">
         <section>
           <h2 className="text-xl font-semibold text-t-primary">1. Acceptance of Terms</h2>
-          <p>By opening an account or using any SecureBank service, you agree to be bound by these Terms and Conditions, our Privacy Policy, and any additional terms applicable to specific products. If you do not agree, you may not use our services.</p>
+          <p>By opening an account or using any Kapita service, you agree to be bound by these Terms and Conditions, our Privacy Policy, and any additional terms applicable to specific products. If you do not agree, you may not use our services.</p>
         </section>
 
         <section>
@@ -20,22 +20,22 @@ export default function TermsPage() {
 
         <section>
           <h2 className="text-xl font-semibold text-t-primary">3. Account Security</h2>
-          <p>You are responsible for safeguarding your login credentials. SecureBank uses bank-grade encryption, but we cannot be held liable for losses arising from your failure to protect your password or device. Notify us immediately of any unauthorized access.</p>
+          <p>You are responsible for safeguarding your login credentials. Kapita uses bank-grade encryption, but we cannot be held liable for losses arising from your failure to protect your password or device. Notify us immediately of any unauthorized access.</p>
         </section>
 
         <section>
           <h2 className="text-xl font-semibold text-t-primary">4. Fees and Charges</h2>
-          <p>Domestic transfers between SecureBank accounts are free. International wire transfer fees are disclosed before each transaction (typically $5-25 + 0.5%-1.5% per region). Currency conversion uses live mid-market rates plus a small spread.</p>
+          <p>Domestic transfers between Kapita accounts are free. International wire transfer fees are disclosed before each transaction (typically $5-25 + 0.5%-1.5% per region). Currency conversion uses live mid-market rates plus a small spread.</p>
         </section>
 
         <section>
           <h2 className="text-xl font-semibold text-t-primary">5. Prohibited Activities</h2>
-          <p>You agree not to use SecureBank for money laundering, terrorism financing, fraud, or any unlawful purpose. We reserve the right to freeze accounts, reverse transactions, and report suspicious activity to authorities under AML/CFT regulations.</p>
+          <p>You agree not to use Kapita for money laundering, terrorism financing, fraud, or any unlawful purpose. We reserve the right to freeze accounts, reverse transactions, and report suspicious activity to authorities under AML/CFT regulations.</p>
         </section>
 
         <section>
           <h2 className="text-xl font-semibold text-t-primary">6. Limitation of Liability</h2>
-          <p>SecureBank's liability is limited to direct damages and shall not exceed the fees paid by you in the 12 months preceding the event. We are not liable for indirect, consequential, or punitive damages.</p>
+          <p>Kapita's liability is limited to direct damages and shall not exceed the fees paid by you in the 12 months preceding the event. We are not liable for indirect, consequential, or punitive damages.</p>
         </section>
 
         <section>

@@ -60,7 +60,7 @@ export default function ReviewsPage() {
   return (
     <ResourcePageLayout
       title="Customer Reviews"
-      subtitle="What real SecureBank customers are saying. Unedited."
+      subtitle="What real Kapita customers are saying. Unedited."
       icon="⭐"
     >
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 p-5 bg-elevated rounded-xl">

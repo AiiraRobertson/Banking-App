@@ -33,7 +33,7 @@ router.get('/lookup', [
     account_number: row.account_number,
     account_type: row.account_type,
     account_name: `${row.first_name} ${row.last_name}`,
-    bank_name: 'SecureBank'
+    bank_name: 'Kapita'
   });
 });
 

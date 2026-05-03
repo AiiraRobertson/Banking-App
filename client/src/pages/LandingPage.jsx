@@ -5,7 +5,7 @@ const resourceGroups = [
   {
     heading: 'Company',
     links: [
-      { to: '/mission', label: 'Our Mission', icon: '🎯', desc: 'Why SecureBank exists' },
+      { to: '/mission', label: 'Our Mission', icon: '🎯', desc: 'Why Kapita exists' },
       { to: '/innovation', label: 'Innovation', icon: '🚀', desc: 'Tech that powers us' },
       { to: '/careers', label: 'Career Growth', icon: '🌱', desc: 'Join the team' },
       { to: '/investment', label: 'Investment Strategy', icon: '📈', desc: 'Portfolios & approach' },
@@ -200,7 +200,7 @@ export default function LandingPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
-            <span className="text-xl font-bold text-t-primary">SecureBank</span>
+            <span className="text-xl font-bold text-t-primary">Kapita</span>
           </div>
           <div className="flex items-center gap-1 sm:gap-3">
             <ResourcesDropdown />
@@ -225,11 +225,11 @@ export default function LandingPage() {
                 Supporting 28+ countries worldwide
               </div>
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-t-primary leading-tight tracking-tight animate-fade-in-up delay-100">
-                International Banking<br />
-                <span className="bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">Made Simple</span>
+                Move money.<br />
+                <span className="bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">Make moves.</span>
               </h1>
               <p className="mt-6 text-lg sm:text-xl text-t-secondary max-w-2xl leading-relaxed animate-fade-in-up delay-200">
-                Send and receive money across borders with competitive exchange rates, low fees, and bank-grade security. Your money, anywhere in the world.
+                Kapita turns every transaction into momentum — competitive exchange rates, low fees, and bank-grade security across 28+ countries.
               </p>
               <div className="mt-10 flex items-center justify-center lg:justify-start gap-4 animate-fade-in-up delay-300">
                 <Link to="/register" className="px-8 py-3.5 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-semibold rounded-xl hover:from-indigo-700 hover:to-indigo-800 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-200 transition-all duration-300 shadow-lg shadow-indigo-200 text-lg animate-pulse-glow">
@@ -369,9 +369,9 @@ export default function LandingPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
-            <span className="font-semibold text-t-primary">SecureBank</span>
+            <span className="font-semibold text-t-primary">Kapita</span>
           </div>
-          <p className="text-sm text-t-tertiary">&copy; 2026 SecureBank. All rights reserved.</p>
+          <p className="text-sm text-t-tertiary">&copy; 2026 Kapita. All rights reserved.</p>
         </div>
       </footer>
     </div>

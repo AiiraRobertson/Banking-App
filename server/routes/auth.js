@@ -17,6 +17,43 @@ const authLimiter = rateLimit({
   message: { error: 'Too many attempts, please try again later' }
 });
 
+// Per-account login limiter — complements the per-IP authLimiter so a shared
+// NAT egress can't be locked out by a single attacker hammering one account,
+// and a single targeted account is protected even if the attacker rotates IPs.
+// In-memory; in cluster mode this is per-worker (a determined attacker hitting
+// different workers gets WORKER_COUNT × ACCOUNT_MAX attempts before lockout).
+// Move to Redis if exact global limits are required.
+const ACCOUNT_WINDOW_MS = 15 * 60 * 1000;
+const ACCOUNT_MAX_FAILS = 5;
+const accountAttempts = new Map();
+
+function recordFailedLogin(email) {
+  const key = email.toLowerCase();
+  const now = Date.now();
+  const entry = accountAttempts.get(key) || { count: 0, firstAt: now };
+  if (now - entry.firstAt > ACCOUNT_WINDOW_MS) {
+    entry.count = 1;
+    entry.firstAt = now;
+  } else {
+    entry.count += 1;
+  }
+  accountAttempts.set(key, entry);
+}
+
+function clearFailedLogins(email) {
+  accountAttempts.delete(email.toLowerCase());
+}
+
+function isAccountLocked(email) {
+  const entry = accountAttempts.get(email.toLowerCase());
+  if (!entry) return false;
+  if (Date.now() - entry.firstAt > ACCOUNT_WINDOW_MS) {
+    accountAttempts.delete(email.toLowerCase());
+    return false;
+  }
+  return entry.count >= ACCOUNT_MAX_FAILS;
+}
+
 const validCountryCodes = countries.map(c => c.code);
 
 const registerValidation = [
@@ -91,7 +128,7 @@ router.post('/register', authLimiter, registerValidation, (req, res) => {
 
     db.prepare(
       'INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)'
-    ).run(userId, 'Welcome!', 'Welcome to SecureBank! Your checking account has been created with a $1,000.00 bonus.', 'info');
+    ).run(userId, 'Welcome!', 'Welcome to Kapita — move money, make moves. Your checking account has been created with a $1,000.00 bonus.', 'info');
 
     const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
     return user;
@@ -106,8 +143,13 @@ router.post('/register', authLimiter, registerValidation, (req, res) => {
 router.post('/login', authLimiter, loginValidation, (req, res) => {
   const { email, password } = req.body;
 
+  if (isAccountLocked(email)) {
+    return res.status(429).json({ error: 'Too many failed attempts for this account. Please try again in a few minutes.' });
+  }
+
   const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+    recordFailedLogin(email);
     return res.status(401).json({ error: 'Invalid email or password' });
   }
 
@@ -115,6 +157,7 @@ router.post('/login', authLimiter, loginValidation, (req, res) => {
     return res.status(403).json({ error: 'Account has been deactivated' });
   }
 
+  clearFailedLogins(email);
   const token = generateToken(user);
   res.json({ token, user: sanitizeUser(user) });
 });

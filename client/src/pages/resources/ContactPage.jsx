@@ -28,12 +28,12 @@ export default function ContactPage() {
         <div className="md:col-span-1 space-y-5 text-sm">
           <div>
             <p className="font-semibold text-t-primary mb-1">Customer Support</p>
-            <p className="text-t-secondary">support@securebank.example</p>
+            <p className="text-t-secondary">support@kapita.example</p>
             <p className="text-t-tertiary mt-1">24/7 in-app chat</p>
           </div>
           <div>
             <p className="font-semibold text-t-primary mb-1">Press & Media</p>
-            <p className="text-t-secondary">press@securebank.example</p>
+            <p className="text-t-secondary">press@kapita.example</p>
           </div>
           <div>
             <p className="font-semibold text-t-primary mb-1">Headquarters</p>

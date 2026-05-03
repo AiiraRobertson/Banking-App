@@ -2,10 +2,10 @@ import { useState } from 'react';
 import ResourcePageLayout from './ResourcePageLayout';
 
 const faqs = [
-  { q: 'How do I open a SecureBank account?', a: 'Click "Open Account" on the homepage, fill in your personal details, and accept our Terms. You\'ll receive an instant checking account with a $1,000 welcome bonus.' },
-  { q: 'Which countries does SecureBank support?', a: 'We currently serve 27 countries across North America (US, Canada), Europe (16 countries including UK, Germany, France), and Africa (10 countries including Nigeria, Kenya, South Africa, Ghana).' },
+  { q: 'How do I open a Kapita account?', a: 'Click "Open Account" on the homepage, fill in your personal details, and accept our Terms. You\'ll receive an instant checking account with a $1,000 welcome bonus.' },
+  { q: 'Which countries does Kapita support?', a: 'We currently serve 27 countries across North America (US, Canada), Europe (16 countries including UK, Germany, France), and Africa (10 countries including Nigeria, Kenya, South Africa, Ghana).' },
   { q: 'How long does an international wire transfer take?', a: 'North America: 1-2 business days. Europe: 2-4 business days. Africa: 3-5 business days. Cutoff times vary by recipient bank.' },
-  { q: 'What are your fees?', a: 'Internal transfers between SecureBank accounts are free. International wires: $5 + 0.5% (NA), $25 + 1.0% (EU), $20 + 1.5% (AF). No monthly maintenance fees.' },
+  { q: 'What are your fees?', a: 'Internal transfers between Kapita accounts are free. International wires: $5 + 0.5% (NA), $25 + 1.0% (EU), $20 + 1.5% (AF). No monthly maintenance fees.' },
   { q: 'How are exchange rates calculated?', a: 'We use live mid-market rates updated every 15 minutes from a regulated FX data provider. Rates are shown before you confirm any conversion.' },
   { q: 'Is my money safe?', a: 'Yes. Deposits are protected up to $250,000 per account by deposit insurance. We use AES-256 encryption, multi-factor authentication, and 24/7 fraud monitoring.' },
   { q: 'How do I reset my password?', a: 'Click "Forgot password" on the login page. We\'ll send a reset link to your registered email. For security, the link expires after 30 minutes.' },

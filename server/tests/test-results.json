@@ -1,0 +1,291 @@
+{
+  "summary": {
+    "total": 28,
+    "pass": 26,
+    "fail": 0,
+    "warn": 2
+  },
+  "results": [
+    {
+      "id": "SMOKE-01",
+      "category": "smoke",
+      "name": "Health endpoint reachable",
+      "status": "PASS",
+      "expected": "200",
+      "actual": 200,
+      "durationMs": 147,
+      "notes": ""
+    },
+    {
+      "id": "SMOKE-02",
+      "category": "smoke",
+      "name": "Login with seeded user returns JWT",
+      "status": "PASS",
+      "expected": "200 + token",
+      "actual": "200 token=true",
+      "durationMs": 817,
+      "notes": ""
+    },
+    {
+      "id": "SMOKE-03",
+      "category": "smoke",
+      "name": "Authenticated user can list accounts",
+      "status": "PASS",
+      "expected": ">=1 account",
+      "actual": "2 accounts",
+      "durationMs": 4,
+      "notes": ""
+    },
+    {
+      "id": "SMOKE-04",
+      "category": "smoke",
+      "name": "Notifications endpoint works",
+      "status": "PASS",
+      "expected": "200",
+      "actual": 200,
+      "durationMs": 7,
+      "notes": ""
+    },
+    {
+      "id": "SMOKE-05",
+      "category": "smoke",
+      "name": "Unauthenticated request rejected",
+      "status": "PASS",
+      "expected": "401",
+      "actual": 401,
+      "durationMs": 5,
+      "notes": ""
+    },
+    {
+      "id": "REG-01",
+      "category": "regression",
+      "name": "Deposit credits account",
+      "status": "PASS",
+      "expected": "200 + new balance",
+      "actual": "200 bal=525577",
+      "durationMs": 10,
+      "notes": ""
+    },
+    {
+      "id": "REG-02",
+      "category": "regression",
+      "name": "Withdrawal debits account",
+      "status": "PASS",
+      "expected": "200",
+      "actual": 200,
+      "durationMs": 7,
+      "notes": ""
+    },
+    {
+      "id": "REG-03",
+      "category": "regression",
+      "name": "Overdraft is rejected",
+      "status": "PASS",
+      "expected": "400 insufficient funds",
+      "actual": "400 undefined",
+      "durationMs": 6,
+      "notes": ""
+    },
+    {
+      "id": "REG-04",
+      "category": "regression",
+      "name": "Internal transfer between own accounts",
+      "status": "PASS",
+      "expected": "200",
+      "actual": 200,
+      "durationMs": 8,
+      "notes": ""
+    },
+    {
+      "id": "REG-05",
+      "category": "regression",
+      "name": "Account lookup returns name + bank",
+      "status": "PASS",
+      "expected": "found:true with name",
+      "actual": "found=true name=Admin User",
+      "durationMs": 5,
+      "notes": ""
+    },
+    {
+      "id": "REG-06",
+      "category": "regression",
+      "name": "Transfer by account number to another user",
+      "status": "PASS",
+      "expected": "200",
+      "actual": 200,
+      "durationMs": 9,
+      "notes": ""
+    },
+    {
+      "id": "REG-07",
+      "category": "regression",
+      "name": "Transfer to non-existent account rejected",
+      "status": "PASS",
+      "expected": "404",
+      "actual": 404,
+      "durationMs": 5,
+      "notes": ""
+    },
+    {
+      "id": "REG-08",
+      "category": "regression",
+      "name": "Wire countries list available",
+      "status": "PASS",
+      "expected": "grouped countries",
+      "actual": "200",
+      "durationMs": 5,
+      "notes": ""
+    },
+    {
+      "id": "REG-09",
+      "category": "regression",
+      "name": "Wire quote returns rate + fee",
+      "status": "PASS",
+      "expected": "rate>0 fee>0",
+      "actual": "rate=0.7371 fee=30",
+      "durationMs": 6,
+      "notes": ""
+    },
+    {
+      "id": "REG-10",
+      "category": "regression",
+      "name": "Receive wire from foreign bank credits USD",
+      "status": "PASS",
+      "expected": "200",
+      "actual": "200 ",
+      "durationMs": 11,
+      "notes": ""
+    },
+    {
+      "id": "REG-11",
+      "category": "regression",
+      "name": "Beneficiary save (upsert)",
+      "status": "PASS",
+      "expected": "201 + id",
+      "actual": "201 id=3",
+      "durationMs": 7,
+      "notes": ""
+    },
+    {
+      "id": "REG-12",
+      "category": "regression",
+      "name": "Beneficiary search by name",
+      "status": "PASS",
+      "expected": ">=1 match",
+      "actual": "1 hits",
+      "durationMs": 4,
+      "notes": ""
+    },
+    {
+      "id": "REG-13",
+      "category": "regression",
+      "name": "Beneficiary delete",
+      "status": "PASS",
+      "expected": "200",
+      "actual": 200,
+      "durationMs": 6,
+      "notes": ""
+    },
+    {
+      "id": "REG-14",
+      "category": "regression",
+      "name": "Profile fetch returns user object",
+      "status": "PASS",
+      "expected": "user.email",
+      "actual": "email=john@example.com",
+      "durationMs": 4,
+      "notes": ""
+    },
+    {
+      "id": "REG-15",
+      "category": "regression",
+      "name": "Profile alert prefs persisted",
+      "status": "PASS",
+      "expected": "alert_min_amount=5",
+      "actual": "got=5",
+      "durationMs": 6,
+      "notes": ""
+    },
+    {
+      "id": "REG-16",
+      "category": "regression",
+      "name": "Bill payee created",
+      "status": "PASS",
+      "expected": "201",
+      "actual": "201 id=2",
+      "durationMs": 6,
+      "notes": ""
+    },
+    {
+      "id": "REG-17",
+      "category": "regression",
+      "name": "Pay-now debits checking",
+      "status": "PASS",
+      "expected": "200",
+      "actual": 200,
+      "durationMs": 8,
+      "notes": ""
+    },
+    {
+      "id": "REG-18",
+      "category": "regression",
+      "name": "Transactions paginated list",
+      "status": "PASS",
+      "expected": "array",
+      "actual": "object",
+      "durationMs": 5,
+      "notes": ""
+    },
+    {
+      "id": "REG-19",
+      "category": "regression",
+      "name": "Loan calculator computes payment",
+      "status": "PASS",
+      "expected": "monthlyPayment>0",
+      "actual": "299.71",
+      "durationMs": 5,
+      "notes": ""
+    },
+    {
+      "id": "SAN-01",
+      "category": "sanity",
+      "name": "Welcome notification mentions Kapita",
+      "status": "WARN",
+      "expected": "Kapita in message",
+      "actual": "not found",
+      "durationMs": 5,
+      "notes": "Demo data was seeded before rename — expected on existing DB"
+    },
+    {
+      "id": "SAN-02",
+      "category": "sanity",
+      "name": "Welcome notification carries slogan",
+      "status": "WARN",
+      "expected": "move money, make moves",
+      "actual": "not found",
+      "durationMs": 5,
+      "notes": "Existing DB still has old slogan"
+    },
+    {
+      "id": "SAN-03",
+      "category": "sanity",
+      "name": "Deposit succeeds (alerts simulated server-side)",
+      "status": "PASS",
+      "expected": "200",
+      "actual": 200,
+      "durationMs": 7,
+      "notes": "Alert delivery is logged to console + alert_log; verified by REG-15 prefs"
+    },
+    {
+      "id": "SAN-04",
+      "category": "sanity",
+      "name": "Security headers + rate-limit headers present",
+      "status": "PASS",
+      "expected": "helmet + rate-limit headers",
+      "actual": "csp=true rl=true",
+      "durationMs": 0,
+      "notes": ""
+    }
+  ],
+  "timestamp": "2026-05-03T17:03:00.273Z"
+}

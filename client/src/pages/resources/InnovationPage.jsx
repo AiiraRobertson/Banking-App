@@ -19,7 +19,7 @@ export default function InnovationPage() {
   return (
     <ResourcePageLayout
       title="Innovation"
-      subtitle="The technology that makes SecureBank the bank we wished existed."
+      subtitle="The technology that makes Kapita the bank we wished existed."
       icon="🚀"
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -36,7 +36,7 @@ export default function InnovationPage() {
 
       <div className="mt-10 p-6 bg-indigo-50 rounded-xl border border-indigo-200">
         <h3 className="font-semibold text-t-primary mb-2">Build with us</h3>
-        <p className="text-sm text-t-secondary">We open-source our research and publish a quarterly engineering blog. Visit the SecureBank GitHub or sign up for our developer newsletter.</p>
+        <p className="text-sm text-t-secondary">We open-source our research and publish a quarterly engineering blog. Visit the Kapita GitHub or sign up for our developer newsletter.</p>
       </div>
     </ResourcePageLayout>
   );

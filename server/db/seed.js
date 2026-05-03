@@ -58,7 +58,7 @@ function seedDatabase() {
     insertTransaction.run(null, savingsId, 'deposit', 2020.50, 12020.50, 'Monthly savings', uuidv4());
     insertTransaction.run(null, savingsId, 'deposit', 729.50, 12750.00, 'Transfer from checking', uuidv4());
 
-    insertNotification.run(demoUser.lastInsertRowid, 'Welcome!', 'Welcome to SecureBank. Your checking account has been created.', 'info');
+    insertNotification.run(demoUser.lastInsertRowid, 'Welcome!', 'Welcome to Kapita — move money, make moves. Your checking account has been created.', 'info');
     insertNotification.run(demoUser.lastInsertRowid, 'Deposit Received', 'A deposit of $1,500.00 has been credited to your checking account.', 'transaction');
     insertNotification.run(demoUser.lastInsertRowid, 'Bill Payment', 'Your electric bill payment of $150.00 has been processed.', 'transaction');
   });

@@ -52,7 +52,7 @@ export default function CareerPage() {
 
         <section className="bg-indigo-50 border border-indigo-200 rounded-xl p-6">
           <h3 className="font-semibold text-t-primary mb-2">Open roles</h3>
-          <p className="text-sm text-t-secondary">We have 40+ open positions across engineering, product, risk, ops, and design. Visit our jobs portal at <strong className="text-indigo-700">jobs.securebank.example</strong> or email <strong className="text-indigo-700">careers@securebank.example</strong> with your CV.</p>
+          <p className="text-sm text-t-secondary">We have 40+ open positions across engineering, product, risk, ops, and design. Visit our jobs portal at <strong className="text-indigo-700">jobs.kapita.example</strong> or email <strong className="text-indigo-700">careers@kapita.example</strong> with your CV.</p>
         </section>
       </div>
     </ResourcePageLayout>

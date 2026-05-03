@@ -94,7 +94,7 @@ export default function RegisterPage() {
             </svg>
           </div>
           <h1 className="text-3xl font-bold text-t-primary">Create Account</h1>
-          <p className="text-t-tertiary mt-1">Join SecureBank — Banking without borders</p>
+          <p className="text-t-tertiary mt-1">Join Kapita — Move money. Make moves.</p>
         </div>
 
         <div className="bg-surface rounded-2xl shadow-xl shadow-[var(--color-shadow)] border border-b-secondary p-8">

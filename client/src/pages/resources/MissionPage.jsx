@@ -10,7 +10,7 @@ export default function MissionPage() {
       <div className="space-y-8 text-t-secondary">
         <section>
           <h2 className="text-xl font-semibold text-t-primary mb-2">Why we exist</h2>
-          <p>Sending $200 to family across an ocean used to cost $40 in fees, take a week, and arrive with no explanation of where the cut went. That's the world SecureBank was built to replace. We believe a person in Lagos, London, or Lisbon deserves the same fast, fair, and fully-priced banking — without the fine print.</p>
+          <p>Sending $200 to family across an ocean used to cost $40 in fees, take a week, and arrive with no explanation of where the cut went. That's the world Kapita was built to replace. We believe a person in Lagos, London, or Lisbon deserves the same fast, fair, and fully-priced banking — without the fine print.</p>
         </section>
 
         <section>
@@ -42,7 +42,7 @@ export default function MissionPage() {
 
         <section>
           <h2 className="text-xl font-semibold text-t-primary mb-2">What's next</h2>
-          <p>By 2030, we want every cross-border transfer at SecureBank to settle in under 60 seconds, at a true mid-market rate, with zero hidden fees. We're not there yet — but every release moves us closer.</p>
+          <p>By 2030, we want every cross-border transfer at Kapita to settle in under 60 seconds, at a true mid-market rate, with zero hidden fees. We're not there yet — but every release moves us closer.</p>
         </section>
       </div>
     </ResourcePageLayout>

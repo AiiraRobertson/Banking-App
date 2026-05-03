@@ -35,8 +35,9 @@ export default function LoginPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-t-primary">SecureBank</h1>
-          <p className="text-t-tertiary mt-1">Sign in to your account</p>
+          <h1 className="text-3xl font-bold text-t-primary">Kapita</h1>
+          <p className="text-xs text-indigo-600 font-medium uppercase tracking-wider mt-0.5">Move money. Make moves.</p>
+          <p className="text-t-tertiary mt-2">Sign in to your account</p>
         </div>
 
         <div className="bg-surface rounded-2xl shadow-xl shadow-[var(--color-shadow)] border border-b-secondary p-8">
