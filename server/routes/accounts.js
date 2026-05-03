@@ -1,5 +1,5 @@
 const express = require('express');
-const { body, param } = require('express-validator');
+const { body, param, query } = require('express-validator');
 const db = require('../db/database');
 const { authenticate } = require('../middleware/auth');
 const { handleValidation } = require('../middleware/validate');
@@ -13,6 +13,28 @@ router.get('/', (req, res) => {
     'SELECT * FROM accounts WHERE user_id = ? AND is_active = 1 ORDER BY created_at'
   ).all(req.user.id);
   res.json({ accounts });
+});
+
+router.get('/lookup', [
+  query('account_number').trim().matches(/^\d{10}$/).withMessage('Account number must be 10 digits'),
+  handleValidation
+], (req, res) => {
+  const row = db.prepare(`
+    SELECT a.account_number, a.account_type, u.first_name, u.last_name
+    FROM accounts a
+    JOIN users u ON a.user_id = u.id
+    WHERE a.account_number = ? AND a.is_active = 1 AND u.is_active = 1
+  `).get(req.query.account_number);
+
+  if (!row) return res.json({ found: false });
+
+  res.json({
+    found: true,
+    account_number: row.account_number,
+    account_type: row.account_type,
+    account_name: `${row.first_name} ${row.last_name}`,
+    bank_name: 'SecureBank'
+  });
 });
 
 router.get('/:id', [

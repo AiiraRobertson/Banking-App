@@ -113,8 +113,59 @@ function initializeDatabase() {
       FOREIGN KEY (sender_user_id) REFERENCES users(id)
     );
 
+    CREATE TABLE IF NOT EXISTS incoming_wire_transfers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      transaction_id INTEGER NOT NULL,
+      recipient_user_id INTEGER NOT NULL,
+      recipient_account_id INTEGER NOT NULL,
+      sender_name TEXT NOT NULL,
+      sender_bank TEXT NOT NULL,
+      sender_account TEXT,
+      swift_code TEXT,
+      iban TEXT,
+      sender_country TEXT NOT NULL,
+      sender_region TEXT NOT NULL,
+      source_currency TEXT NOT NULL,
+      original_amount REAL NOT NULL,
+      exchange_rate REAL NOT NULL,
+      credited_amount REAL NOT NULL,
+      fee_amount REAL NOT NULL DEFAULT 0,
+      net_credited REAL NOT NULL,
+      reference_note TEXT,
+      status TEXT NOT NULL DEFAULT 'completed' CHECK(status IN ('processing', 'completed', 'failed')),
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (transaction_id) REFERENCES transactions(id),
+      FOREIGN KEY (recipient_user_id) REFERENCES users(id),
+      FOREIGN KEY (recipient_account_id) REFERENCES accounts(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS beneficiaries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      nickname TEXT,
+      account_name TEXT NOT NULL,
+      account_number TEXT NOT NULL,
+      bank_name TEXT,
+      bank_country TEXT,
+      swift_code TEXT,
+      iban TEXT,
+      routing_number TEXT,
+      type TEXT NOT NULL DEFAULT 'internal' CHECK(type IN ('internal', 'external', 'wire')),
+      currency TEXT,
+      use_count INTEGER NOT NULL DEFAULT 0,
+      last_used_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      UNIQUE (user_id, account_number, type)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_beneficiaries_user ON beneficiaries(user_id);
+    CREATE INDEX IF NOT EXISTS idx_beneficiaries_search ON beneficiaries(user_id, account_name, account_number);
+
     CREATE INDEX IF NOT EXISTS idx_wire_transfers_sender ON wire_transfers(sender_user_id);
     CREATE INDEX IF NOT EXISTS idx_wire_transfers_status ON wire_transfers(status);
+    CREATE INDEX IF NOT EXISTS idx_incoming_wires_recipient ON incoming_wire_transfers(recipient_user_id);
+    CREATE INDEX IF NOT EXISTS idx_incoming_wires_account ON incoming_wire_transfers(recipient_account_id);
     CREATE INDEX IF NOT EXISTS idx_accounts_user_id ON accounts(user_id);
     CREATE INDEX IF NOT EXISTS idx_transactions_from_account ON transactions(from_account_id);
     CREATE INDEX IF NOT EXISTS idx_transactions_to_account ON transactions(to_account_id);

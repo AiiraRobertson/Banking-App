@@ -50,6 +50,7 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/calculator', require('./routes/calculator'));
 app.use('/api/wire', require('./routes/wire'));
 app.use('/api/resources', require('./routes/resources'));
+app.use('/api/beneficiaries', require('./routes/beneficiaries'));
 
 app.use(errorHandler);
 

@@ -5,7 +5,7 @@ const db = require('../db/database');
 const { authenticate } = require('../middleware/auth');
 const { handleValidation } = require('../middleware/validate');
 const { countries, exchangeRates, fees, calculateFee, convertCurrency, getCountry, getDeliveryEstimate } = require('../utils/currencies');
-const { getRates, convertLive } = require('../utils/liveRates');
+const { getRates, getRate, convertLive } = require('../utils/liveRates');
 const { getBanksForCountry } = require('../utils/banks');
 
 const router = express.Router();
@@ -209,6 +209,135 @@ router.post('/send', [
     if (err.status === 400) return res.status(400).json({ error: err.message });
     throw err;
   }
+});
+
+router.post('/receive', [
+  body('to_account_id').isInt({ min: 1 }),
+  body('amount').isFloat({ min: 1, max: 1000000 }).withMessage('Amount must be between 1 and 1,000,000'),
+  body('country_code').isString().isLength({ min: 2, max: 2 }),
+  body('sender_name').trim().notEmpty().withMessage('Sender name is required'),
+  body('sender_bank').trim().notEmpty().withMessage('Sender bank is required'),
+  body('sender_account').optional().trim(),
+  body('swift_code').optional().trim(),
+  body('iban').optional().trim(),
+  body('reference_note').optional().trim(),
+  handleValidation
+], async (req, res) => {
+  const {
+    to_account_id, amount, country_code,
+    sender_name, sender_bank, sender_account,
+    swift_code, iban, reference_note
+  } = req.body;
+
+  const country = getCountry(country_code);
+  if (!country) return res.status(400).json({ error: 'Unsupported country' });
+
+  if (country.requiresSwift && !swift_code) {
+    return res.status(400).json({ error: 'SWIFT/BIC code is required for this country' });
+  }
+  if (country.requiresIban && !iban) {
+    return res.status(400).json({ error: 'IBAN is required for this country' });
+  }
+
+  const account = db.prepare(
+    'SELECT * FROM accounts WHERE id = ? AND user_id = ? AND is_active = 1'
+  ).get(to_account_id, req.user.id);
+  if (!account) return res.status(404).json({ error: 'Receiving account not found' });
+
+  const sourceAmount = Math.round(amount * 100) / 100;
+  const { rate, fetchedAt, source } = await getRate(country.currency);
+  if (!rate || rate <= 0) return res.status(400).json({ error: 'Unsupported currency' });
+
+  const creditedUsd = Math.round((sourceAmount / rate) * 100) / 100;
+  const inboundFeeRate = country.region === 'north_america' ? 0.005 : country.region === 'europe' ? 0.0075 : 0.01;
+  const feeAmount = Math.max(1, Math.round(creditedUsd * inboundFeeRate * 100) / 100);
+  const netCredited = Math.round((creditedUsd - feeAmount) * 100) / 100;
+  if (netCredited <= 0) return res.status(400).json({ error: 'Amount too small after fees' });
+
+  const receiveWire = db.transaction(() => {
+    db.prepare('UPDATE accounts SET balance = balance + ? WHERE id = ?').run(netCredited, account.id);
+    const newBalance = db.prepare('SELECT balance FROM accounts WHERE id = ?').get(account.id).balance;
+
+    const refId = uuidv4();
+    const txResult = db.prepare(`
+      INSERT INTO transactions (from_account_id, to_account_id, transaction_type, amount, balance_after, description, reference_id, status)
+      VALUES (NULL, ?, 'wire_transfer', ?, ?, ?, ?, 'completed')
+    `).run(account.id, netCredited, newBalance,
+      reference_note || `Wire received from ${sender_name} (${country.name})`, refId);
+
+    db.prepare(`
+      INSERT INTO incoming_wire_transfers (
+        transaction_id, recipient_user_id, recipient_account_id,
+        sender_name, sender_bank, sender_account, swift_code, iban,
+        sender_country, sender_region, source_currency, original_amount,
+        exchange_rate, credited_amount, fee_amount, net_credited, reference_note
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      txResult.lastInsertRowid, req.user.id, account.id,
+      sender_name, sender_bank, sender_account || null, swift_code || null, iban || null,
+      country_code, country.region, country.currency, sourceAmount,
+      rate, creditedUsd, feeAmount, netCredited, reference_note || null
+    );
+
+    db.prepare(
+      'INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)'
+    ).run(req.user.id, 'Wire Transfer Received',
+      `${country.flag} ${country.currency} ${sourceAmount.toFixed(2)} from ${sender_name} (${sender_bank}) credited as $${netCredited.toFixed(2)} to ${account.account_number}. Inbound fee: $${feeAmount.toFixed(2)}.`,
+      'transaction');
+
+    return { referenceId: refId, newBalance, creditedUsd, feeAmount, netCredited };
+  });
+
+  try {
+    const result = receiveWire();
+    res.json({
+      message: 'Incoming wire credited successfully',
+      ...result,
+      sourceCurrency: country.currency,
+      sourceAmount,
+      exchangeRate: rate,
+      rateFetchedAt: fetchedAt,
+      rateSource: source,
+      country: country.name
+    });
+  } catch (err) {
+    if (err.status === 400) return res.status(400).json({ error: err.message });
+    throw err;
+  }
+});
+
+router.get('/incoming', [
+  query('page').optional().isInt({ min: 1 }).toInt(),
+  query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
+  handleValidation
+], (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 15;
+  const offset = (page - 1) * limit;
+
+  const total = db.prepare(
+    'SELECT COUNT(*) as count FROM incoming_wire_transfers WHERE recipient_user_id = ?'
+  ).get(req.user.id).count;
+
+  const transfers = db.prepare(`
+    SELECT i.*, t.reference_id, t.created_at as transaction_date, a.account_number
+    FROM incoming_wire_transfers i
+    JOIN transactions t ON i.transaction_id = t.id
+    JOIN accounts a ON i.recipient_account_id = a.id
+    WHERE i.recipient_user_id = ?
+    ORDER BY i.created_at DESC
+    LIMIT ? OFFSET ?
+  `).all(req.user.id, limit, offset);
+
+  const enriched = transfers.map(tr => {
+    const c = getCountry(tr.sender_country);
+    return { ...tr, country_name: c?.name, flag: c?.flag };
+  });
+
+  res.json({
+    transfers: enriched,
+    pagination: { page, limit, total, pages: Math.ceil(total / limit) }
+  });
 });
 
 router.get('/history', [

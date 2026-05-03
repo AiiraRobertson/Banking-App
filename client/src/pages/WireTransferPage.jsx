@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { getAccounts } from '../services/accountService';
-import { getCountries, getQuote, sendWire, getWireHistory, lookupAccount, getBanksForCountry } from '../services/wireService';
+import { getCountries, getQuote, sendWire, getWireHistory, lookupAccount, getBanksForCountry, receiveWire, getIncomingWires } from '../services/wireService';
+import { saveBeneficiary } from '../services/beneficiaryService';
+import BeneficiaryAutocomplete from '../components/BeneficiaryAutocomplete';
 import { formatCurrency } from '../utils/formatCurrency';
 import { formatDate } from '../utils/formatDate';
 import { generateBic } from '../utils/generateBic';
@@ -38,8 +40,31 @@ export default function WireTransferPage() {
     iban: '',
     routing_number: '',
     amount: '',
-    description: ''
+    description: '',
+    save_beneficiary: true,
+    beneficiary_nickname: ''
   });
+
+  const [receiveForm, setReceiveForm] = useState({
+    to_account_id: '',
+    country_code: '',
+    sender_name: '',
+    sender_bank: '',
+    sender_account: '',
+    swift_code: '',
+    iban: '',
+    amount: '',
+    reference_note: ''
+  });
+  const [receiveBanks, setReceiveBanks] = useState([]);
+  const [receiveBankMode, setReceiveBankMode] = useState('select');
+  const [receiving, setReceiving] = useState(false);
+  const [receiveError, setReceiveError] = useState('');
+  const [receiveSuccess, setReceiveSuccess] = useState(null);
+  const [incoming, setIncoming] = useState([]);
+  const [incomingPage, setIncomingPage] = useState(1);
+  const [incomingPagination, setIncomingPagination] = useState({});
+  const [showReceive, setShowReceive] = useState(false);
 
   useEffect(() => {
     Promise.all([getAccounts(), getCountries()])
@@ -68,6 +93,27 @@ export default function WireTransferPage() {
     setForm(f => ({ ...f, recipient_bank: '', swift_code: '' }));
     setBicAutoFilled(false);
   }, [form.country_code]);
+
+  useEffect(() => {
+    if (accounts.length > 0 && !receiveForm.to_account_id) {
+      setReceiveForm(f => ({ ...f, to_account_id: accounts[0].id.toString() }));
+    }
+  }, [accounts]);
+
+  useEffect(() => {
+    if (!receiveForm.country_code) { setReceiveBanks([]); return; }
+    getBanksForCountry(receiveForm.country_code)
+      .then(res => setReceiveBanks(res.data.banks || []))
+      .catch(() => setReceiveBanks([]));
+    setReceiveBankMode('select');
+    setReceiveForm(f => ({ ...f, sender_bank: '', swift_code: '' }));
+  }, [receiveForm.country_code]);
+
+  useEffect(() => {
+    getIncomingWires({ page: incomingPage, limit: 5 })
+      .then(res => { setIncoming(res.data.transfers); setIncomingPagination(res.data.pagination); })
+      .catch(() => {});
+  }, [incomingPage, receiveSuccess]);
 
   useEffect(() => {
     if (form.recipient_account.length < 6) { setBankLookup(null); return; }
@@ -124,12 +170,66 @@ export default function WireTransferPage() {
       setSuccess(res.data);
       setStep(5);
       getAccounts().then(r => setAccounts(r.data.accounts));
+
+      if (form.save_beneficiary && form.recipient_account) {
+        try {
+          await saveBeneficiary({
+            nickname: form.beneficiary_nickname || undefined,
+            account_name: form.recipient_name,
+            account_number: form.recipient_account,
+            bank_name: form.recipient_bank,
+            bank_country: form.country_code,
+            swift_code: form.swift_code || undefined,
+            iban: form.iban || undefined,
+            routing_number: form.routing_number || undefined,
+            currency: selectedCountry?.currency,
+            type: 'wire'
+          });
+        } catch {}
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Transfer failed');
     } finally {
       setSubmitting(false);
     }
   };
+
+  const handleReceive = async () => {
+    setReceiving(true);
+    setReceiveError('');
+    try {
+      const country = countriesData
+        ? Object.values(countriesData).flat().find(c => c.code === receiveForm.country_code)
+        : null;
+      const payload = {
+        to_account_id: parseInt(receiveForm.to_account_id),
+        amount: parseFloat(receiveForm.amount),
+        country_code: receiveForm.country_code,
+        sender_name: receiveForm.sender_name,
+        sender_bank: receiveForm.sender_bank,
+        sender_account: receiveForm.sender_account || undefined,
+        reference_note: receiveForm.reference_note || undefined
+      };
+      if (country?.requiresSwift) payload.swift_code = receiveForm.swift_code;
+      if (country?.requiresIban) payload.iban = receiveForm.iban;
+
+      const res = await receiveWire(payload);
+      setReceiveSuccess(res.data);
+      setReceiveForm(f => ({
+        ...f, country_code: '', sender_name: '', sender_bank: '',
+        sender_account: '', swift_code: '', iban: '', amount: '', reference_note: ''
+      }));
+      getAccounts().then(r => setAccounts(r.data.accounts));
+    } catch (err) {
+      setReceiveError(err.response?.data?.error || 'Failed to receive wire');
+    } finally {
+      setReceiving(false);
+    }
+  };
+
+  const receiveCountry = countriesData
+    ? Object.values(countriesData).flat().find(c => c.code === receiveForm.country_code)
+    : null;
 
   const resetForm = () => {
     setStep(1);
@@ -233,10 +333,25 @@ export default function WireTransferPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-t-secondary mb-1">Recipient Full Name</label>
-              <input type="text" value={form.recipient_name} onChange={e => setForm({ ...form, recipient_name: e.target.value })}
-                className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                placeholder="John Smith" required />
+              <label className="block text-sm font-medium text-t-secondary mb-1">Find saved beneficiary</label>
+              <BeneficiaryAutocomplete
+                value={form.recipient_name}
+                onChange={(v) => setForm(f => ({ ...f, recipient_name: v }))}
+                onSelect={(b) => setForm(f => ({
+                  ...f,
+                  recipient_name: b.account_name,
+                  recipient_account: b.account_number,
+                  recipient_bank: b.bank_name || '',
+                  swift_code: b.swift_code || '',
+                  iban: b.iban || '',
+                  routing_number: b.routing_number || '',
+                  beneficiary_nickname: b.nickname || ''
+                }))}
+                type="wire"
+                placeholder="Type recipient name, account, or nickname..."
+                required
+              />
+              <p className="text-xs text-t-muted mt-1">Suggestions appear as you type. Or fill in manually below.</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-t-secondary mb-1">Account Number</label>
@@ -494,6 +609,22 @@ export default function WireTransferPage() {
               Please review all details carefully. Wire transfers cannot be reversed once initiated.
             </div>
 
+            <div className="flex flex-col gap-2 p-3 bg-elevated rounded-lg">
+              <label className="flex items-center gap-2 text-sm text-t-secondary cursor-pointer">
+                <input type="checkbox"
+                  checked={form.save_beneficiary}
+                  onChange={e => setForm({ ...form, save_beneficiary: e.target.checked })}
+                  className="rounded border-b-input text-indigo-600 focus:ring-indigo-500" />
+                Save {form.recipient_name} as a beneficiary for quick re-use
+              </label>
+              {form.save_beneficiary && (
+                <input type="text" value={form.beneficiary_nickname}
+                  onChange={e => setForm({ ...form, beneficiary_nickname: e.target.value })}
+                  placeholder="Nickname (optional, e.g. 'Sister in Berlin')"
+                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-surface" />
+              )}
+            </div>
+
             <div className="flex justify-between">
               <button onClick={() => setStep(3)} className="px-6 py-2.5 text-t-secondary bg-elevated rounded-lg hover:bg-hover">Back</button>
               <button onClick={handleSend} disabled={submitting}
@@ -528,6 +659,225 @@ export default function WireTransferPage() {
             <button onClick={resetForm} className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors">
               New Transfer
             </button>
+          </div>
+        )}
+      </div>
+
+      {/* Receive Money From Other Banks */}
+      <div className="bg-surface rounded-xl shadow-sm border border-b-secondary overflow-hidden">
+        <button onClick={() => setShowReceive(!showReceive)}
+          className="w-full flex items-center justify-between p-5 hover:bg-hover transition-colors">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+              <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+            </div>
+            <div className="text-left">
+              <h2 className="text-lg font-semibold text-t-primary">Receive Money From Other Banks</h2>
+              <p className="text-sm text-t-tertiary">Record an incoming wire from a foreign bank in any supported country</p>
+            </div>
+          </div>
+          <svg className={`w-5 h-5 text-t-tertiary transition-transform ${showReceive ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {showReceive && (
+          <div className="p-5 border-t border-b-secondary space-y-4">
+            {receiveError && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{receiveError}</div>}
+            {receiveSuccess && (
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-sm space-y-1">
+                <p className="font-semibold text-green-800">Incoming wire credited!</p>
+                <p className="text-green-700">{receiveSuccess.sourceCurrency} {Number(receiveSuccess.sourceAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })} from {receiveSuccess.country}</p>
+                <p className="text-green-700">Net credited: {formatCurrency(receiveSuccess.netCredited)} (after {formatCurrency(receiveSuccess.feeAmount)} inbound fee)</p>
+                <p className="text-green-700">New balance: {formatCurrency(receiveSuccess.newBalance)}</p>
+                <p className="text-xs text-green-600 font-mono">Ref: {receiveSuccess.referenceId}</p>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-t-secondary mb-1">Receive Into Account</label>
+                <select value={receiveForm.to_account_id}
+                  onChange={e => setReceiveForm({ ...receiveForm, to_account_id: e.target.value })}
+                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                  {accounts.map(a => (
+                    <option key={a.id} value={a.id}>
+                      {a.account_type.charAt(0).toUpperCase() + a.account_type.slice(1)} (****{a.account_number.slice(-4)}) - {formatCurrency(a.balance)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-t-secondary mb-1">Sender Country</label>
+                <select value={receiveForm.country_code}
+                  onChange={e => setReceiveForm({ ...receiveForm, country_code: e.target.value })}
+                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-surface">
+                  <option value="">Select country...</option>
+                  {countriesData && Object.entries(regionLabels).map(([key, label]) => (
+                    <optgroup key={key} label={label}>
+                      {(countriesData[key] || []).map(c => (
+                        <option key={c.code} value={c.code}>{c.flag} {c.name} ({c.currency})</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-t-secondary mb-1">Sender Full Name</label>
+                <input type="text" value={receiveForm.sender_name}
+                  onChange={e => setReceiveForm({ ...receiveForm, sender_name: e.target.value })}
+                  placeholder="e.g. Maria Lopez"
+                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-t-secondary mb-1">Sender Bank</label>
+                {receiveBanks.length > 0 && receiveBankMode === 'select' ? (
+                  <select value={receiveForm.sender_bank}
+                    onChange={e => {
+                      const bankName = e.target.value;
+                      const match = receiveBanks.find(b => b.name === bankName);
+                      const updates = { sender_bank: bankName };
+                      if (match && receiveCountry?.requiresSwift) updates.swift_code = match.swift;
+                      setReceiveForm({ ...receiveForm, ...updates });
+                    }}
+                    className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-surface">
+                    <option value="">Select bank...</option>
+                    {receiveBanks.map(b => <option key={b.name} value={b.name}>{b.name}</option>)}
+                  </select>
+                ) : (
+                  <input type="text" value={receiveForm.sender_bank}
+                    onChange={e => setReceiveForm({ ...receiveForm, sender_bank: e.target.value })}
+                    placeholder="Bank name"
+                    className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+                )}
+                {receiveBanks.length > 0 && (
+                  <button type="button"
+                    onClick={() => {
+                      const next = receiveBankMode === 'select' ? 'manual' : 'select';
+                      setReceiveBankMode(next);
+                      setReceiveForm({ ...receiveForm, sender_bank: '', swift_code: '' });
+                    }}
+                    className="text-xs text-indigo-600 hover:text-indigo-700 mt-1">
+                    {receiveBankMode === 'select' ? 'Enter bank manually' : 'Pick from list'}
+                  </button>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-t-secondary mb-1">Sender Account (optional)</label>
+                <input type="text" value={receiveForm.sender_account}
+                  onChange={e => setReceiveForm({ ...receiveForm, sender_account: e.target.value })}
+                  placeholder="Sender's bank account"
+                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-t-secondary mb-1">
+                  Amount {receiveCountry ? `(${receiveCountry.currency})` : ''}
+                </label>
+                <input type="number" value={receiveForm.amount}
+                  onChange={e => setReceiveForm({ ...receiveForm, amount: e.target.value })}
+                  placeholder="0.00" min="1" max="1000000" step="0.01"
+                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+                <p className="text-xs text-t-muted mt-1">Will be converted to USD at the live rate.</p>
+              </div>
+
+              {receiveCountry?.requiresSwift && (
+                <div>
+                  <label className="block text-sm font-medium text-t-secondary mb-1">Sender SWIFT/BIC <span className="text-red-500">*</span></label>
+                  <input type="text" value={receiveForm.swift_code}
+                    onChange={e => setReceiveForm({ ...receiveForm, swift_code: e.target.value.toUpperCase() })}
+                    placeholder="e.g. DEUTDEFF" maxLength={11}
+                    className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-mono" />
+                </div>
+              )}
+
+              {receiveCountry?.requiresIban && (
+                <div>
+                  <label className="block text-sm font-medium text-t-secondary mb-1">Sender IBAN <span className="text-red-500">*</span></label>
+                  <input type="text" value={receiveForm.iban}
+                    onChange={e => setReceiveForm({ ...receiveForm, iban: e.target.value.toUpperCase().replace(/\s/g, '') })}
+                    placeholder="e.g. DE89370400440532013000"
+                    className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-mono" />
+                </div>
+              )}
+
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-t-secondary mb-1">Reference Note (optional)</label>
+                <input type="text" value={receiveForm.reference_note}
+                  onChange={e => setReceiveForm({ ...receiveForm, reference_note: e.target.value })}
+                  placeholder="e.g. Invoice #45 payment"
+                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+              </div>
+            </div>
+
+            <div className="p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-lg text-xs">
+              An inbound fee of 0.5%–1% (min $1) is applied based on the sender's region. Funds are credited in USD after currency conversion.
+            </div>
+
+            <button onClick={handleReceive}
+              disabled={receiving || !receiveForm.to_account_id || !receiveForm.country_code || !receiveForm.sender_name || !receiveForm.sender_bank || !receiveForm.amount || (receiveCountry?.requiresSwift && !receiveForm.swift_code) || (receiveCountry?.requiresIban && !receiveForm.iban)}
+              className="px-6 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 transition-colors">
+              {receiving ? 'Processing...' : 'Receive Wire'}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Incoming Wires History */}
+      <div>
+        <h2 className="text-lg font-semibold text-t-primary mb-4">Incoming Wires</h2>
+        {incoming.length === 0 ? (
+          <div className="bg-surface rounded-xl shadow-sm border border-b-secondary p-8 text-center text-t-muted">No incoming wires yet</div>
+        ) : (
+          <div className="bg-surface rounded-xl shadow-sm border border-b-secondary overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-elevated">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Date</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Sender</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-t-tertiary uppercase">From</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-t-tertiary uppercase">Amount Sent</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-t-tertiary uppercase">Net Credited</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-t-tertiary uppercase">Fee</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Account</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-b-secondary">
+                  {incoming.map(w => (
+                    <tr key={w.id} className="hover:bg-hover">
+                      <td className="px-4 py-3 text-sm text-t-tertiary">{formatDate(w.created_at)}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-t-primary">
+                        {w.sender_name}
+                        <div className="text-xs text-t-muted">{w.sender_bank}</div>
+                      </td>
+                      <td className="px-4 py-3 text-sm">{w.flag} {w.country_name}</td>
+                      <td className="px-4 py-3 text-sm text-right font-medium">{w.source_currency} {Number(w.original_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                      <td className="px-4 py-3 text-sm text-right font-semibold text-green-600">{formatCurrency(w.net_credited)}</td>
+                      <td className="px-4 py-3 text-sm text-right text-orange-600">{formatCurrency(w.fee_amount)}</td>
+                      <td className="px-4 py-3 text-xs font-mono text-t-tertiary">****{w.account_number.slice(-4)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {incomingPagination.pages > 1 && (
+              <div className="flex justify-between items-center px-4 py-3 bg-elevated text-sm">
+                <span className="text-t-tertiary">Page {incomingPagination.page} of {incomingPagination.pages}</span>
+                <div className="flex gap-2">
+                  <button onClick={() => setIncomingPage(p => Math.max(1, p - 1))} disabled={incomingPage === 1}
+                    className="px-3 py-1 rounded border border-b-input disabled:opacity-50">Prev</button>
+                  <button onClick={() => setIncomingPage(p => Math.min(incomingPagination.pages, p + 1))} disabled={incomingPage === incomingPagination.pages}
+                    className="px-3 py-1 rounded border border-b-input disabled:opacity-50">Next</button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
