@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const db = require('../db/database');
 const { authenticate } = require('../middleware/auth');
 const { handleValidation } = require('../middleware/validate');
+const { sendTransactionAlert } = require('../utils/alerts');
 
 const router = express.Router();
 router.use(authenticate);
@@ -50,6 +51,15 @@ router.post('/deposit', [accountValidation, amountValidation, handleValidation],
   });
 
   const result = deposit();
+  sendTransactionAlert({
+    userId: req.user.id,
+    direction: 'credit',
+    amount: amt,
+    accountNumber: account.account_number,
+    balanceAfter: result.newBalance,
+    counterparty: 'Cash deposit',
+    referenceId: result.referenceId
+  });
   res.json({ message: 'Deposit successful', ...result });
 });
 
@@ -90,6 +100,15 @@ router.post('/withdraw', [accountValidation, amountValidation, handleValidation]
 
   try {
     const result = withdraw();
+    sendTransactionAlert({
+      userId: req.user.id,
+      direction: 'debit',
+      amount: amt,
+      accountNumber: account.account_number,
+      balanceAfter: result.newBalance,
+      counterparty: 'Cash withdrawal',
+      referenceId: result.referenceId
+    });
     res.json({ message: 'Withdrawal successful', ...result });
   } catch (err) {
     if (err.status === 400) return res.status(400).json({ error: err.message });
@@ -140,6 +159,7 @@ router.post('/transfer', [
     db.prepare('UPDATE accounts SET balance = balance + ? WHERE id = ?').run(amt, toAccount.id);
 
     const newFromBalance = db.prepare('SELECT balance FROM accounts WHERE id = ?').get(fromAccount.id).balance;
+    const newToBalance = db.prepare('SELECT balance FROM accounts WHERE id = ?').get(toAccount.id).balance;
     const refId = uuidv4();
 
     db.prepare(`
@@ -160,12 +180,32 @@ router.post('/transfer', [
         `Your account ${fromAccount.account_number} balance is $${newFromBalance.toFixed(2)}.`, 'alert');
     }
 
-    return { referenceId: refId, newBalance: newFromBalance };
+    return { referenceId: refId, newBalance: newFromBalance, newToBalance, recipientUserId: toAccount.user_id, toAccountNumber: toAccount.account_number };
   });
 
   try {
     const result = transfer();
-    res.json({ message: 'Transfer successful', ...result });
+    sendTransactionAlert({
+      userId: req.user.id,
+      direction: 'debit',
+      amount: amt,
+      accountNumber: fromAccount.account_number,
+      balanceAfter: result.newBalance,
+      counterparty: `Transfer to ${result.toAccountNumber}`,
+      referenceId: result.referenceId
+    });
+    if (result.recipientUserId !== req.user.id) {
+      sendTransactionAlert({
+        userId: result.recipientUserId,
+        direction: 'credit',
+        amount: amt,
+        accountNumber: result.toAccountNumber,
+        balanceAfter: result.newToBalance,
+        counterparty: `Transfer from ${fromAccount.account_number}`,
+        referenceId: result.referenceId
+      });
+    }
+    res.json({ message: 'Transfer successful', referenceId: result.referenceId, newBalance: result.newBalance });
   } catch (err) {
     if (err.status === 400) return res.status(400).json({ error: err.message });
     throw err;

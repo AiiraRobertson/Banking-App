@@ -23,9 +23,13 @@ router.put('/', [
   body('city').optional().trim(),
   body('state').optional().trim(),
   body('zip_code').optional().trim(),
+  body('email_alerts').optional().isBoolean().toBoolean(),
+  body('sms_alerts').optional().isBoolean().toBoolean(),
+  body('alert_phone').optional({ nullable: true }).trim(),
+  body('alert_min_amount').optional().isFloat({ min: 0 }).toFloat(),
   handleValidation
 ], (req, res) => {
-  const { first_name, last_name, phone, address, city, state, zip_code } = req.body;
+  const { first_name, last_name, phone, address, city, state, zip_code, email_alerts, sms_alerts, alert_phone, alert_min_amount } = req.body;
 
   db.prepare(`
     UPDATE users SET
@@ -36,9 +40,20 @@ router.put('/', [
       city = COALESCE(?, city),
       state = COALESCE(?, state),
       zip_code = COALESCE(?, zip_code),
+      email_alerts = COALESCE(?, email_alerts),
+      sms_alerts = COALESCE(?, sms_alerts),
+      alert_phone = COALESCE(?, alert_phone),
+      alert_min_amount = COALESCE(?, alert_min_amount),
       updated_at = datetime('now')
     WHERE id = ?
-  `).run(first_name, last_name, phone, address, city, state, zip_code, req.user.id);
+  `).run(
+    first_name, last_name, phone, address, city, state, zip_code,
+    email_alerts === undefined ? null : (email_alerts ? 1 : 0),
+    sms_alerts === undefined ? null : (sms_alerts ? 1 : 0),
+    alert_phone === undefined ? null : alert_phone,
+    alert_min_amount === undefined ? null : alert_min_amount,
+    req.user.id
+  );
 
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
   const { password_hash, ...safe } = user;

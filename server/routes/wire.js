@@ -7,6 +7,7 @@ const { handleValidation } = require('../middleware/validate');
 const { countries, exchangeRates, fees, calculateFee, convertCurrency, getCountry, getDeliveryEstimate } = require('../utils/currencies');
 const { getRates, getRate, convertLive } = require('../utils/liveRates');
 const { getBanksForCountry } = require('../utils/banks');
+const { sendTransactionAlert } = require('../utils/alerts');
 
 const router = express.Router();
 router.use(authenticate);
@@ -197,6 +198,15 @@ router.post('/send', [
 
   try {
     const result = sendWire();
+    sendTransactionAlert({
+      userId: req.user.id,
+      direction: 'debit',
+      amount: result.totalDeducted,
+      accountNumber: account.account_number,
+      balanceAfter: result.newBalance,
+      counterparty: `Wire to ${recipient_name} (${country.name})`,
+      referenceId: result.referenceId
+    });
     res.json({
       message: 'Wire transfer initiated successfully',
       ...result,
@@ -290,6 +300,15 @@ router.post('/receive', [
 
   try {
     const result = receiveWire();
+    sendTransactionAlert({
+      userId: req.user.id,
+      direction: 'credit',
+      amount: result.netCredited,
+      accountNumber: account.account_number,
+      balanceAfter: result.newBalance,
+      counterparty: `Wire from ${sender_name} (${country.name})`,
+      referenceId: result.referenceId
+    });
     res.json({
       message: 'Incoming wire credited successfully',
       ...result,

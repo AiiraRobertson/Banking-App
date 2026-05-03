@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const db = require('../db/database');
 const { authenticate } = require('../middleware/auth');
 const { handleValidation } = require('../middleware/validate');
+const { sendTransactionAlert } = require('../utils/alerts');
 
 const router = express.Router();
 router.use(authenticate);
@@ -170,6 +171,15 @@ router.post('/pay-now', [
   });
 
   const result = pay();
+  sendTransactionAlert({
+    userId: req.user.id,
+    direction: 'debit',
+    amount: amt,
+    accountNumber: account.account_number,
+    balanceAfter: result.newBalance,
+    counterparty: `Bill payment to ${payee.payee_name}`,
+    referenceId: result.referenceId
+  });
   res.json({ message: 'Payment successful', ...result });
 });
 

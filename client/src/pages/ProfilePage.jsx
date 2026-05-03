@@ -15,11 +15,21 @@ export default function ProfilePage() {
   const [error, setError] = useState('');
   const [pwError, setPwError] = useState('');
   const [pwSuccess, setPwSuccess] = useState('');
+  const [alertPrefs, setAlertPrefs] = useState({ email_alerts: true, sms_alerts: false, alert_phone: '', alert_min_amount: 0 });
+  const [alertSaving, setAlertSaving] = useState(false);
+  const [alertSuccess, setAlertSuccess] = useState('');
+  const [alertError, setAlertError] = useState('');
 
   useEffect(() => {
     getProfile().then(res => {
       setProfile(res.data.user);
       setForm(res.data.user);
+      setAlertPrefs({
+        email_alerts: !!res.data.user.email_alerts,
+        sms_alerts: !!res.data.user.sms_alerts,
+        alert_phone: res.data.user.alert_phone || '',
+        alert_min_amount: Number(res.data.user.alert_min_amount || 0)
+      });
     }).finally(() => setLoading(false));
   }, []);
 
@@ -37,6 +47,24 @@ export default function ProfilePage() {
       setSuccess('Profile updated successfully');
     } catch (err) { setError(err.response?.data?.error || 'Update failed'); }
     finally { setSaving(false); }
+  };
+
+  const handleAlertSave = async (e) => {
+    e.preventDefault();
+    setAlertSaving(true); setAlertError(''); setAlertSuccess('');
+    try {
+      const res = await updateProfile({
+        email_alerts: alertPrefs.email_alerts,
+        sms_alerts: alertPrefs.sms_alerts,
+        alert_phone: alertPrefs.alert_phone || '',
+        alert_min_amount: Number(alertPrefs.alert_min_amount) || 0
+      });
+      setProfile(res.data.user);
+      updateUser(res.data.user);
+      setAlertSuccess('Alert preferences saved');
+    } catch (err) {
+      setAlertError(err.response?.data?.error || err.response?.data?.errors?.[0]?.message || 'Save failed');
+    } finally { setAlertSaving(false); }
   };
 
   const handlePasswordChange = async (e) => {
@@ -143,6 +171,52 @@ export default function ProfilePage() {
             ))}
           </div>
         )}
+      </div>
+
+      <div className="bg-surface rounded-xl shadow-sm border border-b-secondary p-6">
+        <h2 className="text-lg font-semibold text-t-primary mb-1">Transaction Alerts</h2>
+        <p className="text-sm text-t-tertiary mb-4">Choose how you want to be notified for credit and debit activity.</p>
+        {alertError && <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{alertError}</div>}
+        {alertSuccess && <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">{alertSuccess}</div>}
+        <form onSubmit={handleAlertSave} className="space-y-4">
+          <label className="flex items-start gap-3 p-3 border border-b-secondary rounded-lg cursor-pointer hover:bg-elevated">
+            <input type="checkbox" checked={alertPrefs.email_alerts}
+              onChange={e => setAlertPrefs({ ...alertPrefs, email_alerts: e.target.checked })}
+              className="mt-1 h-4 w-4 text-indigo-600" />
+            <div className="flex-1">
+              <p className="font-medium text-t-primary">Email alerts</p>
+              <p className="text-xs text-t-tertiary">Sent to {profile.email}</p>
+            </div>
+          </label>
+          <label className="flex items-start gap-3 p-3 border border-b-secondary rounded-lg cursor-pointer hover:bg-elevated">
+            <input type="checkbox" checked={alertPrefs.sms_alerts}
+              onChange={e => setAlertPrefs({ ...alertPrefs, sms_alerts: e.target.checked })}
+              className="mt-1 h-4 w-4 text-indigo-600" />
+            <div className="flex-1">
+              <p className="font-medium text-t-primary">SMS alerts</p>
+              <p className="text-xs text-t-tertiary">Sent to alert phone (or your profile phone if not set)</p>
+            </div>
+          </label>
+          <div>
+            <label className="block text-sm font-medium text-t-secondary mb-1">Alert Phone (optional)</label>
+            <input type="text" value={alertPrefs.alert_phone}
+              onChange={e => setAlertPrefs({ ...alertPrefs, alert_phone: e.target.value })}
+              placeholder={profile.phone || '+1 555 0100'}
+              className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+            <p className="text-xs text-t-tertiary mt-1">Leave blank to use your profile phone for SMS alerts.</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-t-secondary mb-1">Minimum amount to alert ($)</label>
+            <input type="number" min="0" step="0.01" value={alertPrefs.alert_min_amount}
+              onChange={e => setAlertPrefs({ ...alertPrefs, alert_min_amount: e.target.value })}
+              className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+            <p className="text-xs text-t-tertiary mt-1">Transactions below this amount will not trigger an alert. Set to 0 for all transactions.</p>
+          </div>
+          <button type="submit" disabled={alertSaving}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+            {alertSaving ? 'Saving...' : 'Save Alert Preferences'}
+          </button>
+        </form>
       </div>
 
       <div className="bg-surface rounded-xl shadow-sm border border-b-secondary p-6">

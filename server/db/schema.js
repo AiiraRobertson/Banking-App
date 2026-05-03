@@ -1,5 +1,12 @@
 const db = require('./database');
 
+function addColumnIfMissing(table, columnName, definition) {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all();
+  if (!cols.some(c => c.name === columnName)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${columnName} ${definition}`);
+  }
+}
+
 function initializeDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
@@ -215,7 +222,27 @@ function initializeDatabase() {
     );
 
     CREATE INDEX IF NOT EXISTS idx_reviews_published ON reviews(is_published, created_at);
+
+    CREATE TABLE IF NOT EXISTS alert_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      channel TEXT NOT NULL CHECK(channel IN ('email', 'sms', 'inapp')),
+      destination TEXT,
+      subject TEXT NOT NULL,
+      body TEXT NOT NULL,
+      delivery_status TEXT NOT NULL DEFAULT 'simulated' CHECK(delivery_status IN ('simulated', 'sent', 'failed', 'skipped')),
+      reference_id TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_alert_log_user ON alert_log(user_id, created_at);
   `);
+
+  addColumnIfMissing('users', 'email_alerts', "INTEGER NOT NULL DEFAULT 1");
+  addColumnIfMissing('users', 'sms_alerts', "INTEGER NOT NULL DEFAULT 0");
+  addColumnIfMissing('users', 'alert_phone', "TEXT");
+  addColumnIfMissing('users', 'alert_min_amount', "REAL NOT NULL DEFAULT 0");
 }
 
 module.exports = { initializeDatabase };
