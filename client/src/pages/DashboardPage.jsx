@@ -35,6 +35,25 @@ export default function DashboardPage() {
         <p className="text-t-tertiary">Welcome back, {user?.first_name}!</p>
       </div>
 
+      {user && !user.profile_photo && (
+        <div className="flex items-center justify-between gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center text-amber-700">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-amber-900">Verify your identity</p>
+              <p className="text-xs text-amber-700">Upload a profile photo to complete account verification.</p>
+            </div>
+          </div>
+          <Link to="/profile" className="px-3 py-1.5 bg-amber-600 text-white text-sm rounded-lg hover:bg-amber-700 shrink-0">
+            Add photo
+          </Link>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-xl shadow-lg shadow-indigo-200/50 p-6 text-white hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-200/70 transition-all duration-300 cursor-default">
           <p className="text-sm text-indigo-100">Total Balance</p>

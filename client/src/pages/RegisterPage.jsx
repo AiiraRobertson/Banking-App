@@ -3,42 +3,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import PasswordInput from '../components/ui/PasswordInput';
 import PasswordRequirements from '../components/ui/PasswordRequirements';
-
-const nationalities = [
-  { code: 'US', name: 'United States', flag: '\u{1F1FA}\u{1F1F8}' },
-  { code: 'CA', name: 'Canada', flag: '\u{1F1E8}\u{1F1E6}' },
-  { code: 'GB', name: 'United Kingdom', flag: '\u{1F1EC}\u{1F1E7}' },
-  { code: 'DE', name: 'Germany', flag: '\u{1F1E9}\u{1F1EA}' },
-  { code: 'FR', name: 'France', flag: '\u{1F1EB}\u{1F1F7}' },
-  { code: 'NL', name: 'Netherlands', flag: '\u{1F1F3}\u{1F1F1}' },
-  { code: 'ES', name: 'Spain', flag: '\u{1F1EA}\u{1F1F8}' },
-  { code: 'IT', name: 'Italy', flag: '\u{1F1EE}\u{1F1F9}' },
-  { code: 'PT', name: 'Portugal', flag: '\u{1F1F5}\u{1F1F9}' },
-  { code: 'BE', name: 'Belgium', flag: '\u{1F1E7}\u{1F1EA}' },
-  { code: 'IE', name: 'Ireland', flag: '\u{1F1EE}\u{1F1EA}' },
-  { code: 'CH', name: 'Switzerland', flag: '\u{1F1E8}\u{1F1ED}' },
-  { code: 'SE', name: 'Sweden', flag: '\u{1F1F8}\u{1F1EA}' },
-  { code: 'NO', name: 'Norway', flag: '\u{1F1F3}\u{1F1F4}' },
-  { code: 'DK', name: 'Denmark', flag: '\u{1F1E9}\u{1F1F0}' },
-  { code: 'PL', name: 'Poland', flag: '\u{1F1F5}\u{1F1F1}' },
-  { code: 'NG', name: 'Nigeria', flag: '\u{1F1F3}\u{1F1EC}' },
-  { code: 'KE', name: 'Kenya', flag: '\u{1F1F0}\u{1F1EA}' },
-  { code: 'ZA', name: 'South Africa', flag: '\u{1F1FF}\u{1F1E6}' },
-  { code: 'GH', name: 'Ghana', flag: '\u{1F1EC}\u{1F1ED}' },
-  { code: 'EG', name: 'Egypt', flag: '\u{1F1EA}\u{1F1EC}' },
-  { code: 'TZ', name: 'Tanzania', flag: '\u{1F1F9}\u{1F1FF}' },
-  { code: 'ET', name: 'Ethiopia', flag: '\u{1F1EA}\u{1F1F9}' },
-  { code: 'RW', name: 'Rwanda', flag: '\u{1F1F7}\u{1F1FC}' },
-  { code: 'UG', name: 'Uganda', flag: '\u{1F1FA}\u{1F1EC}' },
-  { code: 'CM', name: 'Cameroon', flag: '\u{1F1E8}\u{1F1F2}' },
-  { code: 'SN', name: 'Senegal', flag: '\u{1F1F8}\u{1F1F3}' },
-  { code: 'MA', name: 'Morocco', flag: '\u{1F1F2}\u{1F1E6}' },
-];
+import ThemeToggle from '../components/ui/ThemeToggle';
+import AddressFields from '../components/AddressFields';
+import PhotoCapture from '../components/PhotoCapture';
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
     first_name: '', last_name: '', email: '', password: '', confirm_password: '',
-    nationality: '', date_of_birth: '', address: '', city: '', zip_code: '', terms_accepted: false
+    nationality: '', date_of_birth: '', address: '', city: '', state: '', zip_code: '',
+    profile_photo: null, terms_accepted: false
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -70,7 +43,8 @@ export default function RegisterPage() {
       await register({
         first_name: form.first_name, last_name: form.last_name, email: form.email, password: form.password,
         nationality: form.nationality, date_of_birth: form.date_of_birth,
-        address: form.address, city: form.city, zip_code: form.zip_code,
+        address: form.address, city: form.city, state: form.state, zip_code: form.zip_code,
+        profile_photo: form.profile_photo || undefined,
         terms_accepted: 'true'
       });
       navigate('/');
@@ -85,7 +59,8 @@ export default function RegisterPage() {
   const inputClass = "w-full px-3 py-2.5 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors text-sm";
 
   return (
-    <div className="min-h-screen bg-auth flex items-center justify-center p-4">
+    <div className="min-h-screen bg-auth flex items-center justify-center p-4 relative">
+      <ThemeToggle floating />
       <div className="w-full max-w-lg">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-2xl mb-4 shadow-lg shadow-indigo-200">
@@ -122,34 +97,38 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-t-secondary mb-1">Nationality</label>
-              <select name="nationality" value={form.nationality} onChange={handleChange} className={inputClass} required>
-                <option value="">Select your country</option>
-                {nationalities.map(n => (
-                  <option key={n.code} value={n.code}>{n.flag} {n.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
               <label className="block text-sm font-medium text-t-secondary mb-1">Date of Birth</label>
               <input type="date" name="date_of_birth" value={form.date_of_birth} onChange={handleChange} max={maxDobStr} className={inputClass} required />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-t-secondary mb-1">Home Address</label>
-              <input type="text" name="address" value={form.address} onChange={handleChange} className={inputClass} placeholder="123 Main Street" required />
-            </div>
+            <AddressFields
+              countryLabel="Nationality / Country"
+              inputClass={inputClass}
+              value={{
+                country: form.nationality,
+                address: form.address,
+                city: form.city,
+                state: form.state,
+                zip_code: form.zip_code,
+              }}
+              onChange={(next) =>
+                setForm((f) => ({
+                  ...f,
+                  nationality: next.country ?? f.nationality,
+                  address: next.address ?? f.address,
+                  city: next.city ?? f.city,
+                  state: next.state ?? f.state,
+                  zip_code: next.zip_code ?? f.zip_code,
+                }))
+              }
+            />
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-t-secondary mb-1">City</label>
-                <input type="text" name="city" value={form.city} onChange={handleChange} className={inputClass} required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-t-secondary mb-1">Postal Code</label>
-                <input type="text" name="zip_code" value={form.zip_code} onChange={handleChange} className={inputClass} required />
-              </div>
+            <div className="pt-2 border-t border-b-secondary">
+              <PhotoCapture
+                label="Verification Photo (recommended)"
+                value={form.profile_photo}
+                onChange={(photo) => setForm((f) => ({ ...f, profile_photo: photo }))}
+              />
             </div>
 
             <div>

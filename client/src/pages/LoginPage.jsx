@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import PasswordInput from '../components/ui/PasswordInput';
 import PasswordRequirements from '../components/ui/PasswordRequirements';
+import ThemeToggle from '../components/ui/ThemeToggle';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -27,7 +28,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-auth flex items-center justify-center p-4">
+    <div className="min-h-screen bg-auth flex items-center justify-center p-4 relative">
+      <ThemeToggle floating />
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-2xl mb-4 shadow-lg shadow-indigo-200">
@@ -88,11 +90,13 @@ export default function LoginPage() {
             </Link>
           </p>
 
-          <div className="mt-4 p-3 bg-elevated rounded-lg text-xs text-t-tertiary">
-            <p className="font-medium mb-1">Demo accounts:</p>
-            <p>Admin: admin@bank.com / Admin123!</p>
-            <p>User: john@example.com / User1234!</p>
-          </div>
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-4 p-3 bg-elevated rounded-lg text-xs text-t-tertiary">
+              <p className="font-medium mb-1">Demo accounts (Dev Only):</p>
+              <p>Admin: admin@bank.com / Admin123!</p>
+              <p>User: john@example.com / User1234!</p>
+            </div>
+          )}
         </div>
 
         <p className="mt-6 text-center text-sm text-t-muted">

@@ -26,6 +26,20 @@ az group create `
 
 # Step 4: Deploy infrastructure using Bicep
 Write-Host "`n[Step 4] Deploying infrastructure with Bicep..." -ForegroundColor Yellow
+
+# Generate secure JWT secret if not provided
+if (-not $env:JWT_SECRET) {
+    Write-Host "Generating secure JWT_SECRET..." -ForegroundColor Cyan
+    # Generate a 64-character random string using .NET
+    $bytes = New-Object byte[] 32
+    [Security.Cryptography.RNGCryptoServiceProvider]::Create().GetBytes($bytes)
+    $jwtSecret = [Convert]::ToBase64String($bytes)
+} else {
+    $jwtSecret = $env:JWT_SECRET
+}
+
+Write-Host "JWT_SECRET generated (length: $($jwtSecret.Length))" -ForegroundColor Green
+
 $bicepFile = ".\.azure\infra\main.bicep"
 $parametersFile = ".\.azure\infra\main.parameters.json"
 
@@ -34,7 +48,8 @@ az deployment group create `
   --resource-group $resourceGroupName `
   --template-file $bicepFile `
   --parameters $parametersFile `
-  --parameters environmentName=$environmentName location=$location
+  --parameters environmentName=$environmentName location=$location jwtSecret=$jwtSecret `
+  --parameters @{jwtSecret=@{value=$jwtSecret}}
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Deployment failed!" -ForegroundColor Red

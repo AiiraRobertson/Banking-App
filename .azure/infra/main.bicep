@@ -20,6 +20,10 @@ param frontendServiceName string = 'frontend'
 @description('Node.js runtime version')
 param nodeVersion string = 'NODE|20-lts'
 
+@minLength(32)
+@description('JWT secret for authentication (must be at least 32 characters, use a cryptographically random value)')
+param jwtSecret string
+
 // Generate unique token for resource naming
 var resourceToken = uniqueString(subscription().id, resourceGroup().id, location, environmentName)
 var backendName = 'az${take(backendServiceName, 3)}${resourceToken}'
@@ -172,6 +176,10 @@ resource backendAppService 'Microsoft.Web/sites@2022-09-01' = {
         {
           name: 'NODE_ENV'
           value: 'production'
+        }
+        {
+          name: 'JWT_SECRET'
+          value: jwtSecret
         }
         {
           name: 'WEBSITE_NODE_DEFAULT_VERSION'

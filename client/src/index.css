@@ -2,10 +2,10 @@
 
 /* ===== Theme Color Tokens ===== */
 :root {
-  --color-bg-primary: #f9fafb;
+  --color-bg-primary: #f5f7fb;
   --color-bg-surface: #ffffff;
-  --color-bg-elevated: #f3f4f6;
-  --color-bg-hover: #f3f4f6;
+  --color-bg-elevated: #eef1f7;
+  --color-bg-hover: #eef1f7;
   --color-text-primary: #111827;
   --color-text-secondary: #374151;
   --color-text-tertiary: #6b7280;
@@ -62,6 +62,26 @@ body {
 }
 
 html.dark { color-scheme: dark; }
+
+/* ===== Light-mode banking pattern background ===== */
+body {
+  background-image:
+    radial-gradient(ellipse 60% 50% at 15% 20%, rgba(99,102,241,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 75%, rgba(59,130,246,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 35% at 50% 50%, rgba(139,92,246,0.04) 0%, transparent 70%),
+    radial-gradient(circle at 1px 1px, rgba(99,102,241,0.10) 1px, transparent 0);
+  background-size: auto, auto, auto, 22px 22px;
+  background-attachment: fixed;
+}
+html.dark body {
+  background-image:
+    radial-gradient(ellipse 60% 50% at 15% 20%, rgba(99,102,241,0.14) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 75%, rgba(59,130,246,0.10) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 35% at 50% 50%, rgba(139,92,246,0.08) 0%, transparent 70%),
+    radial-gradient(circle at 1px 1px, rgba(148,163,184,0.06) 1px, transparent 0);
+  background-size: auto, auto, auto, 22px 22px;
+  background-attachment: fixed;
+}
 
 input, select, textarea {
   background-color: var(--color-input-bg);

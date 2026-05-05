@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import ThemeToggle from '../../components/ui/ThemeToggle';
 
 export default function ResourcePageLayout({ title, subtitle, icon, children }) {
   return (
@@ -13,7 +14,8 @@ export default function ResourcePageLayout({ title, subtitle, icon, children }) 
             </div>
             <span className="font-semibold text-t-primary">Kapita</span>
           </Link>
-          <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-2 sm:gap-4 text-sm">
+            <ThemeToggle />
             <Link to="/login" className="text-t-secondary hover:text-t-primary">Login</Link>
             <Link to="/register" className="px-4 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Open Account</Link>
           </div>

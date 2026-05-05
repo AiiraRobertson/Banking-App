@@ -20,6 +20,7 @@ import BillPayPage from './pages/BillPayPage';
 import LoanCalculatorPage from './pages/LoanCalculatorPage';
 import ProfilePage from './pages/ProfilePage';
 import NotificationsPage from './pages/NotificationsPage';
+import BeneficiariesPage from './pages/BeneficiariesPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminUserDetailPage from './pages/admin/AdminUserDetailPage';
@@ -73,6 +74,7 @@ export default function App() {
               <Route path="accounts/:id" element={<AccountDetailPage />} />
               <Route path="transfer" element={<TransferPage />} />
               <Route path="wire-transfer" element={<WireTransferPage />} />
+              <Route path="beneficiaries" element={<BeneficiariesPage />} />
               <Route path="transactions" element={<TransactionHistoryPage />} />
               <Route path="bill-pay" element={<BillPayPage />} />
               <Route path="profile" element={<ProfilePage />} />

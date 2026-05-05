@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useState, useRef } from 'react';
+import ThemeToggle from '../components/ui/ThemeToggle';
 
 const resourceGroups = [
   {
@@ -204,6 +205,7 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-1 sm:gap-3">
             <ResourcesDropdown />
+            <ThemeToggle />
             <Link to="/login" className="px-4 py-2 text-sm font-medium text-t-secondary hover:text-indigo-600 transition-colors duration-200">Sign In</Link>
             <Link to="/register" className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-200 hover:-translate-y-0.5 transition-all duration-300 shadow-sm">Get Started</Link>
           </div>

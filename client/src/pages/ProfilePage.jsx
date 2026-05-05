@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getProfile, updateProfile, changePassword } from '../services/profileService';
+import AddressFields from '../components/AddressFields';
+import PhotoCapture from '../components/PhotoCapture';
 
 export default function ProfilePage() {
   const { updateUser } = useAuth();
@@ -37,10 +39,14 @@ export default function ProfilePage() {
     e.preventDefault();
     setSaving(true); setError(''); setSuccess('');
     try {
-      const res = await updateProfile({
+      const payload = {
         first_name: form.first_name, last_name: form.last_name, phone: form.phone,
         address: form.address, city: form.city, state: form.state, zip_code: form.zip_code
-      });
+      };
+      if (form.profile_photo !== profile.profile_photo) {
+        payload.profile_photo = form.profile_photo === null ? '' : form.profile_photo;
+      }
+      const res = await updateProfile(payload);
       setProfile(res.data.user);
       updateUser(res.data.user);
       setEditing(false);
@@ -106,6 +112,11 @@ export default function ProfilePage() {
 
         {editing ? (
           <form onSubmit={handleSave} className="space-y-4">
+            <PhotoCapture
+              label="Profile Photo"
+              value={form.profile_photo || null}
+              onChange={(photo) => setForm((f) => ({ ...f, profile_photo: photo }))}
+            />
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-t-secondary mb-1">First Name</label>
@@ -127,28 +138,26 @@ export default function ProfilePage() {
               <input type="text" value={form.phone || ''} onChange={e => setForm({ ...form, phone: e.target.value })}
                 className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-t-secondary mb-1">Address</label>
-              <input type="text" value={form.address || ''} onChange={e => setForm({ ...form, address: e.target.value })}
-                className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-t-secondary mb-1">City</label>
-                <input type="text" value={form.city || ''} onChange={e => setForm({ ...form, city: e.target.value })}
-                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-t-secondary mb-1">State</label>
-                <input type="text" value={form.state || ''} onChange={e => setForm({ ...form, state: e.target.value })}
-                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-t-secondary mb-1">ZIP Code</label>
-                <input type="text" value={form.zip_code || ''} onChange={e => setForm({ ...form, zip_code: e.target.value })}
-                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
-              </div>
-            </div>
+            <AddressFields
+              countryLabel="Country"
+              required={false}
+              inputClass="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+              value={{
+                country: form.nationality,
+                address: form.address,
+                city: form.city,
+                state: form.state,
+                zip_code: form.zip_code,
+              }}
+              onChange={(next) => setForm((f) => ({
+                ...f,
+                nationality: next.country ?? f.nationality,
+                address: next.address ?? f.address,
+                city: next.city ?? f.city,
+                state: next.state ?? f.state,
+                zip_code: next.zip_code ?? f.zip_code,
+              }))}
+            />
             <div className="flex gap-3 justify-end">
               <button type="button" onClick={() => { setEditing(false); setForm(profile); }} className="px-4 py-2 text-t-secondary bg-elevated rounded-lg hover:bg-hover">Cancel</button>
               <button type="submit" disabled={saving} className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
@@ -157,6 +166,25 @@ export default function ProfilePage() {
             </div>
           </form>
         ) : (
+          <>
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-b-input bg-elevated flex items-center justify-center shrink-0">
+                {profile.profile_photo ? (
+                  <img src={profile.profile_photo} alt="profile" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-2xl font-semibold text-indigo-600">
+                    {profile.first_name?.[0]}{profile.last_name?.[0]}
+                  </span>
+                )}
+              </div>
+              <div>
+                <p className="text-lg font-semibold text-t-primary">{profile.first_name} {profile.last_name}</p>
+                <p className="text-sm text-t-tertiary">{profile.email}</p>
+                {!profile.profile_photo && (
+                  <p className="text-xs text-amber-600 mt-1">Add a verification photo to complete your profile.</p>
+                )}
+              </div>
+            </div>
           <div className="grid grid-cols-2 gap-4">
             {[
               ['First Name', profile.first_name], ['Last Name', profile.last_name],
@@ -170,6 +198,7 @@ export default function ProfilePage() {
               </div>
             ))}
           </div>
+          </>
         )}
       </div>
 

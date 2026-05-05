@@ -106,6 +106,20 @@ router.post('/:id/touch', [
   res.json({ message: 'Updated' });
 });
 
+router.patch('/:id', [
+  param('id').isInt({ min: 1 }),
+  body('nickname').optional({ checkFalsy: true }).trim().isLength({ max: 50 }),
+  handleValidation
+], (req, res) => {
+  const { nickname } = req.body;
+  const result = db.prepare(
+    'UPDATE beneficiaries SET nickname = ? WHERE id = ? AND user_id = ?'
+  ).run(nickname || null, req.params.id, req.user.id);
+  if (result.changes === 0) return res.status(404).json({ error: 'Beneficiary not found' });
+  const updated = db.prepare('SELECT * FROM beneficiaries WHERE id = ?').get(req.params.id);
+  res.json({ message: 'Beneficiary updated', beneficiary: updated });
+});
+
 router.delete('/:id', [
   param('id').isInt({ min: 1 }),
   handleValidation
