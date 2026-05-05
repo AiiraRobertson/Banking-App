@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/api/transactions/withdraw"
+method: POST
+headers:
+  Authorization: Bearer {{userToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "account_id": {{otherUserAcctId}},
+      "amount": 1.00
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('rejected (4xx)', () => pm.expect(pm.response.code).to.be.within(400,499));
+    language: text/javascript
+order: 2000

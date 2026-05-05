@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{baseUrl}}/.env"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('not actual .env content', () => {
+        pm.expect(pm.response.text()).to.not.match(/JWT_SECRET\s*=/);
+        pm.expect(pm.response.text()).to.not.match(/^DATABASE_URL=/m);
+      });
+    language: text/javascript
+order: 4000

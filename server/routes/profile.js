@@ -27,9 +27,17 @@ router.put('/', [
   body('sms_alerts').optional().isBoolean().toBoolean(),
   body('alert_phone').optional({ nullable: true }).trim(),
   body('alert_min_amount').optional().isFloat({ min: 0 }).toFloat(),
+  body('profile_photo').optional({ nullable: true })
+    .custom((v) => {
+      if (v === null || v === '') return true;
+      if (typeof v !== 'string') throw new Error('Invalid photo');
+      if (!/^data:image\/(jpeg|jpg|png|webp);base64,/.test(v)) throw new Error('Photo must be an image data URL');
+      if (v.length > 1_500_000) throw new Error('Photo too large');
+      return true;
+    }),
   handleValidation
 ], (req, res) => {
-  const { first_name, last_name, phone, address, city, state, zip_code, email_alerts, sms_alerts, alert_phone, alert_min_amount } = req.body;
+  const { first_name, last_name, phone, address, city, state, zip_code, email_alerts, sms_alerts, alert_phone, alert_min_amount, profile_photo } = req.body;
 
   db.prepare(`
     UPDATE users SET
@@ -54,6 +62,11 @@ router.put('/', [
     alert_min_amount === undefined ? null : alert_min_amount,
     req.user.id
   );
+
+  if (profile_photo !== undefined) {
+    const newPhoto = (profile_photo === null || profile_photo === '') ? null : profile_photo;
+    db.prepare('UPDATE users SET profile_photo = ? WHERE id = ?').run(newPhoto, req.user.id);
+  }
 
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
   const { password_hash, ...safe } = user;

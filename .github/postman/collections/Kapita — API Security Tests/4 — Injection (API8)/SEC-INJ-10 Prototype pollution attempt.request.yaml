@@ -1,0 +1,23 @@
+$kind: http-request
+url: "{{baseUrl}}/api/profile"
+method: PUT
+headers:
+  Authorization: Bearer {{userToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "__proto__": { "isAdmin": true },
+      "email_alerts": true
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('no role/admin elevation leaked', () => {
+        let body = {}; try { body = pm.response.json(); } catch(e) {}
+        const u = body.user || {};
+        pm.expect(u.role).to.not.equal('admin');
+      });
+    language: text/javascript
+order: 7000

@@ -1,0 +1,23 @@
+$kind: http-request
+url: "{{baseUrl}}/api/calculator/loan"
+method: POST
+headers:
+  Authorization: Bearer {{userToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "principal": 1000,
+      "annual_rate": 5,
+      "term_months": 9999999
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('responds < 2s and not 5xx', () => {
+        pm.expect(pm.response.responseTime).to.be.below(2000);
+        pm.expect(pm.response.code).to.be.lessThan(500);
+      });
+    language: text/javascript
+order: 8000

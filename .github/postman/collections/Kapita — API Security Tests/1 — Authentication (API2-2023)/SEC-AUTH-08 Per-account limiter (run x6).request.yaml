@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/api/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+  X-Forwarded-For: 10.{{$randomInt}}.{{$randomInt}}.{{$randomInt}}
+body:
+  type: text
+  content: |-
+    {
+      "email": "{{userEmail}}",
+      "password": "{{wrongPassword}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      // Iterations=6: first 5 return 401, 6th returns 429 'Too many failed attempts for this account'.
+      pm.test('401 then 429', () => pm.expect([401,429]).to.include(pm.response.code));
+    language: text/javascript
+order: 7000

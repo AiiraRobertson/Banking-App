@@ -1,0 +1,26 @@
+$kind: http-request
+url: "{{baseUrl}}/api/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "email": "{{adminEmail}}",
+      "password": "{{adminPassword}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const j = pm.response.json();
+      pm.test('200 + admin token', () => { pm.response.to.have.status(200); pm.expect(j.token).to.be.a('string'); });
+      pm.collectionVariables.set('adminToken', j.token);
+      pm.sendRequest({ url: pm.collectionVariables.get('baseUrl') + '/api/accounts', method: 'GET', header: { Authorization: 'Bearer ' + j.token } }, (err, res) => {
+        if (err) return;
+        const accts = res.json().accounts || [];
+        const c = accts.find(a => a.account_type === 'checking');
+        if (c) pm.collectionVariables.set('otherUserAcctId', c.id);
+      });
+    language: text/javascript
+order: 2000

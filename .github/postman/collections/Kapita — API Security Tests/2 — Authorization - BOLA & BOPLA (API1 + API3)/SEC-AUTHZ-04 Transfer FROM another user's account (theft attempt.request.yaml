@@ -1,0 +1,20 @@
+$kind: http-request
+name: SEC-AUTHZ-04 Transfer FROM another user's account (theft attempt)
+url: "{{baseUrl}}/api/transactions/transfer"
+method: POST
+headers:
+  Authorization: Bearer {{userToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "from_account_id": {{otherUserAcctId}},
+      "to_account_id": {{userAcctId}},
+      "amount": 1.00
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('rejected (4xx) — must not transfer from foreign account', () => pm.expect(pm.response.code).to.be.within(400,499));
+    language: text/javascript
+order: 3000

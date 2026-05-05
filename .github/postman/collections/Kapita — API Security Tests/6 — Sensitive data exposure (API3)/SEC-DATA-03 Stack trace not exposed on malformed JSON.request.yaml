@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/api/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: "{ this is : not json"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('4xx (not 500)', () => pm.expect(pm.response.code).to.be.within(400,499));
+      pm.test('no stack trace in body', () => {
+        pm.expect(pm.response.text()).to.not.match(/at .*\(.*\.js:\d+:\d+\)/);
+        pm.expect(pm.response.text()).to.not.match(/node_modules/);
+      });
+    language: text/javascript
+order: 3000

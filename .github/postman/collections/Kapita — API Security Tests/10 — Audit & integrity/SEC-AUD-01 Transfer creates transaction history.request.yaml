@@ -1,0 +1,31 @@
+$kind: http-request
+url: "{{baseUrl}}/api/transactions/transfer"
+method: POST
+headers:
+  Authorization: Bearer {{userToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "from_account_id": {{userAcctId}},
+      "to_account_id": {{userSavingsId}},
+      "amount": 0.50
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('200', () => pm.response.to.have.status(200));
+      pm.sendRequest({
+        url: pm.collectionVariables.get('baseUrl') + '/api/transactions?limit=5',
+        method: 'GET',
+        header: { Authorization: 'Bearer ' + pm.collectionVariables.get('userToken') }
+      }, (err, res) => {
+        if (err) return;
+        const list = (res.json().transactions || []);
+        pm.test('audit row exists for the transfer', () => {
+          pm.expect(list.some(t => Number(t.amount) === 0.50)).to.be.true;
+        });
+      });
+    language: text/javascript
+order: 1000

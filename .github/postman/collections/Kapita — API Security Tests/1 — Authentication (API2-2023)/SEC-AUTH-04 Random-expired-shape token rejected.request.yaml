@@ -1,0 +1,11 @@
+$kind: http-request
+name: SEC-AUTH-04 Random/expired-shape token rejected
+url: "{{baseUrl}}/api/accounts"
+method: GET
+headers:
+  Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.e30.bogus
+scripts:
+  - type: afterResponse
+    code: pm.test('401', () => pm.response.to.have.status(401));
+    language: text/javascript
+order: 4000

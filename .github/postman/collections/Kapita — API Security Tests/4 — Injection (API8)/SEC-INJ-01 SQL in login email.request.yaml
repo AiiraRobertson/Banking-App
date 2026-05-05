@@ -1,0 +1,22 @@
+$kind: http-request
+url: "{{baseUrl}}/api/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "email": "' OR 1=1--",
+      "password": "x"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('rejected (400/401)', () => pm.expect([400,401]).to.include(pm.response.code));
+      pm.test('no token leaked', () => {
+        let body = {}; try { body = pm.response.json(); } catch(e) {}
+        pm.expect(body.token).to.be.undefined;
+      });
+    language: text/javascript
+order: 1000

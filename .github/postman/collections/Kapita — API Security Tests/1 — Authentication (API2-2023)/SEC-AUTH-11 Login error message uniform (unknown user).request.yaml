@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{baseUrl}}/api/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "email": "nobody-{{$randomUUID}}@nowhere.test",
+      "password": "AnyPass123!"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('401 + generic error', () => {
+        pm.response.to.have.status(401);
+        pm.expect(pm.response.json().error).to.match(/invalid email or password/i);
+      });
+    language: text/javascript
+order: 8000

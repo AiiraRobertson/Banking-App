@@ -1,0 +1,30 @@
+$kind: collection
+description: |-
+  Security & vulnerability test scenarios for the Kapita banking API.
+
+  **Setup**
+  1. Start a fresh server: `cd server && rm -f db/bank.db db/bank.db-wal db/bank.db-shm && node server.js`
+  2. Open the **00 — Setup** folder and run `Login as user` and `Login as admin`. The post-response scripts populate `userToken`, `adminToken`, `userAcctId`, `userSavingsId`, `otherUserAcctId` automatically.
+  3. Run any folder via the Collection Runner. Each request has a Tests script that asserts the expected secure outcome.
+
+  **Variables**
+  - `baseUrl` — defaults to `http://127.0.0.1:3001`
+  - `userEmail`, `userPassword`, `adminEmail`, `adminPassword`
+  - Tokens / IDs are populated dynamically.
+
+  **Out of scope for this collection** (covered in `API_SECURITY_TEST_SCENARIOS.md` §14): timing-based user enumeration, slowloris, CPU-exhaustion bcrypt floods, file-system probes that depend on deployment layout. Run those manually.
+variables:
+  baseUrl: http://127.0.0.1:3001
+  userEmail: john@example.com
+  userPassword: User1234!
+  adminEmail: admin@example.com
+  adminPassword: Admin1234!
+  userToken: ""
+  adminToken: ""
+  userAcctId: ""
+  userSavingsId: ""
+  otherUserAcctId: ""
+  otherUserAcctNo: "1000000001"
+  userBeneId: ""
+  userPayeeId: ""
+  wrongPassword: WRONG_PASS_1!

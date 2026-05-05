@@ -1,0 +1,33 @@
+$kind: http-request
+url: "{{baseUrl}}/api/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "email": "massassign-{{$timestamp}}@test.local",
+      "password": "Test1234!",
+      "first_name": "Mass",
+      "last_name": "Assign",
+      "nationality": "US",
+      "date_of_birth": "1990-01-01",
+      "address": "1 Test St",
+      "city": "Testville",
+      "zip_code": "00000",
+      "terms_accepted": "true",
+      "role": "admin",
+      "is_active": 1
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      if (pm.response.code === 201) {
+        const u = pm.response.json().user || {};
+        pm.test('new user is not admin', () => pm.expect(u.role).to.not.equal('admin'));
+      } else {
+        pm.test('register rejected (4xx)', () => pm.expect(pm.response.code).to.be.within(400,499));
+      }
+    language: text/javascript
+order: 7000

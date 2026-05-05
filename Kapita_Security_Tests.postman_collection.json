@@ -1,0 +1,821 @@
+{
+  "info": {
+    "_postman_id": "9b1f0d2e-4a31-4f8f-9b5a-e1c2d3a40001",
+    "name": "Kapita — API Security Tests",
+    "description": "Security & vulnerability test scenarios for the Kapita banking API.\n\n**Setup**\n1. Start a fresh server: `cd server && rm -f db/bank.db db/bank.db-wal db/bank.db-shm && node server.js`\n2. Open the **00 — Setup** folder and run `Login as user` and `Login as admin`. The post-response scripts populate `userToken`, `adminToken`, `userAcctId`, `userSavingsId`, `otherUserAcctId` automatically.\n3. Run any folder via the Collection Runner. Each request has a Tests script that asserts the expected secure outcome.\n\n**Variables**\n- `baseUrl` — defaults to `http://127.0.0.1:3001`\n- `userEmail`, `userPassword`, `adminEmail`, `adminPassword`\n- Tokens / IDs are populated dynamically.\n\n**Out of scope for this collection** (covered in `API_SECURITY_TEST_SCENARIOS.md` §14): timing-based user enumeration, slowloris, CPU-exhaustion bcrypt floods, file-system probes that depend on deployment layout. Run those manually.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",        "value": "http://127.0.0.1:3001" },
+    { "key": "userEmail",      "value": "john@example.com" },
+    { "key": "userPassword",   "value": "User1234!" },
+    { "key": "adminEmail",     "value": "admin@example.com" },
+    { "key": "adminPassword",  "value": "Admin1234!" },
+    { "key": "userToken",      "value": "" },
+    { "key": "adminToken",     "value": "" },
+    { "key": "userAcctId",     "value": "" },
+    { "key": "userSavingsId",  "value": "" },
+    { "key": "otherUserAcctId","value": "" },
+    { "key": "otherUserAcctNo","value": "1000000001" },
+    { "key": "userBeneId",     "value": "" },
+    { "key": "userPayeeId",    "value": "" },
+    { "key": "wrongPassword",  "value": "WRONG_PASS_1!" }
+  ],
+  "item": [
+    {
+      "name": "00 — Setup (run first)",
+      "item": [
+        {
+          "name": "Login as user (populates userToken + account IDs)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "const j = pm.response.json();",
+              "pm.test('200 + token', () => { pm.response.to.have.status(200); pm.expect(j.token).to.be.a('string'); });",
+              "pm.collectionVariables.set('userToken', j.token);",
+              "pm.sendRequest({ url: pm.collectionVariables.get('baseUrl') + '/api/accounts', method: 'GET', header: { Authorization: 'Bearer ' + j.token } }, (err, res) => {",
+              "  if (err) return;",
+              "  const accts = res.json().accounts || [];",
+              "  const c = accts.find(a => a.account_type === 'checking');",
+              "  const s = accts.find(a => a.account_type === 'savings');",
+              "  if (c) pm.collectionVariables.set('userAcctId', c.id);",
+              "  if (s) pm.collectionVariables.set('userSavingsId', s.id);",
+              "});"
+            ]}
+          }]
+        },
+        {
+          "name": "Login as admin (populates adminToken + otherUserAcctId)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] }
+          },
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "const j = pm.response.json();",
+              "pm.test('200 + admin token', () => { pm.response.to.have.status(200); pm.expect(j.token).to.be.a('string'); });",
+              "pm.collectionVariables.set('adminToken', j.token);",
+              "pm.sendRequest({ url: pm.collectionVariables.get('baseUrl') + '/api/accounts', method: 'GET', header: { Authorization: 'Bearer ' + j.token } }, (err, res) => {",
+              "  if (err) return;",
+              "  const accts = res.json().accounts || [];",
+              "  const c = accts.find(a => a.account_type === 'checking');",
+              "  if (c) pm.collectionVariables.set('otherUserAcctId', c.id);",
+              "});"
+            ]}
+          }]
+        }
+      ]
+    },
+    {
+      "name": "1 — Authentication (API2:2023)",
+      "item": [
+        {
+          "name": "SEC-AUTH-01 Missing token rejected",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/accounts", "host": ["{{baseUrl}}"], "path": ["api","accounts"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('401 Authentication required', () => {",
+            "  pm.response.to.have.status(401);",
+            "  pm.expect(pm.response.json().error).to.match(/auth/i);",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "SEC-AUTH-02 Tampered JWT rejected",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}AA" }],
+            "url": { "raw": "{{baseUrl}}/api/accounts", "host": ["{{baseUrl}}"], "path": ["api","accounts"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('401 invalid signature', () => pm.response.to.have.status(401));"
+          ]}}]
+        },
+        {
+          "name": "SEC-AUTH-03 alg:none JWT rejected",
+          "event": [
+            { "listen": "prerequest", "script": { "exec": [
+              "function b64url(s){ return Buffer.from(s).toString('base64').replace(/=/g,'').replace(/\\+/g,'-').replace(/\\//g,'_'); }",
+              "const h = b64url(JSON.stringify({alg:'none',typ:'JWT'}));",
+              "const p = b64url(JSON.stringify({id:1,email:'a@b.c',role:'admin',exp:Math.floor(Date.now()/1000)+3600}));",
+              "pm.variables.set('forgedToken', h + '.' + p + '.');"
+            ]}},
+            { "listen": "test", "script": { "exec": [
+              "pm.test('401 alg:none rejected', () => pm.response.to.have.status(401));"
+            ]}}
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{forgedToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/admin/stats", "host": ["{{baseUrl}}"], "path": ["api","admin","stats"] }
+          }
+        },
+        {
+          "name": "SEC-AUTH-04 Random/expired-shape token rejected",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiJ9.e30.bogus" }],
+            "url": { "raw": "{{baseUrl}}/api/accounts", "host": ["{{baseUrl}}"], "path": ["api","accounts"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('401', () => pm.response.to.have.status(401));"
+          ]}}]
+        },
+        {
+          "name": "SEC-AUTH-06 Role-tampered (unsigned) JWT rejected",
+          "event": [
+            { "listen": "prerequest", "script": { "exec": [
+              "const t = pm.collectionVariables.get('userToken') || '';",
+              "const parts = t.split('.');",
+              "if (parts.length === 3) {",
+              "  const payload = JSON.parse(Buffer.from(parts[1].replace(/-/g,'+').replace(/_/g,'/'), 'base64').toString());",
+              "  payload.role = 'admin';",
+              "  const tampered = parts[0] + '.' + Buffer.from(JSON.stringify(payload)).toString('base64').replace(/=/g,'').replace(/\\+/g,'-').replace(/\\//g,'_') + '.' + parts[2];",
+              "  pm.variables.set('tamperedToken', tampered);",
+              "}"
+            ]}},
+            { "listen": "test", "script": { "exec": [
+              "pm.test('401 — signature invalid after payload edit', () => pm.response.to.have.status(401));"
+            ]}}
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tamperedToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/admin/stats", "host": ["{{baseUrl}}"], "path": ["api","admin","stats"] }
+          }
+        },
+        {
+          "name": "SEC-AUTH-07 Per-IP login limiter triggers (run x11)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{wrongPassword}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "// Run this request 11+ times via Collection Runner with iterations=11.",
+            "// Earlier attempts return 401, the 11th returns 429.",
+            "pm.test('401 or 429', () => pm.expect([401,429]).to.include(pm.response.code));"
+          ]}}]
+        },
+        {
+          "name": "SEC-AUTH-08 Per-account limiter (run x6)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Forwarded-For", "value": "10.{{$randomInt}}.{{$randomInt}}.{{$randomInt}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{wrongPassword}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "// Iterations=6: first 5 return 401, 6th returns 429 'Too many failed attempts for this account'.",
+            "pm.test('401 then 429', () => pm.expect([401,429]).to.include(pm.response.code));"
+          ]}}]
+        },
+        {
+          "name": "SEC-AUTH-11 Login error message uniform (unknown user)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"nobody-{{$randomUUID}}@nowhere.test\",\n  \"password\": \"AnyPass123!\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('401 + generic error', () => {",
+            "  pm.response.to.have.status(401);",
+            "  pm.expect(pm.response.json().error).to.match(/invalid email or password/i);",
+            "});"
+          ]}}]
+        }
+      ]
+    },
+    {
+      "name": "2 — Authorization / BOLA & BOPLA (API1 + API3)",
+      "item": [
+        {
+          "name": "SEC-AUTHZ-02 Deposit into another user's account",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"account_id\": {{otherUserAcctId}},\n  \"amount\": 1.00,\n  \"description\": \"BOLA probe\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/transactions/deposit", "host": ["{{baseUrl}}"], "path": ["api","transactions","deposit"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('rejected (4xx)', () => pm.expect(pm.response.code).to.be.within(400,499));"
+          ]}}]
+        },
+        {
+          "name": "SEC-AUTHZ-03 Withdraw from another user's account",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"account_id\": {{otherUserAcctId}},\n  \"amount\": 1.00\n}" },
+            "url": { "raw": "{{baseUrl}}/api/transactions/withdraw", "host": ["{{baseUrl}}"], "path": ["api","transactions","withdraw"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('rejected (4xx)', () => pm.expect(pm.response.code).to.be.within(400,499));"
+          ]}}]
+        },
+        {
+          "name": "SEC-AUTHZ-04 Transfer FROM another user's account (theft attempt)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"from_account_id\": {{otherUserAcctId}},\n  \"to_account_id\": {{userAcctId}},\n  \"amount\": 1.00\n}" },
+            "url": { "raw": "{{baseUrl}}/api/transactions/transfer", "host": ["{{baseUrl}}"], "path": ["api","transactions","transfer"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('rejected (4xx) — must not transfer from foreign account', () => pm.expect(pm.response.code).to.be.within(400,499));"
+          ]}}]
+        },
+        {
+          "name": "SEC-AUTHZ-12 Non-admin hits /api/admin/stats",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/admin/stats", "host": ["{{baseUrl}}"], "path": ["api","admin","stats"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('403 Insufficient permissions', () => pm.response.to.have.status(403));"
+          ]}}]
+        },
+        {
+          "name": "SEC-AUTHZ-13 Non-admin disables a user",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"is_active\": 0\n}" },
+            "url": { "raw": "{{baseUrl}}/api/admin/users/1", "host": ["{{baseUrl}}"], "path": ["api","admin","users","1"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('403', () => pm.response.to.have.status(403));"
+          ]}}]
+        },
+        {
+          "name": "SEC-AUTHZ-14 Mass-assignment on profile (role/balance)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"role\": \"admin\",\n  \"is_active\": 1,\n  \"balance\": 9999999,\n  \"email_alerts\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/api/profile", "host": ["{{baseUrl}}"], "path": ["api","profile"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('role unchanged', () => {",
+            "  pm.response.to.have.status(200);",
+            "  const u = pm.response.json().user || {};",
+            "  pm.expect(u.role).to.not.equal('admin');",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "SEC-AUTHZ-15 Mass-assignment on register (role=admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"massassign-{{$timestamp}}@test.local\",\n  \"password\": \"Test1234!\",\n  \"first_name\": \"Mass\",\n  \"last_name\": \"Assign\",\n  \"nationality\": \"US\",\n  \"date_of_birth\": \"1990-01-01\",\n  \"address\": \"1 Test St\",\n  \"city\": \"Testville\",\n  \"zip_code\": \"00000\",\n  \"terms_accepted\": \"true\",\n  \"role\": \"admin\",\n  \"is_active\": 1\n}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api","auth","register"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "if (pm.response.code === 201) {",
+            "  const u = pm.response.json().user || {};",
+            "  pm.test('new user is not admin', () => pm.expect(u.role).to.not.equal('admin'));",
+            "} else {",
+            "  pm.test('register rejected (4xx)', () => pm.expect(pm.response.code).to.be.within(400,499));",
+            "}"
+          ]}}]
+        }
+      ]
+    },
+    {
+      "name": "3 — Resource consumption (API4)",
+      "item": [
+        {
+          "name": "SEC-RATE-02 Body size limit (oversize JSON)",
+          "event": [{ "listen": "prerequest", "script": { "exec": [
+            "const big = 'A'.repeat(20000);",
+            "pm.variables.set('bigBody', JSON.stringify({ email: 'x@x.x', password: big }));"
+          ]}},
+          { "listen": "test", "script": { "exec": [
+            "pm.test('413 or 400 (rejected as too large)', () => pm.expect([400,413]).to.include(pm.response.code));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{{bigBody}}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] }
+          }
+        },
+        {
+          "name": "SEC-RATE-03 Pagination cap respected",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users?limit=1000000",
+              "host": ["{{baseUrl}}"], "path": ["api","admin","users"],
+              "query": [{ "key": "limit", "value": "1000000" }]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('400 or clamped <= 100', () => {",
+            "  if (pm.response.code === 200) {",
+            "    const arr = (pm.response.json().users || []);",
+            "    pm.expect(arr.length).to.be.lte(100);",
+            "  } else {",
+            "    pm.expect(pm.response.code).to.be.within(400,499);",
+            "  }",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "SEC-RATE-04 Negative pagination handled",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions?limit=-1&offset=-50",
+              "host": ["{{baseUrl}}"], "path": ["api","transactions"],
+              "query": [
+                { "key": "limit", "value": "-1" },
+                { "key": "offset", "value": "-50" }
+              ]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('not 500', () => pm.expect(pm.response.code).to.not.equal(500));",
+            "pm.test('safe response (200 with sane defaults or 400)', () => pm.expect([200,400]).to.include(pm.response.code));"
+          ]}}]
+        }
+      ]
+    },
+    {
+      "name": "4 — Injection (API8)",
+      "item": [
+        {
+          "name": "SEC-INJ-01 SQL in login email",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"' OR 1=1--\",\n  \"password\": \"x\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('rejected (400/401)', () => pm.expect([400,401]).to.include(pm.response.code));",
+            "pm.test('no token leaked', () => {",
+            "  let body = {}; try { body = pm.response.json(); } catch(e) {}",
+            "  pm.expect(body.token).to.be.undefined;",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "SEC-INJ-02 SQL in account-number lookup",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/accounts/lookup?account_number=' OR '1'='1",
+              "host": ["{{baseUrl}}"], "path": ["api","accounts","lookup"],
+              "query": [{ "key": "account_number", "value": "' OR '1'='1" }]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('no row leaked', () => {",
+            "  let body = {}; try { body = pm.response.json(); } catch(e) {}",
+            "  pm.expect(body.found).to.not.equal(true);",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "SEC-INJ-03 SQL in admin search",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users?search=%' UNION SELECT password_hash,1,1,1,1,1,1,1--",
+              "host": ["{{baseUrl}}"], "path": ["api","admin","users"],
+              "query": [{ "key": "search", "value": "%' UNION SELECT password_hash,1,1,1,1,1,1,1--" }]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('safe — no password_hash in response', () => {",
+            "  pm.expect(pm.response.text()).to.not.match(/password_hash/i);",
+            "  pm.expect(pm.response.text()).to.not.match(/\\$2[abxy]\\$/);",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "SEC-INJ-04 NoSQL operator object as email",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": { \"$ne\": null },\n  \"password\": { \"$ne\": null }\n}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('rejected (400/401)', () => pm.expect([400,401]).to.include(pm.response.code));"
+          ]}}]
+        },
+        {
+          "name": "SEC-INJ-05 Path traversal in static fallback",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/../../../etc/passwd", "host": ["{{baseUrl}}"], "path": ["..","..","..","etc","passwd"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('no /etc/passwd content', () => {",
+            "  pm.expect(pm.response.text()).to.not.match(/root:.*:0:0:/);",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "SEC-INJ-06 Stored XSS in deposit description",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"account_id\": {{userAcctId}},\n  \"amount\": 0.01,\n  \"description\": \"<img src=x onerror=alert(1)>\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/transactions/deposit", "host": ["{{baseUrl}}"], "path": ["api","transactions","deposit"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "// API stores raw text — XSS only realises if client renders unsafely.",
+            "// This test just confirms the API accepts the value without 5xx; the UI render is verified manually.",
+            "pm.test('200 (or 400 if descriptions are sanitised at API)', () => pm.expect([200,400]).to.include(pm.response.code));"
+          ]}}]
+        },
+        {
+          "name": "SEC-INJ-10 Prototype pollution attempt",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"__proto__\": { \"isAdmin\": true },\n  \"email_alerts\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/api/profile", "host": ["{{baseUrl}}"], "path": ["api","profile"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('no role/admin elevation leaked', () => {",
+            "  let body = {}; try { body = pm.response.json(); } catch(e) {}",
+            "  const u = body.user || {};",
+            "  pm.expect(u.role).to.not.equal('admin');",
+            "});"
+          ]}}]
+        }
+      ]
+    },
+    {
+      "name": "5 — Business-logic abuse (API6)",
+      "item": [
+        {
+          "name": "SEC-BIZ-01 Negative-amount deposit",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"account_id\": {{userAcctId}},\n  \"amount\": -100,\n  \"description\": \"neg deposit\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/transactions/deposit", "host": ["{{baseUrl}}"], "path": ["api","transactions","deposit"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('400', () => pm.response.to.have.status(400));"
+          ]}}]
+        },
+        {
+          "name": "SEC-BIZ-02 Negative-amount withdrawal",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"account_id\": {{userAcctId}},\n  \"amount\": -100\n}" },
+            "url": { "raw": "{{baseUrl}}/api/transactions/withdraw", "host": ["{{baseUrl}}"], "path": ["api","transactions","withdraw"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('400', () => pm.response.to.have.status(400));"
+          ]}}]
+        },
+        {
+          "name": "SEC-BIZ-03 Negative transfer amount",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"from_account_id\": {{userAcctId}},\n  \"to_account_id\": {{userSavingsId}},\n  \"amount\": -50\n}" },
+            "url": { "raw": "{{baseUrl}}/api/transactions/transfer", "host": ["{{baseUrl}}"], "path": ["api","transactions","transfer"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('400', () => pm.response.to.have.status(400));"
+          ]}}]
+        },
+        {
+          "name": "SEC-BIZ-04 Zero-amount deposit",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"account_id\": {{userAcctId}},\n  \"amount\": 0\n}" },
+            "url": { "raw": "{{baseUrl}}/api/transactions/deposit", "host": ["{{baseUrl}}"], "path": ["api","transactions","deposit"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('400', () => pm.response.to.have.status(400));"
+          ]}}]
+        },
+        {
+          "name": "SEC-BIZ-07 Transfer to self forbidden / no-op",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"from_account_id\": {{userAcctId}},\n  \"to_account_id\": {{userAcctId}},\n  \"amount\": 1\n}" },
+            "url": { "raw": "{{baseUrl}}/api/transactions/transfer", "host": ["{{baseUrl}}"], "path": ["api","transactions","transfer"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('rejected as same-account', () => pm.expect([400,409,422]).to.include(pm.response.code));"
+          ]}}]
+        },
+        {
+          "name": "SEC-BIZ-08 Absurdly large amount",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"account_id\": {{userAcctId}},\n  \"amount\": 1e18\n}" },
+            "url": { "raw": "{{baseUrl}}/api/transactions/deposit", "host": ["{{baseUrl}}"], "path": ["api","transactions","deposit"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('rejected (4xx)', () => pm.expect(pm.response.code).to.be.within(400,499));"
+          ]}}]
+        },
+        {
+          "name": "SEC-BIZ-09 Wire receive missing IBAN where required",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"to_account_id\": {{userAcctId}},\n  \"amount\": 100,\n  \"country_code\": \"GB\",\n  \"sender_name\": \"Probe\",\n  \"sender_bank\": \"Barclays\",\n  \"swift_code\": \"BARCGB22\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/wire/receive", "host": ["{{baseUrl}}"], "path": ["api","wire","receive"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('400 — IBAN required for GB', () => pm.response.to.have.status(400));"
+          ]}}]
+        },
+        {
+          "name": "SEC-BIZ-13 Loan calc DoS (huge term)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"principal\": 1000,\n  \"annual_rate\": 5,\n  \"term_months\": 9999999\n}" },
+            "url": { "raw": "{{baseUrl}}/api/calculator/loan", "host": ["{{baseUrl}}"], "path": ["api","calculator","loan"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('responds < 2s and not 5xx', () => {",
+            "  pm.expect(pm.response.responseTime).to.be.below(2000);",
+            "  pm.expect(pm.response.code).to.be.lessThan(500);",
+            "});"
+          ]}}]
+        }
+      ]
+    },
+    {
+      "name": "6 — Sensitive data exposure (API3)",
+      "item": [
+        {
+          "name": "SEC-DATA-01 password_hash never serialised — /me",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/auth/me", "host": ["{{baseUrl}}"], "path": ["api","auth","me"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 + no password_hash', () => {",
+            "  pm.response.to.have.status(200);",
+            "  pm.expect(pm.response.text()).to.not.match(/password_hash/i);",
+            "  pm.expect(pm.response.text()).to.not.match(/\\$2[abxy]\\$/);",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "SEC-DATA-01b password_hash never serialised — /profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/profile", "host": ["{{baseUrl}}"], "path": ["api","profile"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('no password_hash', () => {",
+            "  pm.expect(pm.response.text()).to.not.match(/password_hash/i);",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "SEC-DATA-03 Stack trace not exposed on malformed JSON",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{ this is : not json" },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('4xx (not 500)', () => pm.expect(pm.response.code).to.be.within(400,499));",
+            "pm.test('no stack trace in body', () => {",
+            "  pm.expect(pm.response.text()).to.not.match(/at .*\\(.*\\.js:\\d+:\\d+\\)/);",
+            "  pm.expect(pm.response.text()).to.not.match(/node_modules/);",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "SEC-DATA-04 .env not served",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/.env", "host": ["{{baseUrl}}"], "path": [".env"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('not actual .env content', () => {",
+            "  pm.expect(pm.response.text()).to.not.match(/JWT_SECRET\\s*=/);",
+            "  pm.expect(pm.response.text()).to.not.match(/^DATABASE_URL=/m);",
+            "});"
+          ]}}]
+        }
+      ]
+    },
+    {
+      "name": "7 — CORS",
+      "item": [
+        {
+          "name": "SEC-CORS-01 Disallowed origin",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Origin", "value": "https://evil.example" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/accounts", "host": ["{{baseUrl}}"], "path": ["api","accounts"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const acao = pm.response.headers.get('Access-Control-Allow-Origin');",
+            "pm.test('ACAO is not evil.example', () => {",
+            "  pm.expect(acao || '').to.not.equal('https://evil.example');",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "SEC-CORS-03 Preflight from allowed origin",
+          "request": {
+            "method": "OPTIONS",
+            "header": [
+              { "key": "Origin", "value": "http://localhost:5173" },
+              { "key": "Access-Control-Request-Method", "value": "GET" },
+              { "key": "Access-Control-Request-Headers", "value": "authorization" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/accounts", "host": ["{{baseUrl}}"], "path": ["api","accounts"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('204/200 + ACAO echoed', () => {",
+            "  pm.expect([200,204]).to.include(pm.response.code);",
+            "  pm.expect(pm.response.headers.get('Access-Control-Allow-Origin')).to.equal('http://localhost:5173');",
+            "});"
+          ]}}]
+        },
+        {
+          "name": "SEC-CORS-04 Wildcard not combined with credentials",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Origin", "value": "http://localhost:5173" }],
+            "url": { "raw": "{{baseUrl}}/api/accounts", "host": ["{{baseUrl}}"], "path": ["api","accounts"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const acao = pm.response.headers.get('Access-Control-Allow-Origin');",
+            "const acac = pm.response.headers.get('Access-Control-Allow-Credentials');",
+            "pm.test('not (\\'*\\' AND credentials:true)', () => {",
+            "  pm.expect(!(acao === '*' && (acac || '').toLowerCase() === 'true')).to.be.true;",
+            "});"
+          ]}}]
+        }
+      ]
+    },
+    {
+      "name": "8 — Security headers (Helmet)",
+      "item": [
+        {
+          "name": "SEC-HDR — full helmet baseline on /health",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('CSP present', () => pm.expect(pm.response.headers.get('Content-Security-Policy')).to.be.a('string'));",
+            "pm.test('X-Content-Type-Options nosniff', () => pm.expect((pm.response.headers.get('X-Content-Type-Options')||'').toLowerCase()).to.equal('nosniff'));",
+            "pm.test('X-Frame-Options set', () => pm.expect(pm.response.headers.get('X-Frame-Options')).to.match(/SAMEORIGIN|DENY/i));",
+            "pm.test('Referrer-Policy set', () => pm.expect(pm.response.headers.get('Referrer-Policy')).to.be.a('string'));",
+            "pm.test('Rate-limit headers present', () => {",
+            "  const h = pm.response.headers.get('RateLimit-Limit') || pm.response.headers.get('X-RateLimit-Limit');",
+            "  pm.expect(h).to.be.a('string');",
+            "});",
+            "pm.test('X-Powered-By absent', () => pm.expect(pm.response.headers.get('X-Powered-By')).to.be.null);"
+          ]}}]
+        }
+      ]
+    },
+    {
+      "name": "9 — Token & session lifecycle",
+      "item": [
+        {
+          "name": "SEC-SESS-03 JWT exp present + ~24h ahead",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const token = pm.response.json().token;",
+            "pm.expect(token).to.be.a('string');",
+            "const payload = JSON.parse(Buffer.from(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'),'base64').toString());",
+            "const now = Math.floor(Date.now()/1000);",
+            "pm.test('exp present', () => pm.expect(payload.exp).to.be.a('number'));",
+            "pm.test('exp within (now+1h, now+25h)', () => {",
+            "  pm.expect(payload.exp - now).to.be.greaterThan(3600);",
+            "  pm.expect(payload.exp - now).to.be.lessThan(25*3600);",
+            "});"
+          ]}}]
+        }
+      ]
+    },
+    {
+      "name": "10 — Audit & integrity",
+      "item": [
+        {
+          "name": "SEC-AUD-01 Transfer creates transaction history",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"from_account_id\": {{userAcctId}},\n  \"to_account_id\": {{userSavingsId}},\n  \"amount\": 0.50\n}" },
+            "url": { "raw": "{{baseUrl}}/api/transactions/transfer", "host": ["{{baseUrl}}"], "path": ["api","transactions","transfer"] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "pm.sendRequest({",
+            "  url: pm.collectionVariables.get('baseUrl') + '/api/transactions?limit=5',",
+            "  method: 'GET',",
+            "  header: { Authorization: 'Bearer ' + pm.collectionVariables.get('userToken') }",
+            "}, (err, res) => {",
+            "  if (err) return;",
+            "  const list = (res.json().transactions || []);",
+            "  pm.test('audit row exists for the transfer', () => {",
+            "    pm.expect(list.some(t => Number(t.amount) === 0.50)).to.be.true;",
+            "  });",
+            "});"
+          ]}}]
+        }
+      ]
+    }
+  ]
+}

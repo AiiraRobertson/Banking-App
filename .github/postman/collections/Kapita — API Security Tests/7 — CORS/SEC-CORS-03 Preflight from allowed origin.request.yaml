@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{baseUrl}}/api/accounts"
+method: OPTIONS
+headers:
+  Origin: http://localhost:5173
+  Access-Control-Request-Method: GET
+  Access-Control-Request-Headers: authorization
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('204/200 + ACAO echoed', () => {
+        pm.expect([200,204]).to.include(pm.response.code);
+        pm.expect(pm.response.headers.get('Access-Control-Allow-Origin')).to.equal('http://localhost:5173');
+      });
+    language: text/javascript
+order: 2000

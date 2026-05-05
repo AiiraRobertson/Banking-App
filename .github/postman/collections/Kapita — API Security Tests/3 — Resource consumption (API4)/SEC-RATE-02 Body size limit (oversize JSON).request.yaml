@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/api/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: "{{bigBody}}"
+scripts:
+  - type: beforeRequest
+    code: |-
+      const big = 'A'.repeat(20000);
+      pm.variables.set('bigBody', JSON.stringify({ email: 'x@x.x', password: big }));
+    language: text/javascript
+  - type: afterResponse
+    code: pm.test('413 or 400 (rejected as too large)', () => pm.expect([400,413]).to.include(pm.response.code));
+    language: text/javascript
+order: 1000

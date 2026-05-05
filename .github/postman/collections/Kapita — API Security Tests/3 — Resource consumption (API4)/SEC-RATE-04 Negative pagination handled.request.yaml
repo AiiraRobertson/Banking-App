@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{baseUrl}}/api/transactions?limit=-1&offset=-50"
+method: GET
+headers:
+  Authorization: Bearer {{userToken}}
+queryParams:
+  limit: "-1"
+  offset: "-50"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('not 500', () => pm.expect(pm.response.code).to.not.equal(500));
+      pm.test('safe response (200 with sane defaults or 400)', () => pm.expect([200,400]).to.include(pm.response.code));
+    language: text/javascript
+order: 3000

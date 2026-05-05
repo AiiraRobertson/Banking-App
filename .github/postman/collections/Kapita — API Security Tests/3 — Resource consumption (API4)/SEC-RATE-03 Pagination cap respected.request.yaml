@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/api/admin/users?limit=1000000"
+method: GET
+headers:
+  Authorization: Bearer {{adminToken}}
+queryParams:
+  limit: "1000000"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('400 or clamped <= 100', () => {
+        if (pm.response.code === 200) {
+          const arr = (pm.response.json().users || []);
+          pm.expect(arr.length).to.be.lte(100);
+        } else {
+          pm.expect(pm.response.code).to.be.within(400,499);
+        }
+      });
+    language: text/javascript
+order: 2000

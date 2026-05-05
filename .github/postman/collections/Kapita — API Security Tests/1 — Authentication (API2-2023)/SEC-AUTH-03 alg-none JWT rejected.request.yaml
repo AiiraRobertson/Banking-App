@@ -1,0 +1,18 @@
+$kind: http-request
+name: SEC-AUTH-03 alg:none JWT rejected
+url: "{{baseUrl}}/api/admin/stats"
+method: GET
+headers:
+  Authorization: Bearer {{forgedToken}}
+scripts:
+  - type: beforeRequest
+    code: |-
+      function b64url(s){ return Buffer.from(s).toString('base64').replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_'); }
+      const h = b64url(JSON.stringify({alg:'none',typ:'JWT'}));
+      const p = b64url(JSON.stringify({id:1,email:'a@b.c',role:'admin',exp:Math.floor(Date.now()/1000)+3600}));
+      pm.variables.set('forgedToken', h + '.' + p + '.');
+    language: text/javascript
+  - type: afterResponse
+    code: pm.test('401 alg:none rejected', () => pm.response.to.have.status(401));
+    language: text/javascript
+order: 3000

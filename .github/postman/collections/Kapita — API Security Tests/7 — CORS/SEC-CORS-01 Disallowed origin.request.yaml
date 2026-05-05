@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{baseUrl}}/api/accounts"
+method: GET
+headers:
+  Authorization: Bearer {{userToken}}
+  Origin: https://evil.example
+scripts:
+  - type: afterResponse
+    code: |-
+      const acao = pm.response.headers.get('Access-Control-Allow-Origin');
+      pm.test('ACAO is not evil.example', () => {
+        pm.expect(acao || '').to.not.equal('https://evil.example');
+      });
+    language: text/javascript
+order: 1000

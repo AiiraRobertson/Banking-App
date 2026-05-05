@@ -80,8 +80,16 @@ const registerValidation = [
     }),
   body('address').trim().notEmpty().withMessage('Home address is required'),
   body('city').trim().notEmpty().withMessage('City is required'),
+  body('state').optional({ checkFalsy: true }).trim().isLength({ max: 80 }),
   body('zip_code').trim().notEmpty().withMessage('Postal code is required'),
   body('terms_accepted').equals('true').withMessage('You must accept the terms and conditions'),
+  body('profile_photo').optional({ checkFalsy: true })
+    .custom((v) => {
+      if (typeof v !== 'string') throw new Error('Invalid photo');
+      if (!/^data:image\/(jpeg|jpg|png|webp);base64,/.test(v)) throw new Error('Photo must be an image data URL');
+      if (v.length > 1_500_000) throw new Error('Photo too large');
+      return true;
+    }),
   handleValidation
 ];
 
@@ -105,7 +113,7 @@ function sanitizeUser(user) {
 }
 
 router.post('/register', authLimiter, registerValidation, (req, res) => {
-  const { email, password, first_name, last_name, nationality, date_of_birth, address, city, zip_code } = req.body;
+  const { email, password, first_name, last_name, nationality, date_of_birth, address, city, state, zip_code, profile_photo } = req.body;
 
   const existing = db.prepare('SELECT 1 FROM users WHERE email = ?').get(email);
   if (existing) {
@@ -116,8 +124,8 @@ router.post('/register', authLimiter, registerValidation, (req, res) => {
 
   const register = db.transaction(() => {
     const result = db.prepare(
-      'INSERT INTO users (email, password_hash, first_name, last_name, nationality, date_of_birth, address, city, zip_code, terms_accepted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).run(email, passwordHash, first_name, last_name, nationality, date_of_birth, address, city, zip_code, 1);
+      'INSERT INTO users (email, password_hash, first_name, last_name, nationality, date_of_birth, address, city, state, zip_code, profile_photo, terms_accepted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(email, passwordHash, first_name, last_name, nationality, date_of_birth, address, city, state || null, zip_code, profile_photo || null, 1);
 
     const userId = result.lastInsertRowid;
     const accountNumber = generateAccountNumber('checking');

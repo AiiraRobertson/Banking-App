@@ -1,0 +1,11 @@
+$kind: http-request
+url: "{{baseUrl}}/../../../etc/passwd"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('no /etc/passwd content', () => {
+        pm.expect(pm.response.text()).to.not.match(/root:.*:0:0:/);
+      });
+    language: text/javascript
+order: 5000

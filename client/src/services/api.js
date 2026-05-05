@@ -1,7 +1,16 @@
 import axios from 'axios';
 
+// Determine API base URL based on environment
+const getBaseURL = () => {
+  if (import.meta.env.DEV) {
+    return 'http://localhost:3001/api';
+  }
+  // In production, use relative path so it works with deployed backend
+  return '/api';
+};
+
 const api = axios.create({
-  baseURL: 'http://localhost:3001/api',
+  baseURL: getBaseURL(),
   headers: { 'Content-Type': 'application/json' }
 });
 

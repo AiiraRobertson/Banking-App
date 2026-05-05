@@ -1,0 +1,15 @@
+# Use this workspace to collaborate
+workspace:
+  id: 590f1c9d-afbc-4fd1-b749-7c06464b711e
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
+cloudResources:
+  collections:
+    ..\postman\collections\Kapita — API Security Tests: 2ae492f7-2dbe-4a53-96b6-0eaf9072c97e
+
+# All resources in the `postman/` folder are automatically registered in Local View.
+# Point to additional files outside the `postman/` folder to register them individually. Example:
+#localResources:
+#  collections:
+#    - ../tests/E2E Test Collection/

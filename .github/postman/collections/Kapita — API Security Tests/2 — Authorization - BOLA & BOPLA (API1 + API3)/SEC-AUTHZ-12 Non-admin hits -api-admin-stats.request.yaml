@@ -1,0 +1,11 @@
+$kind: http-request
+name: SEC-AUTHZ-12 Non-admin hits /api/admin/stats
+url: "{{baseUrl}}/api/admin/stats"
+method: GET
+headers:
+  Authorization: Bearer {{userToken}}
+scripts:
+  - type: afterResponse
+    code: pm.test('403 Insufficient permissions', () => pm.response.to.have.status(403));
+    language: text/javascript
+order: 4000

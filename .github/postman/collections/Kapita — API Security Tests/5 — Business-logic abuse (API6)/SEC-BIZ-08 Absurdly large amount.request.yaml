@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/api/transactions/deposit"
+method: POST
+headers:
+  Authorization: Bearer {{userToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "account_id": {{userAcctId}},
+      "amount": 1e18
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('rejected (4xx)', () => pm.expect(pm.response.code).to.be.within(400,499));
+    language: text/javascript
+order: 6000

@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{baseUrl}}/api/admin/users?search=%' UNION SELECT password_hash,1,1,1,1,1,1,1--"
+method: GET
+headers:
+  Authorization: Bearer {{adminToken}}
+queryParams:
+  search: "%' UNION SELECT password_hash,1,1,1,1,1,1,1--"
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('safe — no password_hash in response', () => {
+        pm.expect(pm.response.text()).to.not.match(/password_hash/i);
+        pm.expect(pm.response.text()).to.not.match(/\$2[abxy]\$/);
+      });
+    language: text/javascript
+order: 3000

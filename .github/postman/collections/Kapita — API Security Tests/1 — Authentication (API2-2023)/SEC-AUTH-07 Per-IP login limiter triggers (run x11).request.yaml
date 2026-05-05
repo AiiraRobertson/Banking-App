@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/api/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "email": "{{userEmail}}",
+      "password": "{{wrongPassword}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      // Run this request 11+ times via Collection Runner with iterations=11.
+      // Earlier attempts return 401, the 11th returns 429.
+      pm.test('401 or 429', () => pm.expect([401,429]).to.include(pm.response.code));
+    language: text/javascript
+order: 6000

@@ -47,18 +47,30 @@ function startServer() {
   }
 
   app.use(helmet());
+  
+  // Configure CORS for environment
+  const allowedOrigins = [
+    'http://localhost:3001',
+    'http://localhost:5173',
+    'http://localhost:5500',
+    'http://localhost:5501',
+    'http://127.0.0.1:5500',
+    'http://127.0.0.1:5501'
+  ];
+  
+  // In production, add Azure App Service URLs
+  if (process.env.NODE_ENV === 'production') {
+    // Allow any *.azurewebsites.net domain for the deployed frontend
+    allowedOrigins.push(/\.azurewebsites\.net$/);
+    // Also allow https versions
+    allowedOrigins.push(/^https:\/\//);
+  }
+  
   app.use(cors({
-    origin: [
-      'http://localhost:3001',
-      'http://localhost:5173',
-      'http://localhost:5500',
-      'http://localhost:5501',
-      'http://127.0.0.1:5500',
-      'http://127.0.0.1:5501'
-    ],
+    origin: allowedOrigins,
     credentials: true
   }));
-  app.use(express.json({ limit: '10kb' }));
+  app.use(express.json({ limit: '2mb' }));
 
   if (process.env.LOAD_TEST !== '1') {
     // NOTE: in cluster mode this counter is per-worker. Effective cap = max * WORKER_COUNT.

@@ -1,0 +1,28 @@
+$kind: http-request
+url: "{{baseUrl}}/api/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "email": "{{userEmail}}",
+      "password": "{{userPassword}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const j = pm.response.json();
+      pm.test('200 + token', () => { pm.response.to.have.status(200); pm.expect(j.token).to.be.a('string'); });
+      pm.collectionVariables.set('userToken', j.token);
+      pm.sendRequest({ url: pm.collectionVariables.get('baseUrl') + '/api/accounts', method: 'GET', header: { Authorization: 'Bearer ' + j.token } }, (err, res) => {
+        if (err) return;
+        const accts = res.json().accounts || [];
+        const c = accts.find(a => a.account_type === 'checking');
+        const s = accts.find(a => a.account_type === 'savings');
+        if (c) pm.collectionVariables.set('userAcctId', c.id);
+        if (s) pm.collectionVariables.set('userSavingsId', s.id);
+      });
+    language: text/javascript
+order: 1000

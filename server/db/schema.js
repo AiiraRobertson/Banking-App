@@ -243,6 +243,7 @@ function initializeDatabase() {
   addColumnIfMissing('users', 'sms_alerts', "INTEGER NOT NULL DEFAULT 0");
   addColumnIfMissing('users', 'alert_phone', "TEXT");
   addColumnIfMissing('users', 'alert_min_amount', "REAL NOT NULL DEFAULT 0");
+  addColumnIfMissing('users', 'profile_photo', "TEXT");
 }
 
 module.exports = { initializeDatabase };

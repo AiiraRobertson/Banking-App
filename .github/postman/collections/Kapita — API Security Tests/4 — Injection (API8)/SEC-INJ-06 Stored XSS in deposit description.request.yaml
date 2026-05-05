@@ -1,0 +1,22 @@
+$kind: http-request
+url: "{{baseUrl}}/api/transactions/deposit"
+method: POST
+headers:
+  Authorization: Bearer {{userToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "account_id": {{userAcctId}},
+      "amount": 0.01,
+      "description": "<img src=x onerror=alert(1)>"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      // API stores raw text — XSS only realises if client renders unsafely.
+      // This test just confirms the API accepts the value without 5xx; the UI render is verified manually.
+      pm.test('200 (or 400 if descriptions are sanitised at API)', () => pm.expect([200,400]).to.include(pm.response.code));
+    language: text/javascript
+order: 6000

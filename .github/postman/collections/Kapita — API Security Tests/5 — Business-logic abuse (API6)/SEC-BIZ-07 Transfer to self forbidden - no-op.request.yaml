@@ -1,0 +1,20 @@
+$kind: http-request
+name: SEC-BIZ-07 Transfer to self forbidden / no-op
+url: "{{baseUrl}}/api/transactions/transfer"
+method: POST
+headers:
+  Authorization: Bearer {{userToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "from_account_id": {{userAcctId}},
+      "to_account_id": {{userAcctId}},
+      "amount": 1
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('rejected as same-account', () => pm.expect([400,409,422]).to.include(pm.response.code));
+    language: text/javascript
+order: 5000

@@ -1,0 +1,26 @@
+$kind: http-request
+name: SEC-AUTHZ-14 Mass-assignment on profile (role/balance)
+url: "{{baseUrl}}/api/profile"
+method: PUT
+headers:
+  Authorization: Bearer {{userToken}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "role": "admin",
+      "is_active": 1,
+      "balance": 9999999,
+      "email_alerts": true
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('role unchanged', () => {
+        pm.response.to.have.status(200);
+        const u = pm.response.json().user || {};
+        pm.expect(u.role).to.not.equal('admin');
+      });
+    language: text/javascript
+order: 6000

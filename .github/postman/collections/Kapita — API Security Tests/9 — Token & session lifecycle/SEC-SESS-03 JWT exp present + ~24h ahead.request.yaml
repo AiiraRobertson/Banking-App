@@ -1,0 +1,26 @@
+$kind: http-request
+url: "{{baseUrl}}/api/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "email": "{{userEmail}}",
+      "password": "{{userPassword}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const token = pm.response.json().token;
+      pm.expect(token).to.be.a('string');
+      const payload = JSON.parse(Buffer.from(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'),'base64').toString());
+      const now = Math.floor(Date.now()/1000);
+      pm.test('exp present', () => pm.expect(payload.exp).to.be.a('number'));
+      pm.test('exp within (now+1h, now+25h)', () => {
+        pm.expect(payload.exp - now).to.be.greaterThan(3600);
+        pm.expect(payload.exp - now).to.be.lessThan(25*3600);
+      });
+    language: text/javascript
+order: 1000
