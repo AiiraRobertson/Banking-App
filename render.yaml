@@ -7,18 +7,16 @@ services:
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /health
+
     envVars:
       - key: NODE_ENV
         value: production
+
       - key: NODE_VERSION
         value: 20
-      - key: DB_PATH
-        value: /var/data/bank.db
+
       - key: JWT_SECRET
         generateValue: true
+
       - key: CLIENT_ORIGIN
-        sync: false  # set this manually to your Netlify URL, e.g. https://kapita.netlify.app
-    disk:
-      name: kapita-sqlite
-      mountPath: /var/data
-      sizeGB: 1
+        sync: false
