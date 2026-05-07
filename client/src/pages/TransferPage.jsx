@@ -4,6 +4,7 @@ import { deposit, withdraw, transfer } from '../services/transactionService';
 import { saveBeneficiary } from '../services/beneficiaryService';
 import { formatCurrency } from '../utils/formatCurrency';
 import BeneficiaryAutocomplete from '../components/BeneficiaryAutocomplete';
+import { getMaturityInfo, formatMaturityDate } from '../utils/savingsLock';
 
 const tabs = ['Deposit', 'Withdraw', 'Transfer'];
 
@@ -125,6 +126,8 @@ export default function TransferPage() {
   };
 
   const selectedAccount = accounts.find(a => a.id.toString() === form.account_id);
+  const sourceLock = getMaturityInfo(selectedAccount);
+  const lockedForDebit = (activeTab === 'Withdraw' || activeTab === 'Transfer') && sourceLock.locked;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -182,6 +185,11 @@ export default function TransferPage() {
                   ))}
                 </select>
                 {selectedAccount && <p className="text-xs text-t-muted mt-1">Available: {formatCurrency(selectedAccount.balance)}</p>}
+                {lockedForDebit && (
+                  <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
+                    🔒 This savings account is locked for {sourceLock.daysRemaining} more day{sourceLock.daysRemaining === 1 ? '' : 's'} (matures {formatMaturityDate(sourceLock.maturesAt)}). Withdrawals and transfers from it are paused until then. Deposits are still allowed.
+                  </div>
+                )}
               </div>
 
               {activeTab === 'Transfer' && (
@@ -309,14 +317,14 @@ export default function TransferPage() {
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || lockedForDebit}
                 className={`w-full py-2.5 text-white rounded-lg font-medium transition-colors disabled:opacity-50 ${
                   activeTab === 'Deposit' ? 'bg-green-600 hover:bg-green-700' :
                   activeTab === 'Withdraw' ? 'bg-red-600 hover:bg-red-700' :
                   'bg-indigo-600 hover:bg-indigo-700'
                 }`}
               >
-                {loading ? 'Processing...' : `Review ${activeTab}`}
+                {loading ? 'Processing...' : lockedForDebit ? 'Account locked until maturity' : `Review ${activeTab}`}
               </button>
             </form>
           )}

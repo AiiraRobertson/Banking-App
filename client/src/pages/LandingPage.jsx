@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useState, useRef } from 'react';
 import ThemeToggle from '../components/ui/ThemeToggle';
+import AnalogClock from '../components/ui/AnalogClock';
 
 const resourceGroups = [
   {
@@ -348,6 +349,82 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Article + Live clock */}
+      <section className="py-20 bg-elevated/40 border-y border-b-secondary">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-10">
+          <aside className="lg:col-span-1 flex flex-col items-center justify-start gap-6 lg:sticky lg:top-24 self-start">
+            <div className="card-3d rounded-2xl p-6 w-full max-w-xs">
+              <h3 className="text-sm font-semibold text-t-tertiary uppercase tracking-wider text-center mb-4">
+                Live · Your Local Time
+              </h3>
+              <div className="flex justify-center">
+                <AnalogClock size={220} />
+              </div>
+              <p className="mt-4 text-xs text-center text-t-tertiary">
+                Synced to your device. Kapita timestamps every transaction in your zone.
+              </p>
+            </div>
+          </aside>
+
+          <article className="lg:col-span-2 prose prose-indigo max-w-none">
+            <p className="text-xs uppercase tracking-widest text-indigo-600 font-semibold">Product overview</p>
+            <h2 className="text-3xl sm:text-4xl font-bold text-t-primary mt-2 mb-6">
+              Kapita: a modern bank built for people who want their money to keep moving
+            </h2>
+
+            <p className="text-base text-t-secondary leading-relaxed">
+              Banking should not feel like waiting in line. Kapita is a digital-first banking
+              platform designed for individuals, freelancers, families, and small businesses
+              who need to send, receive, and grow money across borders without the friction
+              of legacy systems. From the moment you open an account, every feature you touch
+              — checking, savings, transfers, wire payments, bill pay, beneficiaries — is
+              built around a single idea: your money should work as fast as you do.
+            </p>
+
+            <h3 className="text-xl font-semibold text-t-primary mt-8 mb-3">Built for everyday momentum</h3>
+            <p className="text-base text-t-secondary leading-relaxed">
+              Kapita supports more than 28 countries and lets you hold a verified profile,
+              save trusted beneficiaries, and run wire transfers with full SWIFT and IBAN
+              support. We use bank-grade encryption, role-based access, hashed credentials,
+              real-time alerts on every credit and debit, and an admin oversight layer that
+              keeps the platform accountable. Identity verification — including a profile
+              photo at sign-up — helps us keep fraud out and trust in.
+            </p>
+
+            <h3 className="text-xl font-semibold text-t-primary mt-8 mb-3">Savings that actually save</h3>
+            <p className="text-base text-t-secondary leading-relaxed">
+              Our savings accounts are designed for discipline. When you deposit money into a
+              Kapita savings account, the funds enter a short maturity window. To protect
+              your goals from impulse spending, balances are{' '}
+              <span className="font-semibold text-t-primary">locked for a fixed period of 15 to 30 days</span>{' '}
+              (and longer terms are available on request). During this window, the balance
+              earns interest and cannot be transferred out. Once the maturity period ends,
+              the lock automatically renews — unless you choose to withdraw — so your habit
+              of saving compounds without you having to think about it.
+            </p>
+            <p className="text-base text-t-secondary leading-relaxed mt-3">
+              Every savings account shows you exactly when its current period matures, how
+              many days remain, and what happens next. There are no surprises and no hidden
+              clauses — the rule is the same for everyone, and it's stated plainly in our
+              Product Policy and Terms.
+            </p>
+
+            <h3 className="text-xl font-semibold text-t-primary mt-8 mb-3">A platform you can grow with</h3>
+            <p className="text-base text-t-secondary leading-relaxed">
+              Whether you're paying a bill, wiring funds to a supplier in another country,
+              or putting aside an emergency fund, Kapita is engineered to be the last
+              banking app you'll need to install. We ship updates often, listen to feedback
+              loudly, and treat every line of code as if your salary depends on it — because
+              for many of our customers, it does.
+            </p>
+
+            <p className="text-sm text-t-tertiary mt-8 italic">
+              Move money. Make moves. — The Kapita team
+            </p>
+          </article>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="py-20 relative overflow-hidden">
         <div className="absolute inset-0">
@@ -366,7 +443,7 @@ export default function LandingPage() {
       <footer className="border-t border-b-secondary py-8 bg-elevated/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 group">
-            <div className="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+            <div className="w-7 h-7 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
               <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>

@@ -4,6 +4,7 @@ import { getAccount } from '../services/accountService';
 import { getTransactions } from '../services/transactionService';
 import { formatCurrency } from '../utils/formatCurrency';
 import { formatDateTime, formatDate } from '../utils/formatDate';
+import { getMaturityInfo, formatMaturityDate } from '../utils/savingsLock';
 
 export default function AccountDetailPage() {
   const { id } = useParams();
@@ -61,6 +62,31 @@ export default function AccountDetailPage() {
           <Link to="/transfer" className="px-4 py-2 bg-gray-600 text-white rounded-lg text-sm font-medium hover:bg-gray-700">Withdraw</Link>
         </div>
       </div>
+
+      {(() => {
+        const lock = getMaturityInfo(account);
+        if (!lock.isSavings) return null;
+        return (
+          <div className={`rounded-xl border p-5 ${lock.locked ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200'}`}>
+            <div className="flex items-start gap-3">
+              <div className="text-2xl">{lock.locked ? '🔒' : '✅'}</div>
+              <div className="flex-1">
+                <h3 className={`font-semibold ${lock.locked ? 'text-amber-900' : 'text-emerald-900'}`}>
+                  {lock.locked ? `Savings locked for ${lock.daysRemaining} more day${lock.daysRemaining === 1 ? '' : 's'}` : 'Funds available for withdrawal'}
+                </h3>
+                <p className={`text-sm mt-1 ${lock.locked ? 'text-amber-800' : 'text-emerald-800'}`}>
+                  {lock.locked
+                    ? `Withdrawals, transfers, and bill payments from this account are paused until ${formatMaturityDate(lock.maturesAt)}. New deposits extend the maturity date so funds keep earning.`
+                    : `Your savings have reached maturity. The next deposit will start a new ${account.maturity_days || 30}-day lock cycle.`}
+                </p>
+                <p className="text-xs mt-2 text-t-tertiary">
+                  Maturity policy: {account.maturity_days || 30} days · range 15–365 days. Read the savings lock policy on the Policy page.
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       <div>
         <h2 className="text-lg font-semibold text-t-primary mb-4">Transaction History</h2>

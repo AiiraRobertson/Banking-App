@@ -29,27 +29,37 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-t-primary">5. Prohibited Activities</h2>
+          <h2 className="text-xl font-semibold text-t-primary">5. Savings Account Maturity Lock</h2>
+          <p>
+            Funds credited to a Kapita savings account are subject to a <strong>maturity lock of 15 to 30 days</strong> by default (configurable up to 365 days). The maturity period begins on the date of the most recent qualifying credit and is automatically extended whenever a new deposit, internal transfer, or incoming wire credits the same savings account. While a savings account is locked, withdrawals, outgoing transfers, outgoing wire transfers, and bill payments funded from that account are not permitted, and any such attempt will be rejected with response code <code>SAVINGS_LOCKED</code>. Incoming credits, account viewing, and statements remain available at all times.
+          </p>
+          <p className="mt-2">
+            On reaching the maturity date the lock automatically lifts and the funds become immediately available; the next deposit thereafter will commence a new lock cycle. Early-release of locked savings is at Kapita's sole discretion and may be subject to an early-release adjustment. The full policy and operational mechanics are described in the Privacy & Product Policy under "Savings Maturity Lock Policy".
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-xl font-semibold text-t-primary">6. Prohibited Activities</h2>
           <p>You agree not to use Kapita for money laundering, terrorism financing, fraud, or any unlawful purpose. We reserve the right to freeze accounts, reverse transactions, and report suspicious activity to authorities under AML/CFT regulations.</p>
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-t-primary">6. Limitation of Liability</h2>
+          <h2 className="text-xl font-semibold text-t-primary">7. Limitation of Liability</h2>
           <p>Kapita's liability is limited to direct damages and shall not exceed the fees paid by you in the 12 months preceding the event. We are not liable for indirect, consequential, or punitive damages.</p>
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-t-primary">7. Account Termination</h2>
+          <h2 className="text-xl font-semibold text-t-primary">8. Account Termination</h2>
           <p>Either party may terminate the relationship with 30 days' written notice. Remaining balances will be returned to a verified account on file, less any outstanding obligations.</p>
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-t-primary">8. Governing Law</h2>
+          <h2 className="text-xl font-semibold text-t-primary">9. Governing Law</h2>
           <p>These terms are governed by the laws of the jurisdiction in which your account was opened. Disputes will first be resolved through binding arbitration before resorting to courts.</p>
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-t-primary">9. Changes to Terms</h2>
+          <h2 className="text-xl font-semibold text-t-primary">10. Changes to Terms</h2>
           <p>We may update these terms from time to time. Material changes will be notified via email and in-app notification at least 30 days in advance.</p>
         </section>
       </div>

@@ -5,6 +5,7 @@ const db = require('../db/database');
 const { authenticate } = require('../middleware/auth');
 const { handleValidation } = require('../middleware/validate');
 const { sendTransactionAlert } = require('../utils/alerts');
+const { applyLockOnDeposit, ensureWithdrawAllowed } = require('../utils/savingsLock');
 
 const router = express.Router();
 router.use(authenticate);
@@ -36,6 +37,7 @@ router.post('/deposit', [accountValidation, amountValidation, handleValidation],
 
   const deposit = db.transaction(() => {
     db.prepare('UPDATE accounts SET balance = balance + ? WHERE id = ?').run(amt, account_id);
+    applyLockOnDeposit(account_id);
     const newBalance = db.prepare('SELECT balance FROM accounts WHERE id = ?').get(account_id).balance;
 
     const refId = uuidv4();
@@ -69,6 +71,9 @@ router.post('/withdraw', [accountValidation, amountValidation, handleValidation]
 
   const account = getUserAccount(account_id, req.user.id);
   if (!account) return res.status(404).json({ error: 'Account not found' });
+
+  const lockErr = ensureWithdrawAllowed(account);
+  if (lockErr) return res.status(lockErr.status).json({ error: lockErr.message, code: lockErr.code });
 
   const withdraw = db.transaction(() => {
     const update = db.prepare(
@@ -147,6 +152,9 @@ router.post('/transfer', [
   if (!toAccount) return res.status(404).json({ error: 'Destination account not found' });
   if (fromAccount.id === toAccount.id) return res.status(400).json({ error: 'Cannot transfer to the same account' });
 
+  const lockErr = ensureWithdrawAllowed(fromAccount);
+  if (lockErr) return res.status(lockErr.status).json({ error: lockErr.message, code: lockErr.code });
+
   const transfer = db.transaction(() => {
     const debit = db.prepare(
       'UPDATE accounts SET balance = balance - ? WHERE id = ? AND balance >= ?'
@@ -157,6 +165,7 @@ router.post('/transfer', [
       throw err;
     }
     db.prepare('UPDATE accounts SET balance = balance + ? WHERE id = ?').run(amt, toAccount.id);
+    applyLockOnDeposit(toAccount.id);
 
     const newFromBalance = db.prepare('SELECT balance FROM accounts WHERE id = ?').get(fromAccount.id).balance;
     const newToBalance = db.prepare('SELECT balance FROM accounts WHERE id = ?').get(toAccount.id).balance;

@@ -2,10 +2,15 @@ import axios from 'axios';
 
 // Determine API base URL based on environment
 const getBaseURL = () => {
+  // Production: VITE_API_URL points at the hosted backend (e.g. https://kapita-api.onrender.com)
+  const explicit = import.meta.env.VITE_API_URL;
+  if (explicit) {
+    return explicit.replace(/\/+$/, '') + '/api';
+  }
   if (import.meta.env.DEV) {
     return 'http://localhost:3001/api';
   }
-  // In production, use relative path so it works with deployed backend
+  // Fallback: relative path (only works when same origin serves frontend + backend)
   return '/api';
 };
 

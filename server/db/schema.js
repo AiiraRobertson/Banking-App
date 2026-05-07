@@ -244,6 +244,8 @@ function initializeDatabase() {
   addColumnIfMissing('users', 'alert_phone', "TEXT");
   addColumnIfMissing('users', 'alert_min_amount', "REAL NOT NULL DEFAULT 0");
   addColumnIfMissing('users', 'profile_photo', "TEXT");
+  addColumnIfMissing('accounts', 'maturity_days', "INTEGER NOT NULL DEFAULT 30");
+  addColumnIfMissing('accounts', 'matures_at', "TEXT");
 }
 
 module.exports = { initializeDatabase };

@@ -48,6 +48,24 @@ export default function PolicyPage() {
           <h2 className="text-xl font-semibold text-t-primary">Cookies</h2>
           <p>We use strictly-necessary cookies for login sessions and security. We do not use advertising or third-party tracking cookies.</p>
         </section>
+
+        <section className="rounded-xl border border-amber-200 bg-amber-50 p-5">
+          <h2 className="text-xl font-semibold text-amber-900 flex items-center gap-2">🔒 Savings Maturity Lock Policy</h2>
+          <p className="text-amber-900 mt-2">
+            Funds held in a Kapita savings account are placed under a maturity lock for a period of <strong>15 to 30 days</strong> (extendable up to 365 days). The lock is designed to encourage disciplined saving and to allow Kapita to allocate balances toward yield-bearing instruments on your behalf.
+          </p>
+          <ul className="list-disc pl-5 space-y-1.5 mt-3 text-amber-900">
+            <li><strong>Default lock window:</strong> 30 days from the most recent qualifying credit. The minimum permitted window is 15 days.</li>
+            <li><strong>Auto-renewal on deposit:</strong> Every deposit, internal transfer, or incoming wire that credits a savings account resets the maturity date to <em>now + lock window</em> — or extends it, whichever is later. Your savings stay productive only while locked.</li>
+            <li><strong>Restricted operations during lock:</strong> withdrawals, outgoing transfers, outgoing wires, and bill payments from a locked savings account are blocked and will return an HTTP 423 (<code>SAVINGS_LOCKED</code>) response. Incoming credits are always permitted.</li>
+            <li><strong>Maturity:</strong> when the lock expires, the account becomes a normal demand-savings account. The next deposit will start a fresh lock cycle automatically.</li>
+            <li><strong>Visibility:</strong> the dashboard, accounts list, and account-detail page each surface the current lock status, days remaining, and the maturity date so you always know when funds become available.</li>
+            <li><strong>Hardship requests:</strong> emergency early-release is reviewed case-by-case via <strong>support@kapita.example</strong>. Approval may incur an early-release adjustment.</li>
+          </ul>
+          <p className="text-xs text-amber-900 mt-3">
+            By opening a Kapita savings account you accept this maturity-lock policy. The full mechanics (status codes, extension rules, and override conditions) are restated in the Terms of Service.
+          </p>
+        </section>
       </div>
     </ResourcePageLayout>
   );

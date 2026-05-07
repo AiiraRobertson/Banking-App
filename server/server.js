@@ -57,15 +57,25 @@ function startServer() {
     'http://127.0.0.1:5500',
     'http://127.0.0.1:5501'
   ];
-  
-  // In production, add Azure App Service URLs
-  if (process.env.NODE_ENV === 'production') {
-    // Allow any *.azurewebsites.net domain for the deployed frontend
-    allowedOrigins.push(/\.azurewebsites\.net$/);
-    // Also allow https versions
-    allowedOrigins.push(/^https:\/\//);
+
+  // Production frontend origins — set CLIENT_ORIGIN to your Netlify URL
+  // (comma-separate multiple, e.g. "https://kapita.netlify.app,https://kapita.com").
+  if (process.env.CLIENT_ORIGIN) {
+    process.env.CLIENT_ORIGIN.split(',').map(s => s.trim()).filter(Boolean)
+      .forEach(o => allowedOrigins.push(o));
   }
-  
+
+  // Default Netlify deploy-preview / branch-deploy domains for the same site.
+  if (process.env.NETLIFY_SITE_NAME) {
+    const name = process.env.NETLIFY_SITE_NAME;
+    allowedOrigins.push(new RegExp(`^https:\\/\\/(?:[\\w-]+--)?${name}\\.netlify\\.app$`));
+  }
+
+  // Legacy Azure support (kept so existing Azure deploys keep working).
+  if (process.env.NODE_ENV === 'production') {
+    allowedOrigins.push(/\.azurewebsites\.net$/);
+  }
+
   app.use(cors({
     origin: allowedOrigins,
     credentials: true

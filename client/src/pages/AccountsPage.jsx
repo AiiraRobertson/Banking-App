@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { getAccounts, createAccount } from '../services/accountService';
 import { formatCurrency } from '../utils/formatCurrency';
 import { formatDate } from '../utils/formatDate';
+import { getMaturityInfo } from '../utils/savingsLock';
 
 export default function AccountsPage() {
   const [accounts, setAccounts] = useState([]);
@@ -47,19 +48,31 @@ export default function AccountsPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {accounts.map(account => (
-          <Link key={account.id} to={`/accounts/${account.id}`} className="bg-surface rounded-xl shadow-sm border border-b-secondary p-6 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${account.account_type === 'checking' ? 'bg-blue-50 text-blue-700' : 'bg-green-50 text-green-700'}`}>
-                {account.account_type.charAt(0).toUpperCase() + account.account_type.slice(1)}
-              </span>
-              <span className="text-sm text-t-muted">****{account.account_number.slice(-4)}</span>
-            </div>
-            <p className="text-3xl font-bold text-t-primary mb-1">{formatCurrency(account.balance)}</p>
-            <p className="text-xs text-t-muted">Opened {formatDate(account.created_at)}</p>
-            <p className="text-xs text-t-muted mt-1">Account: {account.account_number}</p>
-          </Link>
-        ))}
+        {accounts.map(account => {
+          const lock = getMaturityInfo(account);
+          return (
+            <Link key={account.id} to={`/accounts/${account.id}`} className="bg-surface rounded-xl shadow-sm border border-b-secondary p-6 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-4">
+                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${account.account_type === 'checking' ? 'bg-blue-50 text-blue-700' : 'bg-green-50 text-green-700'}`}>
+                  {account.account_type.charAt(0).toUpperCase() + account.account_type.slice(1)}
+                </span>
+                <span className="text-sm text-t-muted">****{account.account_number.slice(-4)}</span>
+              </div>
+              <p className="text-3xl font-bold text-t-primary mb-1">{formatCurrency(account.balance)}</p>
+              <p className="text-xs text-t-muted">Opened {formatDate(account.created_at)}</p>
+              <p className="text-xs text-t-muted mt-1">Account: {account.account_number}</p>
+              {lock.isSavings && (
+                <div className={`mt-3 text-xs font-medium px-2.5 py-1.5 rounded-md inline-flex items-center gap-1.5 ${lock.locked ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'}`}>
+                  {lock.locked ? (
+                    <>🔒 Locked · {lock.daysRemaining}d to maturity</>
+                  ) : (
+                    <>✅ Available · funds unlocked</>
+                  )}
+                </div>
+              )}
+            </Link>
+          );
+        })}
       </div>
 
       {showModal && (

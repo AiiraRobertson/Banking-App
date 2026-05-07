@@ -5,6 +5,7 @@ const db = require('../db/database');
 const { authenticate } = require('../middleware/auth');
 const { handleValidation } = require('../middleware/validate');
 const { sendTransactionAlert } = require('../utils/alerts');
+const { ensureWithdrawAllowed } = require('../utils/savingsLock');
 
 const router = express.Router();
 router.use(authenticate);
@@ -151,6 +152,9 @@ router.post('/pay-now', [
   const account = db.prepare('SELECT * FROM accounts WHERE id = ? AND user_id = ? AND is_active = 1').get(from_account_id, req.user.id);
   if (!account) return res.status(404).json({ error: 'Account not found' });
   if (account.balance < amt) return res.status(400).json({ error: 'Insufficient funds' });
+
+  const lockErr = ensureWithdrawAllowed(account);
+  if (lockErr) return res.status(lockErr.status).json({ error: lockErr.message, code: lockErr.code });
 
   const pay = db.transaction(() => {
     db.prepare('UPDATE accounts SET balance = balance - ? WHERE id = ?').run(amt, from_account_id);
