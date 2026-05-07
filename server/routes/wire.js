@@ -8,6 +8,7 @@ const { countries, exchangeRates, fees, calculateFee, convertCurrency, getCountr
 const { getRates, getRate, convertLive } = require('../utils/liveRates');
 const { getBanksForCountry } = require('../utils/banks');
 const { sendTransactionAlert } = require('../utils/alerts');
+const { applyLockOnDeposit, ensureWithdrawAllowed } = require('../utils/savingsLock');
 
 const router = express.Router();
 router.use(authenticate);
@@ -146,6 +147,9 @@ router.post('/send', [
 
   if (!account) return res.status(404).json({ error: 'Account not found' });
 
+  const lockErr = ensureWithdrawAllowed(account);
+  if (lockErr) return res.status(lockErr.status).json({ error: lockErr.message, code: lockErr.code });
+
   const insufficientMsg = `Insufficient funds. You need ${totalDeducted.toFixed(2)} (${amt.toFixed(2)} + ${feeAmount.toFixed(2)} fee)`;
 
   const sendWire = db.transaction(() => {
@@ -266,6 +270,7 @@ router.post('/receive', [
 
   const receiveWire = db.transaction(() => {
     db.prepare('UPDATE accounts SET balance = balance + ? WHERE id = ?').run(netCredited, account.id);
+    applyLockOnDeposit(account.id);
     const newBalance = db.prepare('SELECT balance FROM accounts WHERE id = ?').get(account.id).balance;
 
     const refId = uuidv4();
