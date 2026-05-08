@@ -46,9 +46,9 @@ function startServer() {
     initializeDatabase(); // idempotent — needed so each worker has the schema cached
   }
 
-  app.use(helmet());
-  
-  // Configure CORS for environment
+  // CORS must run before helmet, rate-limit, body-parser, and routes so that
+  // browser preflight (OPTIONS) requests short-circuit immediately and never
+  // touch auth, validation, or DB code.
   const allowedOrigins = [
     'http://localhost:3001',
     'http://localhost:5173',
@@ -76,10 +76,20 @@ function startServer() {
     allowedOrigins.push(/\.azurewebsites\.net$/);
   }
 
-  app.use(cors({
+  const corsOptions = {
     origin: allowedOrigins,
-    credentials: true
-  }));
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    maxAge: 86400, // 24h — browsers cache preflight result, skipping OPTIONS on subsequent calls
+    optionsSuccessStatus: 204
+  };
+  app.use(cors(corsOptions));
+  // Explicitly answer every preflight at the edge so it never reaches helmet,
+  // rate-limit, body parsing, auth, or route handlers.
+  app.options(/.*/, cors(corsOptions));
+
+  app.use(helmet());
   app.use(express.json({ limit: '2mb' }));
 
   if (process.env.LOAD_TEST !== '1') {
@@ -88,7 +98,10 @@ function startServer() {
     const globalLimiter = rateLimit({
       windowMs: 15 * 60 * 1000,
       max: 200,
-      message: { error: 'Too many requests, please try again later' }
+      message: { error: 'Too many requests, please try again later' },
+      // Don't count OPTIONS preflights toward the limit — they're issued by the
+      // browser, not the user, and would unfairly burn quota on bursty SPAs.
+      skip: (req) => req.method === 'OPTIONS'
     });
     app.use(globalLimiter);
   }
