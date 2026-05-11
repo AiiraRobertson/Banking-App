@@ -3,6 +3,7 @@ import { getPayees, addPayee, deletePayee, getScheduledPayments, schedulePayment
 import { getAccounts } from '../services/accountService';
 import { formatCurrency } from '../utils/formatCurrency';
 import { formatDate } from '../utils/formatDate';
+import { getMaturityInfo } from '../utils/savingsLock';
 
 const categories = ['utilities', 'telecom', 'insurance', 'credit_card', 'rent', 'other'];
 
@@ -120,9 +121,9 @@ export default function BillPayPage() {
                 </div>
                 <p className="text-sm text-t-tertiary mb-4">Account: {p.payee_account}</p>
                 <div className="flex gap-2">
-                  <button onClick={() => { setShowPayModal(p); setPayForm({ from_account_id: accounts[0]?.id?.toString() || '', amount: '' }); setError(''); }}
+                  <button onClick={() => { const first = accounts.find(a => !getMaturityInfo(a).locked); setShowPayModal(p); setPayForm({ from_account_id: first?.id?.toString() || '', amount: '' }); setError(''); }}
                     className="flex-1 px-3 py-1.5 bg-indigo-600 text-white text-xs rounded-lg hover:bg-indigo-700">Pay Now</button>
-                  <button onClick={() => { setShowScheduleModal(p); setScheduleForm({ from_account_id: accounts[0]?.id?.toString() || '', amount: '', frequency: 'monthly', next_payment_date: '' }); setError(''); }}
+                  <button onClick={() => { const first = accounts.find(a => !getMaturityInfo(a).locked); setShowScheduleModal(p); setScheduleForm({ from_account_id: first?.id?.toString() || '', amount: '', frequency: 'monthly', next_payment_date: '' }); setError(''); }}
                     className="flex-1 px-3 py-1.5 bg-elevated text-t-secondary text-xs rounded-lg hover:bg-hover">Schedule</button>
                   <button onClick={() => handleDeletePayee(p.id)}
                     className="px-3 py-1.5 text-red-600 text-xs rounded-lg hover:bg-red-50">Delete</button>
@@ -223,7 +224,7 @@ export default function BillPayPage() {
                 <label className="block text-sm font-medium text-t-secondary mb-1">From Account</label>
                 <select value={payForm.from_account_id} onChange={e => setPayForm({ ...payForm, from_account_id: e.target.value })}
                   className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" required>
-                  {accounts.map(a => <option key={a.id} value={a.id}>{a.account_type} (****{a.account_number.slice(-4)}) - {formatCurrency(a.balance)}</option>)}
+                  {accounts.filter(a => !getMaturityInfo(a).locked).map(a => <option key={a.id} value={a.id}>{a.account_type} (****{a.account_number.slice(-4)}) - {formatCurrency(a.balance)}</option>)}
                 </select>
               </div>
               <div>
@@ -252,7 +253,7 @@ export default function BillPayPage() {
                 <label className="block text-sm font-medium text-t-secondary mb-1">From Account</label>
                 <select value={scheduleForm.from_account_id} onChange={e => setScheduleForm({ ...scheduleForm, from_account_id: e.target.value })}
                   className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" required>
-                  {accounts.map(a => <option key={a.id} value={a.id}>{a.account_type} (****{a.account_number.slice(-4)}) - {formatCurrency(a.balance)}</option>)}
+                  {accounts.filter(a => !getMaturityInfo(a).locked).map(a => <option key={a.id} value={a.id}>{a.account_type} (****{a.account_number.slice(-4)}) - {formatCurrency(a.balance)}</option>)}
                 </select>
               </div>
               <div>

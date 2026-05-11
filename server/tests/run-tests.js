@@ -155,9 +155,69 @@ async function regressionTests() {
   r = await req('GET', '/api/transactions?limit=5', null, token);
   record('REG-18', 'regression', 'Transactions paginated list', Array.isArray(r.body.transactions) ? 'PASS' : 'FAIL', 'array', typeof r.body.transactions, r.ms);
 
-  // REG-19 calculator (loan)
-  r = await req('POST', '/api/calculator/loan', { principal: 10000, annual_rate: 5, term_months: 36 }, token);
-  record('REG-19', 'regression', 'Loan calculator computes payment', r.status === 200 && r.body.monthlyPayment > 0 ? 'PASS' : 'FAIL', 'monthlyPayment>0', `${r.body.monthlyPayment}`, r.ms);
+  // REG-19 currency rates
+  r = await req('GET', '/api/currency/rates?base=USD', null, token);
+  record('REG-19', 'regression', 'Currency rates fetch', r.status === 200 && r.body.rates && typeof r.body.rates.EUR === 'number' ? 'PASS' : 'FAIL', 'rates.EUR is number', `${r.body && r.body.rates && r.body.rates.EUR}`, r.ms);
+
+  // REG-20 funding via card (Luhn-valid 4242…)
+  let prevBal = (await req('GET', `/api/accounts/${checking.id}`, null, token)).body.account?.balance ?? 0;
+  r = await req('POST', '/api/funding/topup', {
+    account_id: checking.id, amount: 50, method: 'card',
+    details: { card_number: '4242424242424242', exp_month: 12, exp_year: new Date().getFullYear() + 2, cvv: '123', holder: 'Test User' }
+  }, token);
+  record('REG-20', 'regression', 'Card top-up credits account',
+    r.status === 200 && r.body.newBalance > prevBal ? 'PASS' : 'FAIL',
+    '200 + balance up', `${r.status} bal=${r.body.newBalance}`, r.ms);
+
+  // REG-21 funding via bank
+  prevBal = (await req('GET', `/api/accounts/${checking.id}`, null, token)).body.account?.balance ?? 0;
+  r = await req('POST', '/api/funding/topup', {
+    account_id: checking.id, amount: 75, method: 'bank',
+    details: { bank_name: 'Chase', routing_number: '021000021', account_number: '12345678', holder: 'Test User' }
+  }, token);
+  record('REG-21', 'regression', 'Bank top-up credits account',
+    r.status === 200 && r.body.newBalance > prevBal ? 'PASS' : 'FAIL',
+    '200 + balance up', `${r.status} bal=${r.body.newBalance}`, r.ms);
+
+  // REG-22 funding via crypto
+  prevBal = (await req('GET', `/api/accounts/${checking.id}`, null, token)).body.account?.balance ?? 0;
+  r = await req('POST', '/api/funding/topup', {
+    account_id: checking.id, amount: 30, method: 'crypto',
+    details: {
+      network: 'BTC', asset: 'BTC',
+      tx_hash: 'a3f5b2c8d1e9f0a7b4c6d8e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0',
+      from_address: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa'
+    }
+  }, token);
+  record('REG-22', 'regression', 'Crypto top-up credits account',
+    r.status === 200 && r.body.newBalance > prevBal ? 'PASS' : 'FAIL',
+    '200 + balance up', `${r.status} bal=${r.body.newBalance}`, r.ms);
+
+  // REG-23 funding rejects bad Luhn
+  r = await req('POST', '/api/funding/topup', {
+    account_id: checking.id, amount: 10, method: 'card',
+    details: { card_number: '4242424242424241', exp_month: 12, exp_year: new Date().getFullYear() + 2, cvv: '123', holder: 'Test' }
+  }, token);
+  record('REG-23', 'regression', 'Card top-up rejects bad Luhn',
+    r.status === 400 ? 'PASS' : 'FAIL', '400', `${r.status}`, r.ms);
+
+  // REG-24 explicit lock-savings endpoint (200 on first lock, or 400 if already locked from REG-04 deposit)
+  r = await req('POST', `/api/accounts/${savings.id}/lock-savings`, { days: 30 }, token);
+  const lockedOk = r.status === 200 || (r.status === 400 && /already locked/i.test(r.body.error || ''));
+  record('REG-24', 'regression', 'Lock savings endpoint accepts duration',
+    lockedOk ? 'PASS' : 'FAIL', '200 or 400 already-locked', `${r.status} ${r.body.error || ''}`, r.ms);
+
+  // REG-25 locked savings rejects withdrawal with SAVINGS_LOCKED
+  r = await req('POST', '/api/transactions/withdraw',
+    { account_id: savings.id, amount: 1.00, description: 'Should be blocked' }, token);
+  record('REG-25', 'regression', 'Locked savings blocks withdrawal',
+    r.status === 423 && r.body.code === 'SAVINGS_LOCKED' ? 'PASS' : 'FAIL',
+    '423 SAVINGS_LOCKED', `${r.status} ${r.body.code || ''}`, r.ms);
+
+  // REG-26 lock-savings rejects out-of-range days
+  r = await req('POST', `/api/accounts/${savings.id}/lock-savings`, { days: 1 }, token);
+  record('REG-26', 'regression', 'Lock savings rejects days < 15',
+    r.status === 400 ? 'PASS' : 'FAIL', '400', `${r.status}`, r.ms);
 }
 
 async function sanityTests() {

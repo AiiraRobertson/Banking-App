@@ -6,6 +6,7 @@ import BeneficiaryAutocomplete from '../components/BeneficiaryAutocomplete';
 import { formatCurrency } from '../utils/formatCurrency';
 import { formatDate } from '../utils/formatDate';
 import { generateBic } from '../utils/generateBic';
+import { getMaturityInfo } from '../utils/savingsLock';
 
 const regionLabels = { north_america: 'North America', europe: 'Europe', africa: 'Africa' };
 
@@ -72,8 +73,9 @@ export default function WireTransferPage() {
         setAccounts(accRes.data.accounts);
         setCountriesData(cRes.data.countries);
         setFeesData(cRes.data.fees);
-        if (accRes.data.accounts.length > 0) {
-          setForm(f => ({ ...f, from_account_id: accRes.data.accounts[0].id.toString() }));
+        const firstUnlocked = accRes.data.accounts.find(a => !getMaturityInfo(a).locked);
+        if (firstUnlocked) {
+          setForm(f => ({ ...f, from_account_id: firstUnlocked.id.toString() }));
         }
       }).finally(() => setLoading(false));
   }, []);
@@ -500,7 +502,8 @@ export default function WireTransferPage() {
               <label className="block text-sm font-medium text-t-secondary mb-1">From Account</label>
               <select value={form.from_account_id} onChange={e => setForm({ ...form, from_account_id: e.target.value })}
                 className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                {accounts.map(a => (
+                {accounts.filter(a => !getMaturityInfo(a).locked).length === 0 && <option value="">No available source accounts</option>}
+                {accounts.filter(a => !getMaturityInfo(a).locked).map(a => (
                   <option key={a.id} value={a.id}>
                     {a.account_type.charAt(0).toUpperCase() + a.account_type.slice(1)} (****{a.account_number.slice(-4)}) - {formatCurrency(a.balance)}
                   </option>

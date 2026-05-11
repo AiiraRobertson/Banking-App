@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getAccount } from '../services/accountService';
+import { getAccount, lockSavings } from '../services/accountService';
 import { getTransactions } from '../services/transactionService';
 import { formatCurrency } from '../utils/formatCurrency';
 import { formatDateTime, formatDate } from '../utils/formatDate';
@@ -13,10 +13,34 @@ export default function AccountDetailPage() {
   const [pagination, setPagination] = useState({});
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [lockDays, setLockDays] = useState(30);
+  const [locking, setLocking] = useState(false);
+  const [lockError, setLockError] = useState('');
+
+  const refetchAccount = () => {
+    getAccount(id).then(res => setAccount(res.data.account)).catch(() => {});
+  };
 
   useEffect(() => {
-    getAccount(id).then(res => setAccount(res.data.account)).catch(() => {});
+    refetchAccount();
   }, [id]);
+
+  const handleLockSavings = async () => {
+    setLocking(true);
+    setLockError('');
+    try {
+      const res = await lockSavings(id, lockDays);
+      setAccount(res.data.account);
+    } catch (err) {
+      const data = err.response?.data;
+      const msg = data?.error
+        || (Array.isArray(data?.errors) && data.errors.map(e => e.message).filter(Boolean).join('; '))
+        || 'Failed to lock savings';
+      setLockError(msg);
+    } finally {
+      setLocking(false);
+    }
+  };
 
   useEffect(() => {
     getTransactions({ account_id: id, page, limit: 10 })
@@ -56,15 +80,64 @@ export default function AccountDetailPage() {
             <p className="text-lg font-semibold text-t-primary">{formatDate(account.created_at)}</p>
           </div>
         </div>
-        <div className="flex gap-3 mt-6">
-          <Link to="/transfer" className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">Transfer</Link>
-          <Link to="/transfer" className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">Deposit</Link>
-          <Link to="/transfer" className="px-4 py-2 bg-gray-600 text-white rounded-lg text-sm font-medium hover:bg-gray-700">Withdraw</Link>
-        </div>
+        {(() => {
+          const lock = getMaturityInfo(account);
+          const disableDebit = lock.isSavings && lock.locked;
+          return (
+            <div className="flex flex-wrap gap-3 mt-6 items-center">
+              {disableDebit ? (
+                <button disabled className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium opacity-50 cursor-not-allowed" title="Locked savings — outgoing transfers paused">Transfer</button>
+              ) : (
+                <Link to="/transfer" className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">Transfer</Link>
+              )}
+              <Link to="/add-money" className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">Add Money</Link>
+              {disableDebit && (
+                <span className="text-xs text-amber-700 inline-flex items-center gap-1">🔒 Outflows locked until maturity</span>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {(() => {
         const lock = getMaturityInfo(account);
+        if (lock.isSavings && !lock.locked) {
+          return (
+            <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-5">
+              <div className="flex items-start gap-3">
+                <div className="text-2xl">🔐</div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-indigo-900">Enable savings mode</h3>
+                  <p className="text-sm text-indigo-800 mt-1">
+                    Lock this savings account for a set period. Once locked, withdrawals and transfers from it are paused until the maturity date. Deposits and incoming transfers are still allowed.
+                  </p>
+                  {lockError && <div className="mt-3 p-2 bg-red-50 border border-red-200 text-red-700 rounded text-xs">{lockError}</div>}
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <label className="text-sm text-indigo-900">Duration</label>
+                    <select
+                      value={lockDays}
+                      onChange={e => setLockDays(parseInt(e.target.value, 10))}
+                      disabled={locking}
+                      className="px-3 py-2 border border-indigo-200 bg-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                      <option value={15}>15 days</option>
+                      <option value={30}>30 days</option>
+                      <option value={60}>60 days</option>
+                      <option value={90}>90 days</option>
+                      <option value={180}>180 days</option>
+                      <option value={365}>365 days</option>
+                    </select>
+                    <button
+                      onClick={handleLockSavings}
+                      disabled={locking}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+                      {locking ? 'Locking...' : 'Lock savings'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        }
         if (!lock.isSavings) return null;
         return (
           <div className={`rounded-xl border p-5 ${lock.locked ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200'}`}>

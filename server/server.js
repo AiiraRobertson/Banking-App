@@ -114,10 +114,11 @@ function startServer() {
   app.use('/api/accounts', require('./routes/accounts'));
   app.use('/api/transactions', require('./routes/transactions'));
   app.use('/api/billpay', require('./routes/billpay'));
+  app.use('/api/funding', require('./routes/funding'));
   app.use('/api/notifications', require('./routes/notifications'));
   app.use('/api/profile', require('./routes/profile'));
   app.use('/api/admin', require('./routes/admin'));
-  app.use('/api/calculator', require('./routes/calculator'));
+  app.use('/api/currency', require('./routes/currency'));
   app.use('/api/wire', require('./routes/wire'));
   app.use('/api/resources', require('./routes/resources'));
   app.use('/api/beneficiaries', require('./routes/beneficiaries'));

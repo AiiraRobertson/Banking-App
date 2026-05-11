@@ -237,6 +237,28 @@ function initializeDatabase() {
     );
 
     CREATE INDEX IF NOT EXISTS idx_alert_log_user ON alert_log(user_id, created_at);
+
+    CREATE TABLE IF NOT EXISTS deposit_sources (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      transaction_id INTEGER NOT NULL UNIQUE,
+      method TEXT NOT NULL CHECK(method IN ('card', 'bank', 'crypto')),
+      card_brand TEXT,
+      card_last4 TEXT,
+      card_holder TEXT,
+      bank_name TEXT,
+      bank_routing_last4 TEXT,
+      bank_account_last4 TEXT,
+      bank_holder TEXT,
+      crypto_network TEXT,
+      crypto_asset TEXT,
+      crypto_tx_hash TEXT,
+      crypto_from_address TEXT,
+      external_ref TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_deposit_sources_txn ON deposit_sources(transaction_id);
   `);
 
   addColumnIfMissing('users', 'email_alerts', "INTEGER NOT NULL DEFAULT 1");

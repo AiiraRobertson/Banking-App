@@ -92,7 +92,7 @@ const features = [
   { title: 'Bill Payments', desc: 'Pay your bills on time with scheduled payments and payee management.', icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z', color: 'from-green-500 to-green-600' },
   { title: 'Real-time Notifications', desc: 'Stay informed with instant alerts for every transaction and account activity.', icon: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9', color: 'from-amber-500 to-orange-500' },
   { title: 'Multi-Currency Support', desc: 'Convert between 20+ currencies with competitive exchange rates and low fees.', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z', color: 'from-purple-500 to-purple-600' },
-  { title: 'Loan Calculator', desc: 'Plan your finances with our built-in loan and mortgage calculators.', icon: 'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z', color: 'from-rose-500 to-pink-600' },
+  { title: 'Currency Rates & Converter', desc: 'See live rates worldwide and convert any amount between currencies in one tap.', icon: 'M3 10h18M3 14h18M5 6h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z', color: 'from-rose-500 to-pink-600' },
 ];
 
 const regions = [

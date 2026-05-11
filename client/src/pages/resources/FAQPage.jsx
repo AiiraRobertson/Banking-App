@@ -3,6 +3,7 @@ import ResourcePageLayout from './ResourcePageLayout';
 
 const faqs = [
   { q: 'How do I open a Kapita account?', a: 'Click "Open Account" on the homepage, fill in your personal details, and accept our Terms. You\'ll receive an instant checking account with a $1,000 welcome bonus.' },
+  { q: 'How do I add money to my account?', a: 'From your dashboard, click Add Money and choose your source: credit/debit card, another bank, or a crypto wallet. Funds are credited instantly.' },
   { q: 'Which countries does Kapita support?', a: 'We currently serve 27 countries across North America (US, Canada), Europe (16 countries including UK, Germany, France), and Africa (10 countries including Nigeria, Kenya, South Africa, Ghana).' },
   { q: 'How long does an international wire transfer take?', a: 'North America: 1-2 business days. Europe: 2-4 business days. Africa: 3-5 business days. Cutoff times vary by recipient bank.' },
   { q: 'What are your fees?', a: 'Internal transfers between Kapita accounts are free. International wires: $5 + 0.5% (NA), $25 + 1.0% (EU), $20 + 1.5% (AF). No monthly maintenance fees.' },
@@ -11,7 +12,6 @@ const faqs = [
   { q: 'How do I reset my password?', a: 'Click "Forgot password" on the login page. We\'ll send a reset link to your registered email. For security, the link expires after 30 minutes.' },
   { q: 'Can I have both checking and savings accounts?', a: 'Yes. From the Accounts page, you can open additional checking or savings accounts at any time. Savings accounts earn 4.5% APY.' },
   { q: 'How do I dispute a transaction?', a: 'Submit a complaint via the Complaint page or contact support. Disputes are usually resolved within 5-10 business days. Provisional credit may be issued during investigation.' },
-  { q: 'Do you offer loans?', a: 'We currently offer a loan calculator to help you plan. Personal loans, mortgages, and business credit lines are launching in 2027.' },
   { q: 'Can I close my account?', a: 'Yes. Withdraw all funds, then contact support to close. There is no closing fee. Account history remains available for 7 years for regulatory compliance.' },
   { q: 'Is there a mobile app?', a: 'The web app is fully responsive and works on any modern browser. Native iOS and Android apps are in development.' },
 ];

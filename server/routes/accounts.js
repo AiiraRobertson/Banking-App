@@ -4,6 +4,7 @@ const db = require('../db/database');
 const { authenticate } = require('../middleware/auth');
 const { handleValidation } = require('../middleware/validate');
 const { generateAccountNumber } = require('../utils/accountNumber');
+const { isLocked, MIN_DAYS, MAX_DAYS } = require('../utils/savingsLock');
 
 const router = express.Router();
 router.use(authenticate);
@@ -74,6 +75,46 @@ router.post('/', [
   ).run(req.user.id, 'New Account', `Your new ${req.body.account_type} account (${accountNumber}) has been created.`, 'info');
 
   res.status(201).json({ account });
+});
+
+router.post('/:id/lock-savings', [
+  param('id').isInt({ min: 1 }),
+  body('days').isInt({ min: MIN_DAYS, max: MAX_DAYS })
+    .withMessage(`Days must be between ${MIN_DAYS} and ${MAX_DAYS}`),
+  handleValidation
+], (req, res) => {
+  const account = db.prepare(
+    'SELECT * FROM accounts WHERE id = ? AND user_id = ? AND is_active = 1'
+  ).get(req.params.id, req.user.id);
+
+  if (!account) return res.status(404).json({ error: 'Account not found' });
+  if (account.account_type !== 'savings') {
+    return res.status(400).json({ error: 'Only savings accounts can be locked' });
+  }
+  if (isLocked(account)) {
+    return res.status(400).json({ error: 'Savings account is already locked' });
+  }
+
+  const days = parseInt(req.body.days, 10);
+  const matures = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+
+  db.prepare(
+    'UPDATE accounts SET maturity_days = ?, matures_at = ? WHERE id = ?'
+  ).run(days, matures, account.id);
+
+  const refreshed = db.prepare('SELECT * FROM accounts WHERE id = ?').get(account.id);
+
+  const maturityDate = new Date(matures).toLocaleDateString();
+  db.prepare(
+    'INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)'
+  ).run(
+    req.user.id,
+    'Savings Mode Enabled',
+    `Your savings account ${account.account_number} is locked for ${days} day${days === 1 ? '' : 's'}. Withdrawals resume on ${maturityDate}.`,
+    'info'
+  );
+
+  res.json({ account: refreshed });
 });
 
 module.exports = router;

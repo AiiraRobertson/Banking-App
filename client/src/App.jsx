@@ -17,7 +17,8 @@ import TransferPage from './pages/TransferPage';
 import WireTransferPage from './pages/WireTransferPage';
 import TransactionHistoryPage from './pages/TransactionHistoryPage';
 import BillPayPage from './pages/BillPayPage';
-import LoanCalculatorPage from './pages/LoanCalculatorPage';
+import AddMoneyPage from './pages/AddMoneyPage';
+import CurrencyPage from './pages/CurrencyPage';
 import ProfilePage from './pages/ProfilePage';
 import NotificationsPage from './pages/NotificationsPage';
 import BeneficiariesPage from './pages/BeneficiariesPage';
@@ -54,7 +55,7 @@ export default function App() {
             <Route path="/welcome" element={<PublicRoute><LandingPage /></PublicRoute>} />
             <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
             <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
-            <Route path="/loan-calculator" element={<LoanCalculatorPage />} />
+            <Route path="/currency" element={<CurrencyPage />} />
 
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/faq" element={<FAQPage />} />
@@ -77,6 +78,7 @@ export default function App() {
               <Route path="beneficiaries" element={<BeneficiariesPage />} />
               <Route path="transactions" element={<TransactionHistoryPage />} />
               <Route path="bill-pay" element={<BillPayPage />} />
+              <Route path="add-money" element={<AddMoneyPage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="notifications" element={<NotificationsPage />} />
             </Route>

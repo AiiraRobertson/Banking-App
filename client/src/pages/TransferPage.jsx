@@ -1,17 +1,45 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { getAccounts, lookupAccountByNumber } from '../services/accountService';
-import { deposit, withdraw, transfer } from '../services/transactionService';
+import { transfer } from '../services/transactionService';
+import { getCountries, getQuote, sendWire, getBanksForCountry } from '../services/wireService';
 import { saveBeneficiary } from '../services/beneficiaryService';
 import { formatCurrency } from '../utils/formatCurrency';
 import BeneficiaryAutocomplete from '../components/BeneficiaryAutocomplete';
 import { getMaturityInfo, formatMaturityDate } from '../utils/savingsLock';
+import { generateBic } from '../utils/generateBic';
 
-const tabs = ['Deposit', 'Withdraw', 'Transfer'];
+const regionLabels = { north_america: 'North America', europe: 'Europe', africa: 'Africa' };
 
 export default function TransferPage() {
-  const [activeTab, setActiveTab] = useState('Deposit');
   const [accounts, setAccounts] = useState([]);
-  const [form, setForm] = useState({ account_id: '', to_account_id: '', to_account_number: '', to_account_name: '', amount: '', description: '', transferMode: 'own', save_beneficiary: true, beneficiary_nickname: '' });
+  const [countriesData, setCountriesData] = useState(null);
+  const [feesData, setFeesData] = useState(null);
+  const [countryBanks, setCountryBanks] = useState([]);
+  const [bankMode, setBankMode] = useState('select');
+  const [bicAutoFilled, setBicAutoFilled] = useState(false);
+  const [quote, setQuote] = useState(null);
+  const [quoting, setQuoting] = useState(false);
+
+  const [form, setForm] = useState({
+    account_id: '',
+    to_account_id: '',
+    to_account_number: '',
+    to_account_name: '',
+    amount: '',
+    description: '',
+    transferMode: 'own',
+    save_beneficiary: true,
+    beneficiary_nickname: '',
+    // Other Bank fields
+    country_code: '',
+    region: '',
+    recipient_bank: '',
+    recipient_account: '',
+    swift_code: '',
+    iban: '',
+    routing_number: '',
+  });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(null);
   const [error, setError] = useState('');
@@ -19,14 +47,19 @@ export default function TransferPage() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
-    getAccounts().then(res => {
-      setAccounts(res.data.accounts);
-      if (res.data.accounts.length > 0) setForm(f => ({ ...f, account_id: res.data.accounts[0].id.toString() }));
+    Promise.all([getAccounts(), getCountries()]).then(([accRes, cRes]) => {
+      setAccounts(accRes.data.accounts);
+      setCountriesData(cRes.data.countries);
+      setFeesData(cRes.data.fees);
+      const firstUnlocked = accRes.data.accounts.find(a => !getMaturityInfo(a).locked);
+      if (firstUnlocked) setForm(f => ({ ...f, account_id: firstUnlocked.id.toString() }));
     });
   }, []);
 
+  const sourceAccounts = accounts.filter(a => !getMaturityInfo(a).locked);
+
   useEffect(() => {
-    if (activeTab !== 'Transfer' || form.transferMode !== 'other') {
+    if (form.transferMode !== 'other') {
       setLookup({ status: 'idle', data: null });
       return;
     }
@@ -49,15 +82,64 @@ export default function TransferPage() {
         .catch(() => setLookup({ status: 'error', data: null }));
     }, 350);
     return () => clearTimeout(timer);
-  }, [form.to_account_number, form.transferMode, activeTab]);
+  }, [form.to_account_number, form.transferMode]);
+
+  // Load banks list when country changes (Other Bank mode)
+  useEffect(() => {
+    if (form.transferMode !== 'bank' || !form.country_code) {
+      setCountryBanks([]);
+      return;
+    }
+    getBanksForCountry(form.country_code)
+      .then(res => setCountryBanks(res.data.banks || []))
+      .catch(() => setCountryBanks([]));
+    setBankMode('select');
+    setBicAutoFilled(false);
+    setForm(f => ({ ...f, recipient_bank: '', swift_code: '' }));
+  }, [form.country_code, form.transferMode]);
+
+  // Debounced quote refresh for Other Bank
+  useEffect(() => {
+    if (form.transferMode !== 'bank') { setQuote(null); return; }
+    const amt = parseFloat(form.amount);
+    if (!amt || amt <= 0 || !form.country_code) { setQuote(null); return; }
+    setQuoting(true);
+    const timer = setTimeout(() => {
+      getQuote({ amount: amt, country_code: form.country_code })
+        .then(res => setQuote(res.data))
+        .catch(() => setQuote(null))
+        .finally(() => setQuoting(false));
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [form.amount, form.country_code, form.transferMode]);
 
   const reset = () => {
-    setForm(f => ({ ...f, amount: '', description: '', to_account_id: '', to_account_number: '', to_account_name: '', beneficiary_nickname: '' }));
+    setForm(f => ({
+      ...f,
+      amount: '',
+      description: '',
+      to_account_id: '',
+      to_account_number: '',
+      to_account_name: '',
+      beneficiary_nickname: '',
+      country_code: '',
+      region: '',
+      recipient_bank: '',
+      recipient_account: '',
+      swift_code: '',
+      iban: '',
+      routing_number: '',
+    }));
+    setQuote(null);
     setSuccess(null);
     setError('');
     setLookup({ status: 'idle', data: null });
     setShowConfirm(false);
   };
+
+  const selectedCountry = form.country_code && countriesData
+    ? Object.values(countriesData).flat().find(c => c.code === form.country_code)
+    : null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -65,16 +147,23 @@ export default function TransferPage() {
     const amt = parseFloat(form.amount);
     if (!amt || amt <= 0) { setError('Enter a valid amount'); return; }
 
-    if (activeTab === 'Transfer') {
-      if (form.transferMode === 'own') {
-        const toId = parseInt(form.to_account_id);
-        if (!toId || isNaN(toId)) { setError('Please select a destination account'); return; }
-      } else {
-        const acct = (form.to_account_number || '').trim();
-        if (!/^\d{10}$/.test(acct)) { setError('Account number must be exactly 10 digits'); return; }
-        if (lookup.status === 'not_found') { setError('Destination account does not exist'); return; }
-        if (lookup.status === 'loading') { setError('Verifying account, please wait...'); return; }
-      }
+    if (form.transferMode === 'own') {
+      const toId = parseInt(form.to_account_id);
+      if (!toId || isNaN(toId)) { setError('Please select a destination account'); return; }
+    } else if (form.transferMode === 'other') {
+      const acct = (form.to_account_number || '').trim();
+      if (!/^\d{10}$/.test(acct)) { setError('Account number must be exactly 10 digits'); return; }
+      if (lookup.status === 'not_found') { setError('Destination account does not exist'); return; }
+      if (lookup.status === 'loading') { setError('Verifying account, please wait...'); return; }
+    } else if (form.transferMode === 'bank') {
+      if (!form.country_code) { setError('Select a destination country'); return; }
+      if (!form.recipient_name?.trim() && !form.to_account_name?.trim()) { setError('Enter recipient name'); return; }
+      if (!form.recipient_bank?.trim()) { setError('Select or enter the recipient bank'); return; }
+      if (!form.recipient_account?.trim()) { setError('Enter the recipient account number'); return; }
+      if (selectedCountry?.requiresSwift && !form.swift_code?.trim()) { setError('SWIFT/BIC is required for this country'); return; }
+      if (selectedCountry?.requiresIban && !form.iban?.trim()) { setError('IBAN is required for this country'); return; }
+      if (selectedCountry?.requiresRouting && !form.routing_number?.trim()) { setError('Routing number is required for this country'); return; }
+      if (!quote) { setError('Waiting for fee quote, please wait...'); return; }
     }
     setShowConfirm(true);
   };
@@ -84,26 +173,70 @@ export default function TransferPage() {
     setError('');
     setSuccess(null);
     try {
-      let res;
       const amt = parseFloat(form.amount);
-      if (activeTab === 'Deposit') {
-        res = await deposit({ account_id: parseInt(form.account_id), amount: amt, description: form.description || 'Deposit' });
-      } else if (activeTab === 'Withdraw') {
-        res = await withdraw({ account_id: parseInt(form.account_id), amount: amt, description: form.description || 'Withdrawal' });
-      } else {
-        const payload = { from_account_id: parseInt(form.account_id), amount: amt, description: form.description || 'Transfer' };
-        if (form.transferMode === 'own') {
-          payload.to_account_id = parseInt(form.to_account_id);
-        } else {
-          payload.to_account_number = form.to_account_number.trim();
+
+      if (form.transferMode === 'bank') {
+        const payload = {
+          from_account_id: parseInt(form.account_id),
+          amount: amt,
+          country_code: form.country_code,
+          recipient_name: (form.to_account_name || '').trim(),
+          recipient_bank: form.recipient_bank.trim(),
+          recipient_account: form.recipient_account.trim(),
+          description: form.description || `Transfer to ${form.recipient_bank} (${selectedCountry?.name})`,
+        };
+        if (form.swift_code) payload.swift_code = form.swift_code.trim();
+        if (form.iban) payload.iban = form.iban.trim();
+        if (form.routing_number) payload.routing_number = form.routing_number.trim();
+
+        const res = await sendWire(payload);
+        setShowConfirm(false);
+        setSuccess({
+          message: res.data.message,
+          referenceId: res.data.referenceId,
+          newBalance: res.data.newBalance,
+          extra: {
+            converted: res.data.converted,
+            currency: res.data.currency,
+            feeAmount: res.data.feeAmount,
+            totalDeducted: res.data.totalDeducted,
+            deliveryDays: res.data.deliveryDays,
+            country: res.data.country,
+          }
+        });
+        getAccounts().then(r => setAccounts(r.data.accounts));
+
+        if (form.save_beneficiary) {
+          try {
+            await saveBeneficiary({
+              nickname: form.beneficiary_nickname || undefined,
+              account_name: (form.to_account_name || '').trim() || form.beneficiary_nickname || form.recipient_account,
+              account_number: form.recipient_account.trim(),
+              bank_name: form.recipient_bank.trim(),
+              swift_code: form.swift_code || undefined,
+              iban: form.iban || undefined,
+              routing_number: form.routing_number || undefined,
+              country_code: form.country_code,
+              type: 'wire'
+            });
+          } catch {}
         }
-        res = await transfer(payload);
+        return;
       }
+
+      // own / other modes use /api/transactions/transfer
+      const payload = { from_account_id: parseInt(form.account_id), amount: amt, description: form.description || 'Transfer' };
+      if (form.transferMode === 'own') {
+        payload.to_account_id = parseInt(form.to_account_id);
+      } else {
+        payload.to_account_number = form.to_account_number.trim();
+      }
+      const res = await transfer(payload);
       setShowConfirm(false);
       setSuccess({ message: res.data.message, referenceId: res.data.referenceId, newBalance: res.data.newBalance });
       getAccounts().then(r => setAccounts(r.data.accounts));
 
-      if (activeTab === 'Transfer' && form.transferMode === 'other' && form.save_beneficiary && form.to_account_number) {
+      if (form.transferMode === 'other' && form.save_beneficiary && form.to_account_number) {
         try {
           await saveBeneficiary({
             nickname: form.beneficiary_nickname || undefined,
@@ -127,28 +260,50 @@ export default function TransferPage() {
 
   const selectedAccount = accounts.find(a => a.id.toString() === form.account_id);
   const sourceLock = getMaturityInfo(selectedAccount);
-  const lockedForDebit = (activeTab === 'Withdraw' || activeTab === 'Transfer') && sourceLock.locked;
+  const lockedForDebit = sourceLock.locked;
+
+  const handleBankSelectChange = (val) => {
+    if (val === '__custom__') {
+      setBankMode('custom');
+      setForm(f => ({ ...f, recipient_bank: '', swift_code: '' }));
+      setBicAutoFilled(false);
+      return;
+    }
+    const bank = countryBanks.find(b => b.name === val);
+    if (bank) {
+      setForm(f => ({ ...f, recipient_bank: bank.name, swift_code: bank.swift || '' }));
+      setBicAutoFilled(!!bank.swift);
+    }
+  };
+
+  const handleCustomBankBlur = () => {
+    if (form.recipient_bank && form.country_code && !form.swift_code) {
+      const bic = generateBic(form.recipient_bank, form.country_code);
+      if (bic) {
+        setForm(f => ({ ...f, swift_code: bic }));
+        setBicAutoFilled(true);
+      }
+    }
+  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-t-primary">Transactions</h1>
-        <p className="text-t-tertiary">Deposit, withdraw, or transfer funds</p>
+        <h1 className="text-2xl font-bold text-t-primary">Transfer</h1>
+        <p className="text-t-tertiary">Move money between your accounts, another Kapita user, or to any bank in 27 countries</p>
       </div>
 
-      <div className="bg-surface rounded-xl shadow-sm border border-b-secondary">
-        <div className="flex border-b border-b-primary">
-          {tabs.map(tab => (
-            <button
-              key={tab}
-              onClick={() => { setActiveTab(tab); reset(); }}
-              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-t-tertiary hover:text-t-secondary'}`}
-            >
-              {tab}
-            </button>
-          ))}
+      <Link to="/add-money" className="block bg-green-50 border border-green-200 rounded-lg px-4 py-3 hover:bg-green-100 transition-colors">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-green-900">Need to add funds?</p>
+            <p className="text-xs text-green-800">Top up your account from a card, bank, or crypto wallet.</p>
+          </div>
+          <span className="text-green-700 font-medium text-sm">Add Money &rarr;</span>
         </div>
+      </Link>
 
+      <div className="bg-surface rounded-xl shadow-sm border border-b-secondary">
         <div className="p-6">
           {success ? (
             <div className="text-center space-y-4">
@@ -160,6 +315,15 @@ export default function TransferPage() {
               <h3 className="text-lg font-semibold text-t-primary">{success.message}</h3>
               <p className="text-sm text-t-tertiary">Reference: {success.referenceId}</p>
               <p className="text-sm text-t-tertiary">New balance: {formatCurrency(success.newBalance)}</p>
+              {success.extra && (
+                <div className="text-xs text-t-tertiary space-y-1 bg-elevated rounded-lg p-3 max-w-sm mx-auto">
+                  <div>Recipient gets: <span className="font-semibold text-t-primary">{success.extra.currency} {success.extra.converted?.toFixed(2)}</span></div>
+                  <div>Fee: <span className="font-semibold text-t-primary">{formatCurrency(success.extra.feeAmount)}</span></div>
+                  <div>Total debited: <span className="font-semibold text-t-primary">{formatCurrency(success.extra.totalDeducted)}</span></div>
+                  <div>Country: {success.extra.country}</div>
+                  <div>Estimated delivery: {success.extra.deliveryDays}</div>
+                </div>
+              )}
               <button onClick={reset} className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700">
                 New Transaction
               </button>
@@ -169,16 +333,15 @@ export default function TransferPage() {
               {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
 
               <div>
-                <label className="block text-sm font-medium text-t-secondary mb-1">
-                  {activeTab === 'Transfer' ? 'From Account' : 'Account'}
-                </label>
+                <label className="block text-sm font-medium text-t-secondary mb-1">From Account</label>
                 <select
                   value={form.account_id}
                   onChange={e => setForm({ ...form, account_id: e.target.value })}
                   className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
                   required
                 >
-                  {accounts.map(a => (
+                  {sourceAccounts.length === 0 && <option value="">No available source accounts</option>}
+                  {sourceAccounts.map(a => (
                     <option key={a.id} value={a.id}>
                       {a.account_type.charAt(0).toUpperCase() + a.account_type.slice(1)} (****{a.account_number.slice(-4)}) - {formatCurrency(a.balance)}
                     </option>
@@ -192,10 +355,9 @@ export default function TransferPage() {
                 )}
               </div>
 
-              {activeTab === 'Transfer' && (
-                <div>
+              <div>
                   <label className="block text-sm font-medium text-t-secondary mb-1">Transfer To</label>
-                  <div className="flex gap-2 mb-2">
+                  <div className="flex flex-wrap gap-2 mb-2">
                     <button type="button" onClick={() => setForm({ ...form, transferMode: 'own' })}
                       className={`px-3 py-1 text-xs rounded-full ${form.transferMode === 'own' ? 'bg-indigo-600 text-white' : 'bg-elevated text-t-secondary'}`}>
                       My Account
@@ -204,8 +366,13 @@ export default function TransferPage() {
                       className={`px-3 py-1 text-xs rounded-full ${form.transferMode === 'other' ? 'bg-indigo-600 text-white' : 'bg-elevated text-t-secondary'}`}>
                       Other Account
                     </button>
+                    <button type="button" onClick={() => setForm({ ...form, transferMode: 'bank' })}
+                      className={`px-3 py-1 text-xs rounded-full ${form.transferMode === 'bank' ? 'bg-indigo-600 text-white' : 'bg-elevated text-t-secondary'}`}>
+                      Other Bank
+                    </button>
                   </div>
-                  {form.transferMode === 'own' ? (
+
+                  {form.transferMode === 'own' && (
                     <select
                       value={form.to_account_id}
                       onChange={e => setForm({ ...form, to_account_id: e.target.value })}
@@ -219,7 +386,9 @@ export default function TransferPage() {
                         </option>
                       ))}
                     </select>
-                  ) : (
+                  )}
+
+                  {form.transferMode === 'other' && (
                     <div className="space-y-2">
                       <BeneficiaryAutocomplete
                         value={form.to_account_number}
@@ -287,8 +456,169 @@ export default function TransferPage() {
                       )}
                     </div>
                   )}
+
+                  {form.transferMode === 'bank' && (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-medium text-t-secondary mb-1">Destination Country</label>
+                        <select
+                          value={form.country_code}
+                          onChange={e => {
+                            const code = e.target.value;
+                            const country = code && countriesData ? Object.values(countriesData).flat().find(c => c.code === code) : null;
+                            setForm(f => ({ ...f, country_code: code, region: country?.region || '' }));
+                          }}
+                          className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                          required
+                        >
+                          <option value="">Select country...</option>
+                          {countriesData && Object.entries(countriesData).map(([region, list]) => (
+                            <optgroup key={region} label={regionLabels[region]}>
+                              {list.map(c => (
+                                <option key={c.code} value={c.code}>{c.flag} {c.name} ({c.currency})</option>
+                              ))}
+                            </optgroup>
+                          ))}
+                        </select>
+                        {selectedCountry && feesData && (
+                          <p className="text-xs text-t-muted mt-1">
+                            Fee: ${feesData[selectedCountry.region].flat.toFixed(2)} + {feesData[selectedCountry.region].percent}% · Delivery: {feesData[selectedCountry.region].deliveryDays}
+                          </p>
+                        )}
+                      </div>
+
+                      {form.country_code && (
+                        <>
+                          <div>
+                            <label className="block text-xs font-medium text-t-secondary mb-1">Recipient Name</label>
+                            <input
+                              type="text"
+                              value={form.to_account_name}
+                              onChange={e => setForm({ ...form, to_account_name: e.target.value })}
+                              placeholder="Full name on the destination account"
+                              className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm"
+                              required
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-t-secondary mb-1">Recipient Bank</label>
+                            {bankMode === 'select' && countryBanks.length > 0 ? (
+                              <select
+                                value={form.recipient_bank}
+                                onChange={e => handleBankSelectChange(e.target.value)}
+                                className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm"
+                              >
+                                <option value="">Select bank...</option>
+                                {countryBanks.map(b => (
+                                  <option key={b.name} value={b.name}>{b.name}{b.swift ? ` (${b.swift})` : ''}</option>
+                                ))}
+                                <option value="__custom__">+ Other bank (enter manually)</option>
+                              </select>
+                            ) : (
+                              <div className="space-y-1">
+                                <input
+                                  type="text"
+                                  value={form.recipient_bank}
+                                  onChange={e => { setForm({ ...form, recipient_bank: e.target.value }); setBicAutoFilled(false); }}
+                                  onBlur={handleCustomBankBlur}
+                                  placeholder="Bank name"
+                                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm"
+                                  required
+                                />
+                                {countryBanks.length > 0 && (
+                                  <button type="button" onClick={() => { setBankMode('select'); setBicAutoFilled(false); setForm(f => ({ ...f, recipient_bank: '', swift_code: '' })); }}
+                                    className="text-xs text-indigo-600 hover:underline">
+                                    ← Pick from {countryBanks.length} known banks
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-t-secondary mb-1">Recipient Account / IBAN Number</label>
+                            <input
+                              type="text"
+                              value={form.recipient_account}
+                              onChange={e => setForm({ ...form, recipient_account: e.target.value })}
+                              placeholder="Account number"
+                              className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm font-mono"
+                              required
+                            />
+                          </div>
+
+                          {selectedCountry?.requiresSwift && (
+                            <div>
+                              <label className="block text-xs font-medium text-t-secondary mb-1">
+                                SWIFT / BIC Code
+                                {bicAutoFilled && <span className="ml-1 text-[10px] text-emerald-600 font-normal">· auto-filled</span>}
+                              </label>
+                              <input
+                                type="text"
+                                value={form.swift_code}
+                                onChange={e => { setForm({ ...form, swift_code: e.target.value.toUpperCase() }); setBicAutoFilled(false); }}
+                                placeholder="e.g. BARCGB22"
+                                className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm font-mono uppercase"
+                                required
+                              />
+                            </div>
+                          )}
+
+                          {selectedCountry?.requiresIban && (
+                            <div>
+                              <label className="block text-xs font-medium text-t-secondary mb-1">IBAN</label>
+                              <input
+                                type="text"
+                                value={form.iban}
+                                onChange={e => setForm({ ...form, iban: e.target.value.toUpperCase() })}
+                                placeholder="e.g. GB29NWBK60161331926819"
+                                className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm font-mono uppercase"
+                                required
+                              />
+                            </div>
+                          )}
+
+                          {selectedCountry?.requiresRouting && (
+                            <div>
+                              <label className="block text-xs font-medium text-t-secondary mb-1">Routing Number</label>
+                              <input
+                                type="text"
+                                value={form.routing_number}
+                                onChange={e => setForm({ ...form, routing_number: e.target.value })}
+                                placeholder="9-digit routing number"
+                                className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm font-mono"
+                                required
+                              />
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-2 pt-1">
+                            <input
+                              type="checkbox"
+                              id="save-beneficiary-bank"
+                              checked={form.save_beneficiary}
+                              onChange={e => setForm({ ...form, save_beneficiary: e.target.checked })}
+                              className="rounded border-b-input text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <label htmlFor="save-beneficiary-bank" className="text-xs text-t-secondary">
+                              Save as beneficiary for quick re-use
+                            </label>
+                          </div>
+                          {form.save_beneficiary && (
+                            <input
+                              type="text"
+                              value={form.beneficiary_nickname}
+                              onChange={e => setForm({ ...form, beneficiary_nickname: e.target.value })}
+                              placeholder="Nickname (optional)"
+                              className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm"
+                            />
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
-              )}
 
               <div>
                 <label className="block text-sm font-medium text-t-secondary mb-1">Amount ($)</label>
@@ -302,6 +632,21 @@ export default function TransferPage() {
                   step="0.01"
                   required
                 />
+                {form.transferMode === 'bank' && form.country_code && (
+                  <div className="mt-2 p-3 bg-elevated border border-b-secondary rounded-lg text-xs space-y-1">
+                    {quoting && <p className="text-t-muted">Fetching live rate...</p>}
+                    {!quoting && quote && (
+                      <>
+                        <div className="flex justify-between"><span className="text-t-tertiary">Recipient gets</span><span className="font-semibold text-t-primary">{quote.currency} {quote.convertedAmount.toFixed(2)}</span></div>
+                        <div className="flex justify-between"><span className="text-t-tertiary">Exchange rate</span><span className="text-t-secondary">1 USD = {quote.exchangeRate.toFixed(4)} {quote.currency}</span></div>
+                        <div className="flex justify-between"><span className="text-t-tertiary">Fee</span><span className="text-t-secondary">{formatCurrency(quote.feeAmount)}</span></div>
+                        <div className="flex justify-between border-t border-b-secondary pt-1 mt-1"><span className="text-t-tertiary">Total to debit</span><span className="font-semibold text-t-primary">{formatCurrency(quote.totalDeducted)}</span></div>
+                        <div className="text-t-muted">Delivery: {quote.deliveryEstimate}</div>
+                      </>
+                    )}
+                    {!quoting && !quote && form.amount && <p className="text-t-muted">Enter a valid amount to see the rate.</p>}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -318,13 +663,9 @@ export default function TransferPage() {
               <button
                 type="submit"
                 disabled={loading || lockedForDebit}
-                className={`w-full py-2.5 text-white rounded-lg font-medium transition-colors disabled:opacity-50 ${
-                  activeTab === 'Deposit' ? 'bg-green-600 hover:bg-green-700' :
-                  activeTab === 'Withdraw' ? 'bg-red-600 hover:bg-red-700' :
-                  'bg-indigo-600 hover:bg-indigo-700'
-                }`}
+                className="w-full py-2.5 text-white rounded-lg font-medium transition-colors disabled:opacity-50 bg-indigo-600 hover:bg-indigo-700"
               >
-                {loading ? 'Processing...' : lockedForDebit ? 'Account locked until maturity' : `Review ${activeTab}`}
+                {loading ? 'Processing...' : lockedForDebit ? 'Account locked until maturity' : 'Review Transfer'}
               </button>
             </form>
           )}
@@ -333,11 +674,12 @@ export default function TransferPage() {
 
       {showConfirm && (
         <ConfirmModal
-          activeTab={activeTab}
           form={form}
           accounts={accounts}
           selectedAccount={selectedAccount}
           lookup={lookup}
+          quote={quote}
+          selectedCountry={selectedCountry}
           loading={loading}
           error={error}
           onCancel={() => setShowConfirm(false)}
@@ -348,26 +690,32 @@ export default function TransferPage() {
   );
 }
 
-function ConfirmModal({ activeTab, form, accounts, selectedAccount, lookup, loading, error, onCancel, onConfirm }) {
+function ConfirmModal({ form, accounts, selectedAccount, lookup, quote, selectedCountry, loading, error, onCancel, onConfirm }) {
   const amt = parseFloat(form.amount) || 0;
-  const destAccount = form.transferMode === 'own'
-    ? accounts.find(a => a.id.toString() === form.to_account_id)
-    : null;
-  const destName = form.transferMode === 'own'
-    ? (destAccount ? `${destAccount.account_type.charAt(0).toUpperCase() + destAccount.account_type.slice(1)} (****${destAccount.account_number.slice(-4)})` : '—')
-    : (lookup.data?.account_name || form.to_account_name || 'Unknown');
-  const destNumber = form.transferMode === 'own'
-    ? (destAccount?.account_number || '')
-    : form.to_account_number;
 
-  const accentBg = activeTab === 'Deposit' ? 'bg-green-100' : activeTab === 'Withdraw' ? 'bg-red-100' : 'bg-indigo-100';
-  const accentText = activeTab === 'Deposit' ? 'text-green-600' : activeTab === 'Withdraw' ? 'text-red-600' : 'text-indigo-600';
-  const btnColor = activeTab === 'Deposit' ? 'bg-green-600 hover:bg-green-700'
-    : activeTab === 'Withdraw' ? 'bg-red-600 hover:bg-red-700'
-    : 'bg-indigo-600 hover:bg-indigo-700';
-  const projectedBalance = activeTab === 'Deposit'
-    ? (selectedAccount?.balance || 0) + amt
-    : (selectedAccount?.balance || 0) - amt;
+  let destName, destNumber, methodLabel, debit;
+  if (form.transferMode === 'own') {
+    const destAccount = accounts.find(a => a.id.toString() === form.to_account_id);
+    destName = destAccount ? `${destAccount.account_type.charAt(0).toUpperCase() + destAccount.account_type.slice(1)} (****${destAccount.account_number.slice(-4)})` : '—';
+    destNumber = destAccount?.account_number || '';
+    methodLabel = 'Internal (own account)';
+    debit = amt;
+  } else if (form.transferMode === 'other') {
+    destName = lookup.data?.account_name || form.to_account_name || 'Unknown';
+    destNumber = form.to_account_number;
+    methodLabel = 'Kapita account';
+    debit = amt;
+  } else {
+    destName = form.to_account_name || 'Unknown';
+    destNumber = form.recipient_account;
+    methodLabel = `${selectedCountry?.flag || ''} ${form.recipient_bank} (${selectedCountry?.name})`.trim();
+    debit = quote?.totalDeducted ?? amt;
+  }
+
+  const accentBg = 'bg-indigo-100';
+  const accentText = 'text-indigo-600';
+  const btnColor = 'bg-indigo-600 hover:bg-indigo-700';
+  const projectedBalance = (selectedAccount?.balance || 0) - debit;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onCancel}>
@@ -379,7 +727,7 @@ function ConfirmModal({ activeTab, form, accounts, selectedAccount, lookup, load
             </svg>
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-t-primary">Confirm {activeTab}</h3>
+            <h3 className="text-lg font-semibold text-t-primary">Confirm Transfer</h3>
             <p className="text-xs text-t-tertiary">Please review the details below before continuing</p>
           </div>
         </div>
@@ -395,28 +743,42 @@ function ConfirmModal({ activeTab, form, accounts, selectedAccount, lookup, load
             <hr className="border-b-primary" />
             <div className="space-y-2 text-sm">
               <div className="flex justify-between gap-3">
-                <span className="text-t-tertiary">{activeTab === 'Deposit' ? 'To' : 'From'}</span>
+                <span className="text-t-tertiary">From</span>
                 <span className="font-medium text-t-primary text-right">
                   {selectedAccount ? `${selectedAccount.account_type.charAt(0).toUpperCase() + selectedAccount.account_type.slice(1)} (****${selectedAccount.account_number.slice(-4)})` : '—'}
                 </span>
               </div>
-              {activeTab === 'Transfer' && (
-                <>
-                  <div className="flex justify-between gap-3">
-                    <span className="text-t-tertiary">Recipient</span>
-                    <span className="font-semibold text-t-primary text-right">{destName}</span>
-                  </div>
-                  {destNumber && (
-                    <div className="flex justify-between gap-3">
-                      <span className="text-t-tertiary">Account</span>
-                      <span className="font-mono text-xs text-t-primary">{destNumber}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between gap-3">
-                    <span className="text-t-tertiary">Method</span>
-                    <span className="text-t-secondary">{form.transferMode === 'own' ? 'Internal (own account)' : 'Kapita account'}</span>
-                  </div>
-                </>
+              <div className="flex justify-between gap-3">
+                <span className="text-t-tertiary">Recipient</span>
+                <span className="font-semibold text-t-primary text-right">{destName}</span>
+              </div>
+              {destNumber && (
+                <div className="flex justify-between gap-3">
+                  <span className="text-t-tertiary">Account</span>
+                  <span className="font-mono text-xs text-t-primary truncate max-w-[60%]">{destNumber}</span>
+                </div>
+              )}
+              <div className="flex justify-between gap-3">
+                <span className="text-t-tertiary">Method</span>
+                <span className="text-t-secondary text-right">{methodLabel}</span>
+              </div>
+              {form.transferMode === 'bank' && form.swift_code && (
+                <div className="flex justify-between gap-3">
+                  <span className="text-t-tertiary">SWIFT</span>
+                  <span className="font-mono text-xs text-t-primary">{form.swift_code}</span>
+                </div>
+              )}
+              {form.transferMode === 'bank' && form.iban && (
+                <div className="flex justify-between gap-3">
+                  <span className="text-t-tertiary">IBAN</span>
+                  <span className="font-mono text-xs text-t-primary truncate max-w-[60%]">{form.iban}</span>
+                </div>
+              )}
+              {form.transferMode === 'bank' && form.routing_number && (
+                <div className="flex justify-between gap-3">
+                  <span className="text-t-tertiary">Routing</span>
+                  <span className="font-mono text-xs text-t-primary">{form.routing_number}</span>
+                </div>
               )}
               {form.description && (
                 <div className="flex justify-between gap-3">
@@ -425,6 +787,20 @@ function ConfirmModal({ activeTab, form, accounts, selectedAccount, lookup, load
                 </div>
               )}
             </div>
+
+            {form.transferMode === 'bank' && quote && (
+              <>
+                <hr className="border-b-primary" />
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between"><span className="text-t-tertiary">Recipient gets</span><span className="font-semibold text-t-primary">{quote.currency} {quote.convertedAmount.toFixed(2)}</span></div>
+                  <div className="flex justify-between"><span className="text-t-tertiary">Rate</span><span className="text-t-secondary">1 USD = {quote.exchangeRate.toFixed(4)} {quote.currency}</span></div>
+                  <div className="flex justify-between"><span className="text-t-tertiary">Fee</span><span className="text-t-secondary">{formatCurrency(quote.feeAmount)}</span></div>
+                  <div className="flex justify-between"><span className="text-t-tertiary">Total debit</span><span className="font-semibold text-t-primary">{formatCurrency(quote.totalDeducted)}</span></div>
+                  <div className="flex justify-between"><span className="text-t-tertiary">Delivery</span><span className="text-t-secondary">{quote.deliveryEstimate}</span></div>
+                </div>
+              </>
+            )}
+
             <hr className="border-b-primary" />
             <div className="space-y-1 text-sm">
               <div className="flex justify-between">
@@ -437,15 +813,20 @@ function ConfirmModal({ activeTab, form, accounts, selectedAccount, lookup, load
                   {formatCurrency(projectedBalance)}
                 </span>
               </div>
-              {activeTab !== 'Deposit' && projectedBalance < 0 && (
+              {projectedBalance < 0 && (
                 <p className="text-xs text-red-600 mt-1">Insufficient funds for this transaction.</p>
               )}
             </div>
           </div>
 
-          {activeTab === 'Transfer' && form.transferMode === 'other' && lookup.status === 'found' && (
+          {form.transferMode === 'other' && lookup.status === 'found' && (
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800">
               Verified recipient with Kapita. Once you confirm, the transfer is final and cannot be reversed.
+            </div>
+          )}
+          {form.transferMode === 'bank' && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
+              Cross-bank transfers are final once confirmed. Double-check the SWIFT/IBAN/routing details — banks cannot reverse a wire after settlement.
             </div>
           )}
         </div>
@@ -455,9 +836,9 @@ function ConfirmModal({ activeTab, form, accounts, selectedAccount, lookup, load
             className="flex-1 py-2.5 text-t-secondary bg-elevated rounded-lg hover:bg-hover font-medium transition-colors">
             Cancel
           </button>
-          <button onClick={onConfirm} disabled={loading || (activeTab !== 'Deposit' && projectedBalance < 0)}
+          <button onClick={onConfirm} disabled={loading || projectedBalance < 0}
             className={`flex-1 py-2.5 text-white rounded-lg font-medium transition-colors disabled:opacity-50 ${btnColor}`}>
-            {loading ? 'Processing...' : `Confirm ${activeTab}`}
+            {loading ? 'Processing...' : 'Confirm Transfer'}
           </button>
         </div>
       </div>

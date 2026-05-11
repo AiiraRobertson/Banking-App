@@ -5,6 +5,7 @@ import { getAccounts } from '../services/accountService';
 import { getTransactions } from '../services/transactionService';
 import { formatCurrency } from '../utils/formatCurrency';
 import { formatDateTime } from '../utils/formatDate';
+import { getMaturityInfo } from '../utils/savingsLock';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -82,24 +83,32 @@ export default function DashboardPage() {
             <Link to="/accounts" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">View all</Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {accounts.map(account => (
-              <Link
-                key={account.id}
-                to={`/accounts/${account.id}`}
-                className="bg-surface rounded-xl shadow-sm border border-b-secondary p-5 hover:shadow-lg hover:shadow-indigo-100/30 hover:border-indigo-100 hover:scale-[1.02] transition-all duration-300"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                    account.account_type === 'checking' ? 'bg-blue-50 text-blue-700' : 'bg-green-50 text-green-700'
-                  }`}>
-                    {account.account_type.charAt(0).toUpperCase() + account.account_type.slice(1)}
-                  </span>
-                  <span className="text-xs text-t-muted">****{account.account_number.slice(-4)}</span>
-                </div>
-                <p className="text-2xl font-bold text-t-primary">{formatCurrency(account.balance)}</p>
-                <p className="text-xs text-t-muted mt-1">Available balance</p>
-              </Link>
-            ))}
+            {accounts.map(account => {
+              const lock = getMaturityInfo(account);
+              return (
+                <Link
+                  key={account.id}
+                  to={`/accounts/${account.id}`}
+                  className="bg-surface rounded-xl shadow-sm border border-b-secondary p-5 hover:shadow-lg hover:shadow-indigo-100/30 hover:border-indigo-100 hover:scale-[1.02] transition-all duration-300"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                      account.account_type === 'checking' ? 'bg-blue-50 text-blue-700' : 'bg-green-50 text-green-700'
+                    }`}>
+                      {account.account_type.charAt(0).toUpperCase() + account.account_type.slice(1)}
+                    </span>
+                    <span className="text-xs text-t-muted">****{account.account_number.slice(-4)}</span>
+                  </div>
+                  <p className="text-2xl font-bold text-t-primary">{formatCurrency(account.balance)}</p>
+                  <p className="text-xs text-t-muted mt-1">Available balance</p>
+                  {lock.isSavings && lock.locked && (
+                    <div className="mt-2 inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
+                      🔒 Locked · {lock.daysRemaining}d
+                    </div>
+                  )}
+                </Link>
+              );
+            })}
           </div>
         </div>
 
@@ -107,10 +116,10 @@ export default function DashboardPage() {
           <h2 className="text-lg font-semibold text-t-primary">Quick Actions</h2>
           <div className="grid grid-cols-2 gap-3">
             {[
-              { to: '/transfer', label: 'Deposit', icon: 'M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z', color: 'text-green-600 bg-green-50' },
-              { to: '/transfer', label: 'Withdraw', icon: 'M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z', color: 'text-red-600 bg-red-50' },
+              { to: '/add-money', label: 'Add Money', icon: 'M12 4v16m8-8H4', color: 'text-green-600 bg-green-50' },
               { to: '/transfer', label: 'Transfer', icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4', color: 'text-indigo-600 bg-indigo-50' },
               { to: '/bill-pay', label: 'Pay Bill', icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z', color: 'text-orange-600 bg-orange-50' },
+              { to: '/wire-transfer', label: 'Send Wire', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z', color: 'text-purple-600 bg-purple-50' },
             ].map(action => (
               <Link key={action.label} to={action.to} className="bg-surface rounded-xl shadow-sm border border-b-secondary p-4 text-center hover:shadow-lg hover:shadow-indigo-100/30 hover:border-indigo-100 hover:-translate-y-1 transition-all duration-300 group">
                 <div className={`w-10 h-10 rounded-full ${action.color} flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform duration-300`}>

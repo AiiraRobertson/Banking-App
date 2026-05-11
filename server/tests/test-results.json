@@ -1,7 +1,7 @@
 {
   "summary": {
-    "total": 28,
-    "pass": 26,
+    "total": 35,
+    "pass": 33,
     "fail": 0,
     "warn": 2
   },
@@ -13,7 +13,7 @@
       "status": "PASS",
       "expected": "200",
       "actual": 200,
-      "durationMs": 147,
+      "durationMs": 109,
       "notes": ""
     },
     {
@@ -23,7 +23,7 @@
       "status": "PASS",
       "expected": "200 + token",
       "actual": "200 token=true",
-      "durationMs": 817,
+      "durationMs": 602,
       "notes": ""
     },
     {
@@ -33,7 +33,7 @@
       "status": "PASS",
       "expected": ">=1 account",
       "actual": "2 accounts",
-      "durationMs": 4,
+      "durationMs": 5,
       "notes": ""
     },
     {
@@ -43,7 +43,7 @@
       "status": "PASS",
       "expected": "200",
       "actual": 200,
-      "durationMs": 7,
+      "durationMs": 13,
       "notes": ""
     },
     {
@@ -53,7 +53,7 @@
       "status": "PASS",
       "expected": "401",
       "actual": 401,
-      "durationMs": 5,
+      "durationMs": 3,
       "notes": ""
     },
     {
@@ -62,8 +62,8 @@
       "name": "Deposit credits account",
       "status": "PASS",
       "expected": "200 + new balance",
-      "actual": "200 bal=525577",
-      "durationMs": 10,
+      "actual": "200 bal=528103.8299999961",
+      "durationMs": 32,
       "notes": ""
     },
     {
@@ -73,7 +73,7 @@
       "status": "PASS",
       "expected": "200",
       "actual": 200,
-      "durationMs": 7,
+      "durationMs": 6,
       "notes": ""
     },
     {
@@ -83,7 +83,7 @@
       "status": "PASS",
       "expected": "400 insufficient funds",
       "actual": "400 undefined",
-      "durationMs": 6,
+      "durationMs": 7,
       "notes": ""
     },
     {
@@ -103,7 +103,7 @@
       "status": "PASS",
       "expected": "found:true with name",
       "actual": "found=true name=Admin User",
-      "durationMs": 5,
+      "durationMs": 8,
       "notes": ""
     },
     {
@@ -113,7 +113,7 @@
       "status": "PASS",
       "expected": "200",
       "actual": 200,
-      "durationMs": 9,
+      "durationMs": 6,
       "notes": ""
     },
     {
@@ -123,7 +123,7 @@
       "status": "PASS",
       "expected": "404",
       "actual": 404,
-      "durationMs": 5,
+      "durationMs": 7,
       "notes": ""
     },
     {
@@ -133,7 +133,7 @@
       "status": "PASS",
       "expected": "grouped countries",
       "actual": "200",
-      "durationMs": 5,
+      "durationMs": 3,
       "notes": ""
     },
     {
@@ -142,8 +142,8 @@
       "name": "Wire quote returns rate + fee",
       "status": "PASS",
       "expected": "rate>0 fee>0",
-      "actual": "rate=0.7371 fee=30",
-      "durationMs": 6,
+      "actual": "rate=0.7344 fee=30",
+      "durationMs": 2019,
       "notes": ""
     },
     {
@@ -162,8 +162,8 @@
       "name": "Beneficiary save (upsert)",
       "status": "PASS",
       "expected": "201 + id",
-      "actual": "201 id=3",
-      "durationMs": 7,
+      "actual": "201 id=10",
+      "durationMs": 6,
       "notes": ""
     },
     {
@@ -183,7 +183,7 @@
       "status": "PASS",
       "expected": "200",
       "actual": 200,
-      "durationMs": 6,
+      "durationMs": 5,
       "notes": ""
     },
     {
@@ -193,7 +193,7 @@
       "status": "PASS",
       "expected": "user.email",
       "actual": "email=john@example.com",
-      "durationMs": 4,
+      "durationMs": 3,
       "notes": ""
     },
     {
@@ -203,7 +203,7 @@
       "status": "PASS",
       "expected": "alert_min_amount=5",
       "actual": "got=5",
-      "durationMs": 6,
+      "durationMs": 8,
       "notes": ""
     },
     {
@@ -212,7 +212,7 @@
       "name": "Bill payee created",
       "status": "PASS",
       "expected": "201",
-      "actual": "201 id=2",
+      "actual": "201 id=8",
       "durationMs": 6,
       "notes": ""
     },
@@ -223,7 +223,7 @@
       "status": "PASS",
       "expected": "200",
       "actual": 200,
-      "durationMs": 8,
+      "durationMs": 5,
       "notes": ""
     },
     {
@@ -239,11 +239,81 @@
     {
       "id": "REG-19",
       "category": "regression",
-      "name": "Loan calculator computes payment",
+      "name": "Currency rates fetch",
       "status": "PASS",
-      "expected": "monthlyPayment>0",
-      "actual": "299.71",
-      "durationMs": 5,
+      "expected": "rates.EUR is number",
+      "actual": "0.849377",
+      "durationMs": 325,
+      "notes": ""
+    },
+    {
+      "id": "REG-20",
+      "category": "regression",
+      "name": "Card top-up credits account",
+      "status": "PASS",
+      "expected": "200 + balance up",
+      "actual": "200 bal=528372.1199999962",
+      "durationMs": 6,
+      "notes": ""
+    },
+    {
+      "id": "REG-21",
+      "category": "regression",
+      "name": "Bank top-up credits account",
+      "status": "PASS",
+      "expected": "200 + balance up",
+      "actual": "200 bal=528447.1199999962",
+      "durationMs": 4,
+      "notes": ""
+    },
+    {
+      "id": "REG-22",
+      "category": "regression",
+      "name": "Crypto top-up credits account",
+      "status": "PASS",
+      "expected": "200 + balance up",
+      "actual": "200 bal=528477.1199999962",
+      "durationMs": 4,
+      "notes": ""
+    },
+    {
+      "id": "REG-23",
+      "category": "regression",
+      "name": "Card top-up rejects bad Luhn",
+      "status": "PASS",
+      "expected": "400",
+      "actual": "400",
+      "durationMs": 3,
+      "notes": ""
+    },
+    {
+      "id": "REG-24",
+      "category": "regression",
+      "name": "Lock savings endpoint accepts duration",
+      "status": "PASS",
+      "expected": "200 or 400 already-locked",
+      "actual": "400 Savings account is already locked",
+      "durationMs": 3,
+      "notes": ""
+    },
+    {
+      "id": "REG-25",
+      "category": "regression",
+      "name": "Locked savings blocks withdrawal",
+      "status": "PASS",
+      "expected": "423 SAVINGS_LOCKED",
+      "actual": "423 SAVINGS_LOCKED",
+      "durationMs": 6,
+      "notes": ""
+    },
+    {
+      "id": "REG-26",
+      "category": "regression",
+      "name": "Lock savings rejects days < 15",
+      "status": "PASS",
+      "expected": "400",
+      "actual": "400",
+      "durationMs": 2,
       "notes": ""
     },
     {
@@ -253,7 +323,7 @@
       "status": "WARN",
       "expected": "Kapita in message",
       "actual": "not found",
-      "durationMs": 5,
+      "durationMs": 3,
       "notes": "Demo data was seeded before rename — expected on existing DB"
     },
     {
@@ -263,7 +333,7 @@
       "status": "WARN",
       "expected": "move money, make moves",
       "actual": "not found",
-      "durationMs": 5,
+      "durationMs": 3,
       "notes": "Existing DB still has old slogan"
     },
     {
@@ -273,7 +343,7 @@
       "status": "PASS",
       "expected": "200",
       "actual": 200,
-      "durationMs": 7,
+      "durationMs": 3,
       "notes": "Alert delivery is logged to console + alert_log; verified by REG-15 prefs"
     },
     {
@@ -287,5 +357,5 @@
       "notes": ""
     }
   ],
-  "timestamp": "2026-05-03T17:03:00.273Z"
+  "timestamp": "2026-05-10T23:12:23.557Z"
 }
