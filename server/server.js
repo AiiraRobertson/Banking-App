@@ -125,10 +125,18 @@ function startServer() {
 
   app.use(errorHandler);
 
+  const fs = require('fs');
   const clientDist = path.join(__dirname, '..', 'client', 'dist');
-  app.use(express.static(clientDist));
+  const clientIndex = path.join(clientDist, 'index.html');
+  const hasClientBuild = fs.existsSync(clientIndex);
+  if (hasClientBuild) {
+    app.use(express.static(clientDist));
+  }
   app.get('/{*splat}', (req, res) => {
-    res.sendFile(path.join(clientDist, 'index.html'));
+    if (hasClientBuild) {
+      return res.sendFile(clientIndex);
+    }
+    res.status(404).json({ error: 'not_found', message: 'API-only deployment; SPA is hosted separately.' });
   });
 
   app.listen(PORT, () => {
