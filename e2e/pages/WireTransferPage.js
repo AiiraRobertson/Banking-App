@@ -5,7 +5,7 @@ const { BasePage } = require('./BasePage');
 class WireTransferPage extends BasePage {
   constructor(page) {
     super(page);
-    this.heading = page.getByRole('heading', { name: /wire transfer/i });
+    this.heading = page.getByRole('heading', { name: /international wire transfer/i });
   }
 
   async goto() {

@@ -1,6 +1,6 @@
 // @ts-check
 const { request } = require('@playwright/test');
-const { API_URL } = require('../playwright.config');
+const { API_URL, E2E_BYPASS_TOKEN } = require('../playwright.config');
 
 /**
  * Lightweight API client used by setup/fixtures to seed state
@@ -20,6 +20,7 @@ class ApiClient {
   headers() {
     const h = { 'Content-Type': 'application/json' };
     if (this.token) h.Authorization = `Bearer ${this.token}`;
+    if (E2E_BYPASS_TOKEN) h['x-e2e-bypass'] = E2E_BYPASS_TOKEN;
     return h;
   }
 

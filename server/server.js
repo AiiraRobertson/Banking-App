@@ -95,13 +95,15 @@ function startServer() {
   if (process.env.LOAD_TEST !== '1') {
     // NOTE: in cluster mode this counter is per-worker. Effective cap = max * WORKER_COUNT.
     // Move to a shared store (Redis) if you need exact global limits across workers.
+    const E2E_BYPASS_TOKEN = process.env.E2E_BYPASS_TOKEN;
     const globalLimiter = rateLimit({
       windowMs: 15 * 60 * 1000,
       max: 200,
       message: { error: 'Too many requests, please try again later' },
       // Don't count OPTIONS preflights toward the limit — they're issued by the
       // browser, not the user, and would unfairly burn quota on bursty SPAs.
-      skip: (req) => req.method === 'OPTIONS'
+      skip: (req) => req.method === 'OPTIONS' ||
+        (Boolean(E2E_BYPASS_TOKEN) && req.get('x-e2e-bypass') === E2E_BYPASS_TOKEN)
     });
     app.use(globalLimiter);
   }

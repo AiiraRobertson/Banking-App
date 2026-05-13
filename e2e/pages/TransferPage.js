@@ -16,7 +16,8 @@ class TransferPage extends BasePage {
     this.reviewButton = page.getByRole('button', { name: /review transfer/i });
     this.confirmButton = page.getByRole('button', { name: /^confirm transfer$/i });
     this.cancelButton = page.getByRole('button', { name: /^cancel$/i });
-    this.successHeading = page.getByText(/transfer (completed|initiated)/i);
+    this.successHeading = page.getByRole('heading', { name: /transfer (successful|completed|initiated)/i });
+    this.newTransactionButton = page.getByRole('button', { name: /new transaction/i });
 
     // Other Account
     this.beneficiaryInput = page.locator('input[placeholder*="account number"]');
@@ -107,7 +108,7 @@ class TransferPage extends BasePage {
   }
 
   async expectSuccess() {
-    await expect(this.successHeading).toBeVisible({ timeout: 15000 });
+    await expect(this.newTransactionButton).toBeVisible({ timeout: 15000 });
   }
 }
 

@@ -11,10 +11,12 @@ const rateLimit = require('express-rate-limit');
 
 const router = express.Router();
 
+const E2E_BYPASS_TOKEN = process.env.E2E_BYPASS_TOKEN;
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
-  message: { error: 'Too many attempts, please try again later' }
+  message: { error: 'Too many attempts, please try again later' },
+  skip: (req) => Boolean(E2E_BYPASS_TOKEN) && req.get('x-e2e-bypass') === E2E_BYPASS_TOKEN,
 });
 
 // Per-account login limiter — complements the per-IP authLimiter so a shared
@@ -150,14 +152,15 @@ router.post('/register', authLimiter, registerValidation, (req, res) => {
 
 router.post('/login', authLimiter, loginValidation, (req, res) => {
   const { email, password } = req.body;
+  const bypass = Boolean(E2E_BYPASS_TOKEN) && req.get('x-e2e-bypass') === E2E_BYPASS_TOKEN;
 
-  if (isAccountLocked(email)) {
+  if (!bypass && isAccountLocked(email)) {
     return res.status(429).json({ error: 'Too many failed attempts for this account. Please try again in a few minutes.' });
   }
 
   const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
-    recordFailedLogin(email);
+    if (!bypass) recordFailedLogin(email);
     return res.status(401).json({ error: 'Invalid email or password' });
   }
 

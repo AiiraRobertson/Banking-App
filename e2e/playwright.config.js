@@ -4,6 +4,7 @@ require('dotenv').config();
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:5173';
 const API_URL = process.env.API_URL || 'http://localhost:3001';
+const E2E_BYPASS_TOKEN = process.env.E2E_BYPASS_TOKEN || '';
 
 module.exports = defineConfig({
   testDir: './tests',
@@ -25,7 +26,6 @@ module.exports = defineConfig({
     video: 'retain-on-failure',
     actionTimeout: 15 * 1000,
     navigationTimeout: 30 * 1000,
-    extraHTTPHeaders: { 'x-e2e': 'playwright' },
   },
   projects: [
     {
@@ -53,3 +53,4 @@ module.exports = defineConfig({
 
 module.exports.BASE_URL = BASE_URL;
 module.exports.API_URL = API_URL;
+module.exports.E2E_BYPASS_TOKEN = E2E_BYPASS_TOKEN;

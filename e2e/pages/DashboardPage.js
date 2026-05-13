@@ -7,12 +7,13 @@ class DashboardPage extends BasePage {
   constructor(page) {
     super(page);
     this.sidebar = new SidebarComponent(page);
-    this.heading = page.getByRole('heading', { name: 'Dashboard' });
-    this.welcome = page.getByText(/welcome back/i);
-    this.totalBalanceCard = page.locator('text=Total Balance').locator('..');
-    this.accountsList = page.getByText('Your Accounts').locator('..');
-    this.quickActions = page.getByText('Quick Actions').locator('..');
-    this.recentTxTable = page.getByText('Recent Transactions').locator('..');
+    this.main = page.getByRole('main');
+    this.heading = this.main.getByRole('heading', { name: 'Dashboard' });
+    this.welcome = this.main.getByText(/welcome back/i).first();
+    this.totalBalanceCard = this.main.getByText('Total Balance').locator('..');
+    this.accountsList = this.main.getByRole('heading', { name: 'Your Accounts' }).locator('..');
+    this.quickActions = this.main.getByRole('heading', { name: 'Quick Actions' }).locator('..');
+    this.recentTxTable = this.main.getByRole('heading', { name: 'Recent Transactions' }).locator('..');
   }
 
   async goto() {
