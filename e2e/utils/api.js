@@ -7,6 +7,10 @@ const { API_URL, E2E_BYPASS_TOKEN } = require('../playwright.config');
  * directly through the backend (faster than driving the UI).
  */
 class ApiClient {
+  /**
+   * @param {import('@playwright/test').APIRequestContext} ctx
+   * @param {string|null} token
+   */
   constructor(ctx, token = null) {
     this.ctx = ctx;
     this.token = token;
@@ -18,12 +22,17 @@ class ApiClient {
   }
 
   headers() {
+    /** @type {{ [key: string]: string }} */
     const h = { 'Content-Type': 'application/json' };
     if (this.token) h.Authorization = `Bearer ${this.token}`;
     if (E2E_BYPASS_TOKEN) h['x-e2e-bypass'] = E2E_BYPASS_TOKEN;
     return h;
   }
 
+  /**
+   * @param {string} email
+   * @param {string} password
+   */
   async login(email, password) {
     const res = await this.ctx.post('/api/auth/login', {
       headers: this.headers(),

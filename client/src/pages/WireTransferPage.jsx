@@ -875,9 +875,9 @@ export default function WireTransferPage() {
                 <span className="text-t-tertiary">Page {incomingPagination.page} of {incomingPagination.pages}</span>
                 <div className="flex gap-2">
                   <button onClick={() => setIncomingPage(p => Math.max(1, p - 1))} disabled={incomingPage === 1}
-                    className="px-3 py-1 rounded border border-b-input disabled:opacity-50">Prev</button>
+                    className="px-3 py-1 rounded border border-b-input hover:bg-surface disabled:opacity-50 disabled:hover:bg-transparent transition-colors">Prev</button>
                   <button onClick={() => setIncomingPage(p => Math.min(incomingPagination.pages, p + 1))} disabled={incomingPage === incomingPagination.pages}
-                    className="px-3 py-1 rounded border border-b-input disabled:opacity-50">Next</button>
+                    className="px-3 py-1 rounded border border-b-input hover:bg-surface disabled:opacity-50 disabled:hover:bg-transparent transition-colors">Next</button>
                 </div>
               </div>
             )}

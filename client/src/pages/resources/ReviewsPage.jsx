@@ -8,8 +8,8 @@ function Stars({ value, size = 'sm', interactive = false, onChange }) {
     <div className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map(n => (
         interactive ? (
-          <button key={n} type="button" onClick={() => onChange(n)}>
-            <svg className={`${sizeClass} ${n <= value ? 'text-amber-400' : 'text-gray-300'} hover:scale-110 transition-transform`} fill="currentColor" viewBox="0 0 24 24">
+          <button key={n} type="button" onClick={() => onChange(n)} className="hover:scale-110 transition-transform cursor-pointer">
+            <svg className={`${sizeClass} ${n <= value ? 'text-amber-400' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
             </svg>
           </button>

@@ -247,7 +247,7 @@ export default function BeneficiariesPage() {
                         </button>
                         <button
                           onClick={() => setConfirmId(null)}
-                          className="text-xs px-2 py-1 text-t-tertiary"
+                          className="text-xs px-2 py-1 text-t-tertiary hover:text-t-secondary transition-colors"
                         >
                           Cancel
                         </button>

@@ -359,15 +359,15 @@ export default function TransferPage() {
                   <label className="block text-sm font-medium text-t-secondary mb-1">Transfer To</label>
                   <div className="flex flex-wrap gap-2 mb-2">
                     <button type="button" onClick={() => setForm({ ...form, transferMode: 'own' })}
-                      className={`px-3 py-1 text-xs rounded-full ${form.transferMode === 'own' ? 'bg-indigo-600 text-white' : 'bg-elevated text-t-secondary'}`}>
+                      className={`px-3 py-1 text-xs rounded-full transition-colors ${form.transferMode === 'own' ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-elevated text-t-secondary hover:bg-hover'}`}>
                       My Account
                     </button>
                     <button type="button" onClick={() => setForm({ ...form, transferMode: 'other' })}
-                      className={`px-3 py-1 text-xs rounded-full ${form.transferMode === 'other' ? 'bg-indigo-600 text-white' : 'bg-elevated text-t-secondary'}`}>
+                      className={`px-3 py-1 text-xs rounded-full transition-colors ${form.transferMode === 'other' ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-elevated text-t-secondary hover:bg-hover'}`}>
                       Other Account
                     </button>
                     <button type="button" onClick={() => setForm({ ...form, transferMode: 'bank' })}
-                      className={`px-3 py-1 text-xs rounded-full ${form.transferMode === 'bank' ? 'bg-indigo-600 text-white' : 'bg-elevated text-t-secondary'}`}>
+                      className={`px-3 py-1 text-xs rounded-full transition-colors ${form.transferMode === 'bank' ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-elevated text-t-secondary hover:bg-hover'}`}>
                       Other Bank
                     </button>
                   </div>
