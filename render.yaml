@@ -2,17 +2,11 @@ services:
   - type: web
     name: kapita-api
     runtime: node
-    # Persistent disks require a paid plan (free tier has no disk).
-    plan: starter
+    plan: free
     rootDir: server
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /health
-
-    disk:
-      name: kapita-data
-      mountPath: /var/data
-      sizeGB: 1
 
     envVars:
       - key: NODE_ENV
@@ -26,6 +20,3 @@ services:
 
       - key: CLIENT_ORIGIN
         sync: false
-
-      - key: DB_PATH
-        value: /var/data/bank.db
