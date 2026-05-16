@@ -147,7 +147,11 @@ export default function WireTransferPage() {
       const res = await getQuote({ amount: parseFloat(form.amount), country_code: form.country_code });
       setQuote(res.data);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to get quote');
+      const data = err.response?.data;
+      const validation = Array.isArray(data?.errors) && data.errors.length
+        ? data.errors.map((e) => e.message || e.msg).filter(Boolean).join(' • ')
+        : '';
+      setError(data?.error || validation || err.message || 'Failed to get quote');
     }
   };
 
@@ -190,7 +194,11 @@ export default function WireTransferPage() {
         } catch {}
       }
     } catch (err) {
-      setError(err.response?.data?.error || 'Transfer failed');
+      const data = err.response?.data;
+      const validation = Array.isArray(data?.errors) && data.errors.length
+        ? data.errors.map((e) => e.message || e.msg).filter(Boolean).join(' • ')
+        : '';
+      setError(data?.error || validation || err.message || 'Transfer failed');
     } finally {
       setSubmitting(false);
     }
@@ -223,7 +231,11 @@ export default function WireTransferPage() {
       }));
       getAccounts().then(r => setAccounts(r.data.accounts));
     } catch (err) {
-      setReceiveError(err.response?.data?.error || 'Failed to receive wire');
+      const data = err.response?.data;
+      const validation = Array.isArray(data?.errors) && data.errors.length
+        ? data.errors.map((e) => e.message || e.msg).filter(Boolean).join(' • ')
+        : '';
+      setReceiveError(data?.error || validation || err.message || 'Failed to receive wire');
     } finally {
       setReceiving(false);
     }

@@ -50,7 +50,10 @@ export default function RegisterPage() {
       navigate('/');
     } catch (err) {
       const data = err.response?.data;
-      setError(data?.error || data?.errors?.[0]?.message || 'Registration failed');
+      const validation = Array.isArray(data?.errors) && data.errors.length
+        ? data.errors.map((e) => e.message || e.msg).filter(Boolean).join(' • ')
+        : '';
+      setError(data?.error || validation || err.message || 'Registration failed');
     } finally {
       setLoading(false);
     }

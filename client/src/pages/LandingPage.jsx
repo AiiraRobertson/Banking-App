@@ -162,27 +162,27 @@ function GlobeSection() {
       />
 
       <div className="absolute top-4 left-4 z-20 animate-float">
-        <div className="bg-[var(--color-bg-surface)]/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg shadow-indigo-100/50 border border-indigo-100 text-xs font-semibold text-indigo-700 flex items-center gap-1.5">
+        <div className="bg-[var(--color-bg-surface)]/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg shadow-indigo-100/50 border border-indigo-100 text-xs font-semibold text-indigo-700 flex items-center gap-1.5 hover:scale-110 hover:shadow-xl hover:shadow-indigo-200 hover:bg-indigo-50 transition-all duration-300 cursor-default">
           <span className="text-base">{"\u{1F1FA}\u{1F1F8}"}</span> USD
         </div>
       </div>
       <div className="absolute top-12 right-6 z-20 animate-float-delayed">
-        <div className="bg-[var(--color-bg-surface)]/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg shadow-purple-100/50 border border-purple-100 text-xs font-semibold text-purple-700 flex items-center gap-1.5">
+        <div className="bg-[var(--color-bg-surface)]/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg shadow-purple-100/50 border border-purple-100 text-xs font-semibold text-purple-700 flex items-center gap-1.5 hover:scale-110 hover:shadow-xl hover:shadow-purple-200 hover:bg-purple-50 transition-all duration-300 cursor-default">
           <span className="text-base">{"\u{1F1EA}\u{1F1FA}"}</span> EUR
         </div>
       </div>
       <div className="absolute bottom-16 left-2 z-20 animate-float-delayed" style={{ animationDelay: '0.5s' }}>
-        <div className="bg-[var(--color-bg-surface)]/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg shadow-green-100/50 border border-green-100 text-xs font-semibold text-green-700 flex items-center gap-1.5">
+        <div className="bg-[var(--color-bg-surface)]/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg shadow-green-100/50 border border-green-100 text-xs font-semibold text-green-700 flex items-center gap-1.5 hover:scale-110 hover:shadow-xl hover:shadow-green-200 hover:bg-green-50 transition-all duration-300 cursor-default">
           <span className="text-base">{"\u{1F1F3}\u{1F1EC}"}</span> NGN
         </div>
       </div>
       <div className="absolute bottom-8 right-8 z-20 animate-float" style={{ animationDelay: '1.5s' }}>
-        <div className="bg-[var(--color-bg-surface)]/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg shadow-blue-100/50 border border-blue-100 text-xs font-semibold text-blue-700 flex items-center gap-1.5">
+        <div className="bg-[var(--color-bg-surface)]/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg shadow-blue-100/50 border border-blue-100 text-xs font-semibold text-blue-700 flex items-center gap-1.5 hover:scale-110 hover:shadow-xl hover:shadow-blue-200 hover:bg-blue-50 transition-all duration-300 cursor-default">
           <span className="text-base">{"\u{1F1EC}\u{1F1E7}"}</span> GBP
         </div>
       </div>
       <div className="absolute top-1/2 right-0 z-20 animate-float" style={{ animationDelay: '2s' }}>
-        <div className="bg-[var(--color-bg-surface)]/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg shadow-amber-100/50 border border-amber-100 text-xs font-semibold text-amber-700 flex items-center gap-1.5">
+        <div className="bg-[var(--color-bg-surface)]/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-lg shadow-amber-100/50 border border-amber-100 text-xs font-semibold text-amber-700 flex items-center gap-1.5 hover:scale-110 hover:shadow-xl hover:shadow-amber-200 hover:bg-amber-50 transition-all duration-300 cursor-default">
           <span className="text-base">{"\u{1F1E8}\u{1F1ED}"}</span> CHF
         </div>
       </div>
@@ -223,7 +223,7 @@ export default function LandingPage() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-50 border border-indigo-100 rounded-full text-sm text-indigo-700 font-medium mb-6 animate-fade-in-up">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-50 border border-indigo-100 rounded-full text-sm text-indigo-700 font-medium mb-6 animate-fade-in-up hover:bg-indigo-100 hover:border-indigo-200 hover:scale-105 hover:shadow-md hover:shadow-indigo-100 transition-all duration-300 cursor-default">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 Supporting 28+ countries worldwide
               </div>
@@ -244,8 +244,8 @@ export default function LandingPage() {
               </div>
               <div className="mt-12 flex items-center justify-center lg:justify-start gap-8 text-sm text-t-tertiary animate-fade-in-up delay-500">
                 {['No monthly fees', '$1,000 welcome bonus', 'Instant setup'].map(text => (
-                  <div key={text} className="flex items-center gap-2">
-                    <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  <div key={text} className="flex items-center gap-2 hover:text-t-primary hover:scale-105 transition-all duration-200 cursor-default group">
+                    <svg className="w-5 h-5 text-green-500 group-hover:scale-125 group-hover:text-green-600 transition-all duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                     {text}
                   </div>
                 ))}
@@ -288,7 +288,7 @@ export default function LandingPage() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-indigo-50/50 rounded-full blur-3xl" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-50 border border-indigo-100 rounded-full text-sm text-indigo-700 font-medium mb-4">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-50 border border-indigo-100 rounded-full text-sm text-indigo-700 font-medium mb-4 hover:bg-indigo-100 hover:border-indigo-200 hover:scale-105 hover:shadow-md hover:shadow-indigo-100 transition-all duration-300 cursor-default">
               <span className="text-base">{"\u{1F30D}"}</span> Global Coverage
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-t-primary">Send money to 28+ countries</h2>
@@ -353,14 +353,14 @@ export default function LandingPage() {
       <section className="py-20 bg-elevated/40 border-y border-b-secondary">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-10">
           <aside className="lg:col-span-1 flex flex-col items-center justify-start gap-6 lg:sticky lg:top-24 self-start">
-            <div className="card-3d rounded-2xl p-6 w-full max-w-xs">
-              <h3 className="text-sm font-semibold text-t-tertiary uppercase tracking-wider text-center mb-4">
+            <div className="card-3d rounded-2xl p-6 w-full max-w-xs hover:shadow-xl hover:shadow-indigo-100/40 hover:-translate-y-1 hover:scale-[1.02] transition-all duration-300 cursor-default group">
+              <h3 className="text-sm font-semibold text-t-tertiary uppercase tracking-wider text-center mb-4 group-hover:text-indigo-600 transition-colors duration-300">
                 Live · Your Local Time
               </h3>
-              <div className="flex justify-center">
+              <div className="flex justify-center group-hover:scale-105 transition-transform duration-300">
                 <AnalogClock size={220} />
               </div>
-              <p className="mt-4 text-xs text-center text-t-tertiary">
+              <p className="mt-4 text-xs text-center text-t-tertiary group-hover:text-t-secondary transition-colors duration-300">
                 Synced to your device. Kapita timestamps every transaction in your zone.
               </p>
             </div>
