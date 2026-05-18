@@ -20,3 +20,12 @@ services:
 
       - key: CLIENT_ORIGIN
         sync: false
+
+      # Email verification (Resend) — set these in the Render dashboard.
+      # APP_URL should point at the Netlify URL (e.g. https://kapita.netlify.app).
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: APP_URL
+        sync: false

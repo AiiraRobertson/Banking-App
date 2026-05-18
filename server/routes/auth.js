@@ -7,6 +7,7 @@ const { handleValidation } = require('../middleware/validate');
 const { authenticate } = require('../middleware/auth');
 const { generateAccountNumber } = require('../utils/accountNumber');
 const { countries } = require('../utils/currencies');
+const { generateToken: makeVerifyToken, verificationExpiry, sendVerificationEmail } = require('../utils/email');
 const rateLimit = require('express-rate-limit');
 
 const router = express.Router();
@@ -114,7 +115,7 @@ function sanitizeUser(user) {
   return safe;
 }
 
-router.post('/register', authLimiter, registerValidation, (req, res) => {
+router.post('/register', authLimiter, registerValidation, async (req, res) => {
   const { email, password, first_name, last_name, nationality, date_of_birth, address, city, state, zip_code, profile_photo } = req.body;
 
   const existing = db.prepare('SELECT 1 FROM users WHERE email = ?').get(email);
@@ -123,11 +124,13 @@ router.post('/register', authLimiter, registerValidation, (req, res) => {
   }
 
   const passwordHash = bcrypt.hashSync(password, 12);
+  const verifyToken = makeVerifyToken();
+  const verifyExpires = verificationExpiry();
 
   const register = db.transaction(() => {
     const result = db.prepare(
-      'INSERT INTO users (email, password_hash, first_name, last_name, nationality, date_of_birth, address, city, state, zip_code, profile_photo, terms_accepted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).run(email, passwordHash, first_name, last_name, nationality, date_of_birth, address, city, state || null, zip_code, profile_photo || null, 1);
+      'INSERT INTO users (email, password_hash, first_name, last_name, nationality, date_of_birth, address, city, state, zip_code, profile_photo, terms_accepted, verification_token, verification_expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(email, passwordHash, first_name, last_name, nationality, date_of_birth, address, city, state || null, zip_code, profile_photo || null, 1, verifyToken, verifyExpires);
 
     const userId = result.lastInsertRowid;
     const accountNumber = generateAccountNumber('checking');
@@ -138,7 +141,7 @@ router.post('/register', authLimiter, registerValidation, (req, res) => {
 
     db.prepare(
       'INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)'
-    ).run(userId, 'Welcome!', 'Welcome to Kapita — move money, make moves. Your checking account has been created with a $1,000.00 bonus.', 'info');
+    ).run(userId, 'Welcome!', 'Welcome to Kapita — move money, make moves. Your checking account has been created with a $1,000.00 bonus. Verify your email to unlock all features.', 'info');
 
     const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
     return user;
@@ -147,7 +150,64 @@ router.post('/register', authLimiter, registerValidation, (req, res) => {
   const user = register();
   const token = generateToken(user);
 
+  // Fire-and-log: don't block registration on email delivery.
+  sendVerificationEmail({ to: user.email, firstName: user.first_name, token: verifyToken })
+    .catch((err) => console.error('[register] verification email failed:', err));
+
   res.status(201).json({ token, user: sanitizeUser(user) });
+});
+
+router.get('/verify-email', (req, res) => {
+  const token = String(req.query.token || '').trim();
+  if (!token) return res.status(400).json({ error: 'Verification token is required' });
+
+  const user = db.prepare('SELECT * FROM users WHERE verification_token = ?').get(token);
+  if (!user) return res.status(400).json({ error: 'Invalid or expired verification link' });
+
+  if (user.email_verified) {
+    return res.json({ message: 'Email already verified', email: user.email, alreadyVerified: true });
+  }
+
+  if (user.verification_expires_at && new Date(user.verification_expires_at) < new Date()) {
+    return res.status(400).json({ error: 'Verification link has expired. Please request a new one.', expired: true });
+  }
+
+  db.prepare(
+    'UPDATE users SET email_verified = 1, verification_token = NULL, verification_expires_at = NULL, updated_at = datetime(\'now\') WHERE id = ?'
+  ).run(user.id);
+
+  db.prepare(
+    'INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)'
+  ).run(user.id, 'Email Verified', 'Your email address has been confirmed. All account features are now unlocked.', 'security');
+
+  res.json({ message: 'Email verified successfully', email: user.email });
+});
+
+const resendLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: 'Too many verification emails sent. Please wait a few minutes.' },
+  skip: (req) => Boolean(E2E_BYPASS_TOKEN) && req.get('x-e2e-bypass') === E2E_BYPASS_TOKEN,
+});
+
+router.post('/resend-verification', resendLimiter, authenticate, async (req, res) => {
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  if (user.email_verified) return res.json({ message: 'Email already verified', alreadyVerified: true });
+
+  const verifyToken = makeVerifyToken();
+  const verifyExpires = verificationExpiry();
+
+  db.prepare(
+    'UPDATE users SET verification_token = ?, verification_expires_at = ?, updated_at = datetime(\'now\') WHERE id = ?'
+  ).run(verifyToken, verifyExpires, user.id);
+
+  const result = await sendVerificationEmail({ to: user.email, firstName: user.first_name, token: verifyToken });
+  if (!result.delivered && !result.simulated) {
+    return res.status(502).json({ error: 'Could not send verification email. Please try again later.' });
+  }
+
+  res.json({ message: 'Verification email sent. Check your inbox.', simulated: !!result.simulated });
 });
 
 router.post('/login', authLimiter, loginValidation, (req, res) => {

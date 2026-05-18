@@ -266,6 +266,9 @@ function initializeDatabase() {
   addColumnIfMissing('users', 'alert_phone', "TEXT");
   addColumnIfMissing('users', 'alert_min_amount', "REAL NOT NULL DEFAULT 0");
   addColumnIfMissing('users', 'profile_photo', "TEXT");
+  addColumnIfMissing('users', 'email_verified', "INTEGER NOT NULL DEFAULT 0");
+  addColumnIfMissing('users', 'verification_token', "TEXT");
+  addColumnIfMissing('users', 'verification_expires_at', "TEXT");
   addColumnIfMissing('accounts', 'maturity_days', "INTEGER NOT NULL DEFAULT 30");
   addColumnIfMissing('accounts', 'matures_at', "TEXT");
 }
