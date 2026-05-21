@@ -2,6 +2,7 @@
 const { defineConfig, devices } = require('@playwright/test');
 require('dotenv').config();
 
+// Kapita app URLs
 const BASE_URL = process.env.BASE_URL || 'http://localhost:5173';
 const API_URL = process.env.API_URL || 'http://localhost:3001';
 const E2E_BYPASS_TOKEN = process.env.E2E_BYPASS_TOKEN || '';
@@ -49,6 +50,20 @@ module.exports = defineConfig({
     },
   ],
   outputDir: 'test-results/',
+  webServer: [
+    {
+      command: 'npm run dev --prefix ../client',
+      url: BASE_URL,
+      reuseExistingServer: !process.env.CI,
+      timeout: 120 * 1000,
+    },
+    {
+      command: 'npm run start --prefix ../server',
+      url: `${API_URL}/health`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 120 * 1000,
+    },
+  ],
 });
 
 module.exports.BASE_URL = BASE_URL;

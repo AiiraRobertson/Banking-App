@@ -45,6 +45,8 @@ function verifyEmailHtml({ firstName, verifyUrl }) {
 </body></html>`;
 }
 
+const IS_PROD = process.env.NODE_ENV === 'production';
+
 async function sendVerificationEmail({ to, firstName, token }) {
   const verifyUrl = buildVerifyUrl(token);
   if (!resend) {
@@ -60,11 +62,19 @@ async function sendVerificationEmail({ to, firstName, token }) {
     });
     if (error) {
       console.error('[email] resend error:', error);
+      if (!IS_PROD) {
+        console.log(`[email:fallback] verification link for ${to}: ${verifyUrl}`);
+        return { delivered: false, simulated: true, verifyUrl, providerError: error.message };
+      }
       return { delivered: false, error: error.message || 'Send failed', verifyUrl };
     }
     return { delivered: true, verifyUrl };
   } catch (err) {
     console.error('[email] threw:', err);
+    if (!IS_PROD) {
+      console.log(`[email:fallback] verification link for ${to}: ${verifyUrl}`);
+      return { delivered: false, simulated: true, verifyUrl, providerError: err.message };
+    }
     return { delivered: false, error: err.message, verifyUrl };
   }
 }
