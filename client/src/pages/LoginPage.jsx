@@ -2,30 +2,35 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import PasswordInput from '../components/ui/PasswordInput';
-import PasswordRequirements from '../components/ui/PasswordRequirements';
 import ThemeToggle from '../components/ui/ThemeToggle';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError(null);
     setLoading(true);
     try {
       await login(email, password);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed');
+      const status = err.response?.status;
+      const message = err.response?.data?.error || 'Login failed. Please try again.';
+      setError({ status, message });
     } finally {
       setLoading(false);
     }
   };
+
+  const errorTone = error?.status === 429
+    ? 'bg-amber-50 border-amber-200 text-amber-800'
+    : 'bg-red-50 border-red-200 text-red-700';
 
   return (
     <div className="min-h-screen bg-auth flex items-center justify-center p-4 relative">
@@ -44,16 +49,19 @@ export default function LoginPage() {
 
         <div className="bg-surface rounded-2xl shadow-xl shadow-[var(--color-shadow)] border border-b-secondary p-8">
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-              {error}
+            <div role="alert" className={`mb-4 p-3 border rounded-lg text-sm ${errorTone}`}>
+              {error.message}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-t-secondary mb-1">Email</label>
+              <label htmlFor="login-email" className="block text-sm font-medium text-t-secondary mb-1">Email</label>
               <input
+                id="login-email"
                 type="email"
+                name="email"
+                autoComplete="username"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 className="w-full px-3 py-2.5 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors text-sm"
@@ -63,15 +71,22 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-t-secondary mb-1">Password</label>
+              <div className="flex items-baseline justify-between mb-1">
+                <label htmlFor="login-password" className="block text-sm font-medium text-t-secondary">Password</label>
+                <Link to="/contact" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">
+                  Forgot password?
+                </Link>
+              </div>
               <PasswordInput
+                id="login-password"
+                name="password"
+                autoComplete="current-password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 className="w-full px-3 py-2.5 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors text-sm"
                 placeholder="Enter your password"
                 required
               />
-              <PasswordRequirements password={password} mode="hint" />
             </div>
 
             <button

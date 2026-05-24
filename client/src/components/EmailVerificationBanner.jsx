@@ -1,19 +1,35 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { resendVerification } from '../services/authService';
+
+const DISMISS_KEY = 'verifyBannerDismissedAt';
+const DISMISS_HOURS = 24;
+const COOLDOWN_SECONDS = 30;
 
 export default function EmailVerificationBanner() {
   const { user } = useAuth();
   const [status, setStatus] = useState({ loading: false, sent: false, error: '' });
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(() => {
+    const at = Number(localStorage.getItem(DISMISS_KEY) || 0);
+    return at && Date.now() - at < DISMISS_HOURS * 3600 * 1000;
+  });
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const id = setInterval(() => setCooldown((s) => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(id);
+  }, [cooldown]);
 
   if (!user || user.email_verified || dismissed) return null;
 
   const handleResend = async () => {
+    if (cooldown > 0) return;
     setStatus({ loading: true, sent: false, error: '' });
     try {
       const { data } = await resendVerification();
       setStatus({ loading: false, sent: true, error: '', simulated: !!data.simulated });
+      setCooldown(COOLDOWN_SECONDS);
     } catch (err) {
       setStatus({
         loading: false,
@@ -21,6 +37,11 @@ export default function EmailVerificationBanner() {
         error: err.response?.data?.error || 'Could not resend. Please try again.',
       });
     }
+  };
+
+  const handleDismiss = () => {
+    localStorage.setItem(DISMISS_KEY, String(Date.now()));
+    setDismissed(true);
   };
 
   return (
@@ -36,26 +57,28 @@ export default function EmailVerificationBanner() {
           </span>
         </span>
 
-        {status.sent ? (
+        {status.sent && cooldown > 0 ? (
           <span className="text-green-700 font-medium">
             {status.simulated ? 'Link logged to server console (dev mode).' : 'Verification email sent — check your inbox.'}
+            {' '}<span className="text-green-600 font-normal">Resend in {cooldown}s.</span>
           </span>
         ) : (
           <button
             onClick={handleResend}
-            disabled={status.loading}
+            disabled={status.loading || cooldown > 0}
             className="px-3 py-1 bg-amber-600 text-white rounded-md font-medium hover:bg-amber-700 transition-colors disabled:opacity-50"
           >
-            {status.loading ? 'Sending…' : 'Resend link'}
+            {status.loading ? 'Sending…' : cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend link'}
           </button>
         )}
 
         {status.error && <span className="text-red-700">{status.error}</span>}
 
         <button
-          onClick={() => setDismissed(true)}
+          onClick={handleDismiss}
           className="ml-auto text-amber-700 hover:text-amber-900 transition-colors"
-          title="Dismiss for this session"
+          title="Hide for 24 hours"
+          aria-label="Dismiss banner for 24 hours"
         >
           ✕
         </button>

@@ -86,22 +86,22 @@ export default function RegisterPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-t-secondary mb-1">First Name</label>
-                <input type="text" name="first_name" value={form.first_name} onChange={handleChange} className={inputClass} required />
+                <input type="text" name="first_name" autoComplete="given-name" value={form.first_name} onChange={handleChange} className={inputClass} required />
               </div>
               <div>
                 <label className="block text-sm font-medium text-t-secondary mb-1">Last Name</label>
-                <input type="text" name="last_name" value={form.last_name} onChange={handleChange} className={inputClass} required />
+                <input type="text" name="last_name" autoComplete="family-name" value={form.last_name} onChange={handleChange} className={inputClass} required />
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-t-secondary mb-1">Email</label>
-              <input type="email" name="email" value={form.email} onChange={handleChange} className={inputClass} placeholder="you@example.com" required />
+              <input type="email" name="email" autoComplete="email" value={form.email} onChange={handleChange} className={inputClass} placeholder="you@example.com" required />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-t-secondary mb-1">Date of Birth</label>
-              <input type="date" name="date_of_birth" value={form.date_of_birth} onChange={handleChange} max={maxDobStr} className={inputClass} required />
+              <input type="date" name="date_of_birth" autoComplete="bday" value={form.date_of_birth} onChange={handleChange} max={maxDobStr} className={inputClass} required />
             </div>
 
             <AddressFields
@@ -136,13 +136,13 @@ export default function RegisterPage() {
 
             <div>
               <label className="block text-sm font-medium text-t-secondary mb-1">Password</label>
-              <PasswordInput name="password" value={form.password} onChange={handleChange} className={inputClass} placeholder="Min 8 chars, uppercase, lowercase, number, special" required />
+              <PasswordInput name="password" autoComplete="new-password" value={form.password} onChange={handleChange} className={inputClass} placeholder="Min 8 chars, uppercase, lowercase, number, special" required />
               <PasswordRequirements password={form.password} mode="checklist" />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-t-secondary mb-1">Confirm Password</label>
-              <PasswordInput name="confirm_password" value={form.confirm_password} onChange={handleChange} className={inputClass} required />
+              <PasswordInput name="confirm_password" autoComplete="new-password" value={form.confirm_password} onChange={handleChange} className={inputClass} required />
               {form.confirm_password && (
                 <p className={`text-xs mt-1.5 ${form.password === form.confirm_password ? 'text-green-600' : 'text-red-500'}`}>
                   {form.password === form.confirm_password ? 'Passwords match' : 'Passwords do not match'}
@@ -154,7 +154,10 @@ export default function RegisterPage() {
               <input type="checkbox" name="terms_accepted" checked={form.terms_accepted} onChange={handleChange}
                 className="mt-0.5 h-4 w-4 text-indigo-600 border-b-input rounded focus:ring-indigo-500" />
               <label className="text-sm text-t-secondary">
-                I agree to the <span className="text-indigo-600 font-medium cursor-pointer hover:text-indigo-700">Terms and Conditions</span> and <span className="text-indigo-600 font-medium cursor-pointer hover:text-indigo-700">Privacy Policy</span>
+                I agree to the{' '}
+                <Link to="/terms" target="_blank" rel="noopener" className="text-indigo-600 font-medium hover:text-indigo-700 underline-offset-2 hover:underline">Terms and Conditions</Link>
+                {' '}and{' '}
+                <Link to="/policy" target="_blank" rel="noopener" className="text-indigo-600 font-medium hover:text-indigo-700 underline-offset-2 hover:underline">Privacy Policy</Link>
               </label>
             </div>
 
