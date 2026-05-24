@@ -7,7 +7,14 @@ const { handleValidation } = require('../middleware/validate');
 const { authenticate } = require('../middleware/auth');
 const { generateAccountNumber } = require('../utils/accountNumber');
 const { countries } = require('../utils/currencies');
-const { generateToken: makeVerifyToken, verificationExpiry, sendVerificationEmail } = require('../utils/email');
+const {
+  generateToken: makeVerifyToken,
+  verificationExpiry,
+  sendVerificationEmail,
+  hashToken,
+  passwordResetExpiry,
+  sendPasswordResetEmail,
+} = require('../utils/email');
 const rateLimit = require('express-rate-limit');
 
 const router = express.Router();
@@ -208,6 +215,75 @@ router.post('/resend-verification', resendLimiter, authenticate, async (req, res
   }
 
   res.json({ message: 'Verification email sent. Check your inbox.', simulated: !!result.simulated });
+});
+
+const forgotLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: 'Too many password reset requests. Please wait a few minutes.' },
+  skip: (req) => Boolean(E2E_BYPASS_TOKEN) && req.get('x-e2e-bypass') === E2E_BYPASS_TOKEN,
+});
+
+const forgotValidation = [
+  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+  handleValidation,
+];
+
+const resetValidation = [
+  body('token').isString().isLength({ min: 32 }).withMessage('Reset token is required'),
+  body('password')
+    .isLength({ min: 8 }).withMessage('Password must be at least 8 characters')
+    .matches(/[A-Z]/).withMessage('Password must contain an uppercase letter')
+    .matches(/[a-z]/).withMessage('Password must contain a lowercase letter')
+    .matches(/[0-9]/).withMessage('Password must contain a number')
+    .matches(/[!@#$%^&*]/).withMessage('Password must contain a special character'),
+  handleValidation,
+];
+
+// Forgot password: always returns success to avoid leaking which emails exist.
+router.post('/forgot-password', forgotLimiter, forgotValidation, async (req, res) => {
+  const { email } = req.body;
+  const genericResponse = { message: 'If an account exists for that email, a reset link has been sent.' };
+
+  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+  if (!user || !user.is_active) {
+    return res.json(genericResponse);
+  }
+
+  const rawToken = makeVerifyToken();
+  const tokenHash = hashToken(rawToken);
+  const expires = passwordResetExpiry();
+
+  db.prepare(
+    `UPDATE users SET password_reset_token_hash = ?, password_reset_expires_at = ?, updated_at = datetime('now') WHERE id = ?`
+  ).run(tokenHash, expires, user.id);
+
+  const result = await sendPasswordResetEmail({ to: user.email, firstName: user.first_name, token: rawToken });
+
+  // In dev / fallback mode, surface simulated:true so the UI can show "logged to console"
+  res.json({ ...genericResponse, simulated: !!result.simulated });
+});
+
+router.post('/reset-password', authLimiter, resetValidation, (req, res) => {
+  const { token, password } = req.body;
+  const tokenHash = hashToken(token);
+
+  const user = db.prepare('SELECT * FROM users WHERE password_reset_token_hash = ?').get(tokenHash);
+  if (!user) {
+    return res.status(400).json({ error: 'Invalid or expired reset link' });
+  }
+  if (!user.password_reset_expires_at || new Date(user.password_reset_expires_at) < new Date()) {
+    return res.status(400).json({ error: 'Reset link has expired. Please request a new one.', expired: true });
+  }
+
+  const passwordHash = bcrypt.hashSync(password, 12);
+  db.prepare(
+    `UPDATE users SET password_hash = ?, password_reset_token_hash = NULL, password_reset_expires_at = NULL, updated_at = datetime('now') WHERE id = ?`
+  ).run(passwordHash, user.id);
+
+  clearFailedLogins(user.email);
+
+  res.json({ message: 'Password reset successfully. You can now sign in.' });
 });
 
 router.post('/login', authLimiter, loginValidation, (req, res) => {

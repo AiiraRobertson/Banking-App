@@ -269,6 +269,8 @@ function initializeDatabase() {
   addColumnIfMissing('users', 'email_verified', "INTEGER NOT NULL DEFAULT 0");
   addColumnIfMissing('users', 'verification_token', "TEXT");
   addColumnIfMissing('users', 'verification_expires_at', "TEXT");
+  addColumnIfMissing('users', 'password_reset_token_hash', "TEXT");
+  addColumnIfMissing('users', 'password_reset_expires_at', "TEXT");
   addColumnIfMissing('accounts', 'maturity_days', "INTEGER NOT NULL DEFAULT 30");
   addColumnIfMissing('accounts', 'matures_at', "TEXT");
 }
