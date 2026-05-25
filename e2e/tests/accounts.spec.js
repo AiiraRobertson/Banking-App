@@ -1,5 +1,5 @@
 // @ts-check
-const { test, expect } = require('../fixtures/authFixture');
+const { test, expect } = /** @type {import('../fixtures/authFixture')} */ (require('../fixtures/authFixture'));
 
 test.describe('Accounts @smoke', () => {
   test('lists at least one account card', async ({ accountsPage }) => {

@@ -14,9 +14,24 @@ const { users } = require('../utils/testData');
 const userStorage = path.join(__dirname, '..', '.auth', 'user.json');
 
 /**
- * Extended fixture set. `authedPage` boots the browser already signed in
- * (storageState reused from the setup project). Page objects are provided
+ * @typedef {object} KapitaFixtures
+ * @property {LoginPage} loginPage
+ * @property {RegisterPage} registerPage
+ * @property {DashboardPage} dashboardPage
+ * @property {TransferPage} transferPage
+ * @property {WireTransferPage} wirePage
+ * @property {AccountsPage} accountsPage
+ * @property {ProfilePage} profilePage
+ * @property {boolean} isNarrowViewport
+ * @property {ApiClient} api
+ */
+
+/**
+ * Extended fixture set. The `storageState` option boots the browser already
+ * signed in (reusing state from the setup project). Page objects are provided
  * as lazy factories so a test only constructs what it needs.
+ *
+ * @type {ReturnType<typeof base.test.extend<KapitaFixtures>>}
  */
 const test = base.test.extend({
   // Storage state for authenticated user
@@ -29,6 +44,14 @@ const test = base.test.extend({
   wirePage: async ({ page }, use) => use(new WireTransferPage(page)),
   accountsPage: async ({ page }, use) => use(new AccountsPage(page)),
   profilePage: async ({ page }, use) => use(new ProfilePage(page)),
+
+  // Narrow-viewport detection (Pixel 7 etc.) — distinct from Playwright's
+  // built-in `isMobile` which only reflects device emulation, not viewport width.
+  isNarrowViewport: async ({ page }, use) => {
+    const viewportSize = page.viewportSize();
+    const narrow = !!(viewportSize && viewportSize.width < 600);
+    await use(narrow);
+  },
 
   api: async ({}, use) => {
     const client = await ApiClient.create();

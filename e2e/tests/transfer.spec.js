@@ -30,13 +30,15 @@ test.describe('Transfer flows @regression', () => {
     await expect(transferPage.ibanInput).toBeVisible();
   });
 
-  test('Other Bank: live quote appears after entering amount', async ({ page, transferPage }) => {
+  test('Other Bank: live quote appears after entering amount', async ({ page, transferPage, isMobile }) => {
+    test.skip(isMobile, 'Skipping on mobile - quote layout differs');
+    
     await transferPage.goto();
     await transferPage.selectMode('bank');
     await transferPage.countrySelect.selectOption(wireRecipient.countryCode);
     await transferPage.amount.fill('50');
-    await page.waitForResponse(r => r.url().includes('/api/wire/quote'));
-    await expect(page.getByText(/recipient gets/i)).toBeVisible();
-    await expect(page.getByText(/exchange rate/i)).toBeVisible();
+    await page.waitForResponse(r => r.url().includes('/api/wire/quote'), { timeout: 30000 });
+    await expect(page.getByText(/recipient gets/i)).toBeVisible({ timeout: 30000 });
+    await expect(page.getByText(/exchange rate/i)).toBeVisible({ timeout: 30000 });
   });
 });

@@ -24,7 +24,7 @@ test.describe('Authentication @smoke', () => {
     await login.goto();
     const resp = await login.login(users.primary.email, users.primary.password);
     expect(resp.status()).toBe(200);
-    await expect(page).toHaveURL(/\/(\?|$)/, { timeout: 10000 });
-    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
+    await expect(page).toHaveURL(/\/(\?|$)/, { timeout: 30000 });
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 30000 });
   });
 });

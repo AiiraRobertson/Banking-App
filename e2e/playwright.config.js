@@ -7,10 +7,42 @@ const BASE_URL = process.env.BASE_URL || 'http://localhost:5173';
 const API_URL = process.env.API_URL || 'http://localhost:3001';
 const E2E_BYPASS_TOKEN = process.env.E2E_BYPASS_TOKEN || '';
 
-module.exports = defineConfig({
+// Determine if we're running against local dev or production
+const isProduction = BASE_URL.includes('https://') || BASE_URL.includes('netlify') || BASE_URL.includes('render');
+const isLocalhost = BASE_URL.includes('localhost') || BASE_URL.includes('127.0.0.1');
+
+console.log(`🎭 Playwright E2E Configuration`);
+console.log(`   BASE_URL: ${BASE_URL}`);
+console.log(`   API_URL: ${API_URL}`);
+console.log(`   Environment: ${isProduction ? '🌐 PRODUCTION' : '🏠 LOCAL DEV'}`);
+
+// Define timeouts based on environment (production may be slower)
+const timeouts = isProduction
+  ? { test: 120 * 1000, expect: 15 * 1000, navigation: 60 * 1000, action: 30 * 1000 }
+  : { test: 60 * 1000, expect: 10 * 1000, navigation: 30 * 1000, action: 15 * 1000 };
+
+// Web servers only needed for local development
+const webServer = isLocalhost
+  ? [
+      {
+        command: 'npm run dev --prefix ../client',
+        url: BASE_URL,
+        reuseExistingServer: !process.env.CI,
+        timeout: 120 * 1000,
+      },
+      {
+        command: 'npm run dev --prefix ../server',
+        url: `${API_URL}/health`,
+        reuseExistingServer: !process.env.CI,
+        timeout: 120 * 1000,
+      },
+    ]
+  : [];
+
+const config = defineConfig({
   testDir: './tests',
-  timeout: 60 * 1000,
-  expect: { timeout: 10 * 1000 },
+  timeout: timeouts.test,
+  expect: { timeout: timeouts.expect },
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -25,8 +57,8 @@ module.exports = defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    actionTimeout: 15 * 1000,
-    navigationTimeout: 30 * 1000,
+    actionTimeout: timeouts.action,
+    navigationTimeout: timeouts.navigation,
   },
   projects: [
     {
@@ -50,21 +82,15 @@ module.exports = defineConfig({
     },
   ],
   outputDir: 'test-results/',
-  webServer: [
-    {
-      command: 'npm run dev --prefix ../client',
-      url: BASE_URL,
-      reuseExistingServer: !process.env.CI,
-      timeout: 120 * 1000,
-    },
-    {
-      command: 'npm run start --prefix ../server',
-      url: `${API_URL}/health`,
-      reuseExistingServer: !process.env.CI,
-      timeout: 120 * 1000,
-    },
-  ],
+  ...(webServer.length > 0 && { webServer }),
 });
+
+module.exports = config;
+
+// Export for use in other files
+module.exports.BASE_URL = BASE_URL;
+module.exports.API_URL = API_URL;
+module.exports.E2E_BYPASS_TOKEN = E2E_BYPASS_TOKEN;
 
 module.exports.BASE_URL = BASE_URL;
 module.exports.API_URL = API_URL;

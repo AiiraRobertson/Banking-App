@@ -2,6 +2,40 @@
 
 End-to-end Playwright suite using the Page Object Model.
 
+**🎭 For complete setup and troubleshooting guide, see [KAPITA_SETUP.md](./KAPITA_SETUP.md)**
+
+## Quick Reference
+
+### URLs
+- **Local Dev**: http://localhost:5173 (client) / http://localhost:3001 (API)
+- **Production**: https://kapita.netlify.app (client) / https://kapita-api.onrender.com (API)
+
+### Quick Start
+
+```bash
+cd e2e
+npm install
+npx playwright install --with-deps chromium
+
+# For local dev (default .env already configured)
+npm run test
+
+# For production Kapita
+# Edit .env to uncomment production URLs, then:
+npm run test
+```
+
+### Test Commands
+
+```bash
+npm run test              # Run all tests
+npm run test:headed      # Run with visible browser
+npm run test:ui          # Interactive UI mode
+npm run test:debug       # Debug mode
+npm run test:smoke       # Smoke tests only (@smoke tag)
+npm run report            # View HTML report
+```
+
 ## Layout
 
 ```
