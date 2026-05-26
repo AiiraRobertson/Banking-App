@@ -30,8 +30,8 @@ test.describe('Transfer flows @regression', () => {
     await expect(transferPage.ibanInput).toBeVisible();
   });
 
-  test('Other Bank: live quote appears after entering amount', async ({ page, transferPage, isMobile }) => {
-    test.skip(isMobile, 'Skipping on mobile - quote layout differs');
+  test('Other Bank: live quote appears after entering amount', async ({ page, transferPage, isNarrowViewport }) => {
+    test.skip(isNarrowViewport, 'Skipping on mobile - quote layout differs');
     
     await transferPage.goto();
     await transferPage.selectMode('bank');

@@ -1,9 +1,8 @@
-import { test, expect } from '@playwright/test';
+// @ts-check
+const { test, expect } = require('../fixtures/authFixture');
 
-test('admin can sign in and sign out', async ({ page, browserName, page: { viewportSize } }) => {
-  // Skip on mobile viewports (Pixel 7 is 412x915)
-  const isMobileViewport = viewportSize && viewportSize.width < 600;
-  test.skip(isMobileViewport, 'Skipping on mobile viewport - responsive nav differs');
+test('admin can sign in and sign out', async ({ page, isNarrowViewport }) => {
+  test.skip(isNarrowViewport, 'Skipping on mobile viewport - responsive nav differs');
   
   await page.goto('/login');
   await page.getByLabel('Email', { exact: true }).fill('admin@bank.com');
