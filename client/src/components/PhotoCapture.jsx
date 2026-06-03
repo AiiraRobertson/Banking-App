@@ -38,14 +38,28 @@ export default function PhotoCapture({ value, onChange, label = 'Verification Ph
   const [mode, setMode] = useState('idle');
   const [error, setError] = useState('');
 
-  useEffect(() => () => stopCamera(), []);
-
   const stopCamera = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     }
   };
+
+  useEffect(() => () => stopCamera(), []);
+
+  // Attach the stream once React has committed the <video> element to the DOM.
+  // Doing this in an effect (rather than a setTimeout after setMode) guarantees
+  // videoRef.current exists, avoiding a silent race where the stream is never wired up.
+  useEffect(() => {
+    if (mode !== 'camera') return;
+    const video = videoRef.current;
+    if (!video || !streamRef.current) return;
+    video.srcObject = streamRef.current;
+    video.play().catch((err) => {
+      setError('Could not start camera preview');
+      console.error('Video play failed:', err);
+    });
+  }, [mode]);
 
   const handleFile = async (e) => {
     const file = e.target.files?.[0];
@@ -71,21 +85,26 @@ export default function PhotoCapture({ value, onChange, label = 'Verification Ph
 
   const startCamera = async () => {
     setError('');
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError('Camera not available. It requires a secure (HTTPS) connection.');
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 640 } },
         audio: false,
       });
       streamRef.current = stream;
+      // The effect keyed on `mode` attaches the stream to the <video> after render.
       setMode('camera');
-      setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.play().catch(() => {});
-        }
-      }, 0);
-    } catch {
-      setError('Camera access denied or unavailable');
+    } catch (err) {
+      const message =
+        err?.name === 'NotAllowedError'
+          ? 'Camera permission denied. Please allow access and try again.'
+          : err?.name === 'NotFoundError'
+            ? 'No camera found on this device.'
+            : 'Could not access the camera.';
+      setError(message);
       setMode('idle');
     }
   };
