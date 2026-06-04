@@ -64,6 +64,21 @@ body {
   color: var(--color-text-primary);
 }
 
+/* ===== Prevent horizontal overflow (mobile Safari zooms the whole layout
+   out to fit any element wider than the viewport). Contain it at the root. ===== */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+#root {
+  max-width: 100%;
+  overflow-x: clip;
+}
+/* Media should never force the page wider than its container */
+img, svg, video, canvas {
+  max-width: 100%;
+}
+
 /* Display heading family for hero / section titles */
 .font-display {
   font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
