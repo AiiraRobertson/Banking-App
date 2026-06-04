@@ -6,7 +6,7 @@ import AuthShell, { Icons } from '../components/ui/AuthShell';
 import Alert from '../components/ui/Alert';
 import PrimaryButton from '../components/ui/PrimaryButton';
 
-const inputClass = "w-full px-3 py-2.5 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm hover:border-indigo-300";
+const inputClass = "w-full px-3 py-2.5 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-xs sm:text-sm hover:border-indigo-300";
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -45,9 +45,9 @@ export default function LoginPage() {
         </Alert>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
         <div>
-          <label htmlFor="login-email" className="block text-sm font-medium text-t-secondary mb-1">Email</label>
+          <label htmlFor="login-email" className="block text-xs sm:text-sm font-medium text-t-secondary mb-1.5 sm:mb-2">Email</label>
           <input
             id="login-email"
             type="email"
@@ -62,9 +62,9 @@ export default function LoginPage() {
         </div>
 
         <div>
-          <div className="flex items-baseline justify-between mb-1">
-            <label htmlFor="login-password" className="block text-sm font-medium text-t-secondary">Password</label>
-            <Link to="/forgot-password" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium transition-colors">
+          <div className="flex items-baseline justify-between mb-1.5 sm:mb-2">
+            <label htmlFor="login-password" className="block text-xs sm:text-sm font-medium text-t-secondary">Password</label>
+            <Link to="/forgot-password" className="text-[10px] sm:text-xs text-indigo-600 hover:text-indigo-700 font-medium transition-colors">
               Forgot password?
             </Link>
           </div>
@@ -85,7 +85,7 @@ export default function LoginPage() {
         </PrimaryButton>
       </form>
 
-      <p className="mt-6 text-center text-sm text-t-tertiary">
+      <p className="mt-4 sm:mt-6 text-center text-xs sm:text-sm text-t-tertiary">
         Don't have an account?{' '}
         <Link to="/register" className="text-indigo-600 font-medium hover:text-indigo-700 transition-colors">
           Create one
@@ -93,7 +93,7 @@ export default function LoginPage() {
       </p>
 
       {process.env.NODE_ENV === 'development' && (
-        <div className="mt-4 p-3 bg-elevated rounded-lg text-xs text-t-tertiary">
+        <div className="mt-3 sm:mt-4 p-2.5 sm:p-3 bg-elevated rounded-lg text-[10px] sm:text-xs text-t-tertiary">
           <p className="font-medium mb-1">Demo accounts (Dev Only):</p>
           <p>Admin: admin@bank.com / Admin123!</p>
           <p>User: john@example.com / User1234!</p>

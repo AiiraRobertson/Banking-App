@@ -30,79 +30,79 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 lg:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-t-primary">Dashboard</h1>
-        <p className="text-t-tertiary">Welcome back, {user?.first_name}!</p>
+        <h1 className="text-xl lg:text-2xl font-bold text-t-primary">Dashboard</h1>
+        <p className="text-sm lg:text-base text-t-tertiary">Welcome back, {user?.first_name}!</p>
       </div>
 
       {user && !user.profile_photo && (
-        <div className="flex items-center justify-between gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center text-amber-700">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 sm:p-4 bg-amber-50 border border-amber-200 rounded-lg lg:rounded-xl">
+          <div className="flex items-start sm:items-center gap-2 sm:gap-3 flex-1">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-amber-100 rounded-full flex items-center justify-center text-amber-700 shrink-0">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </div>
             <div>
-              <p className="text-sm font-medium text-amber-900">Verify your identity</p>
-              <p className="text-xs text-amber-700">Upload a profile photo to complete account verification.</p>
+              <p className="text-xs sm:text-sm font-medium text-amber-900">Verify your identity</p>
+              <p className="text-[10px] sm:text-xs text-amber-700">Upload a profile photo to complete verification.</p>
             </div>
           </div>
-          <Link to="/profile" className="px-3 py-1.5 bg-amber-600 text-white text-sm rounded-lg hover:bg-amber-700 shrink-0">
+          <Link to="/profile" className="px-3 py-1.5 bg-amber-600 text-white text-xs sm:text-sm rounded-lg hover:bg-amber-700 shrink-0">
             Add photo
           </Link>
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-xl shadow-lg shadow-indigo-200/50 p-6 text-white hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-200/70 transition-all duration-300 cursor-default">
-          <p className="text-sm text-indigo-100">Total Balance</p>
-          <p className="text-2xl font-bold mt-1">{formatCurrency(totalBalance)}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+        <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-lg lg:rounded-xl shadow-lg shadow-indigo-200/50 p-3 sm:p-4 lg:p-6 text-white hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-200/70 transition-all duration-300 cursor-default">
+          <p className="text-xs sm:text-sm text-indigo-100">Total Balance</p>
+          <p className="text-lg sm:text-2xl font-bold mt-1">{formatCurrency(totalBalance)}</p>
         </div>
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg shadow-blue-200/50 p-6 text-white hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-200/70 transition-all duration-300 cursor-default">
-          <p className="text-sm text-blue-100">Accounts</p>
-          <p className="text-2xl font-bold mt-1">{accounts.length}</p>
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg lg:rounded-xl shadow-lg shadow-blue-200/50 p-3 sm:p-4 lg:p-6 text-white hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-200/70 transition-all duration-300 cursor-default">
+          <p className="text-xs sm:text-sm text-blue-100">Accounts</p>
+          <p className="text-lg sm:text-2xl font-bold mt-1">{accounts.length}</p>
         </div>
-        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-lg shadow-emerald-200/50 p-6 text-white hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-200/70 transition-all duration-300 cursor-default">
-          <p className="text-sm text-emerald-100">Recent Transactions</p>
-          <p className="text-2xl font-bold mt-1">{transactions.length}</p>
+        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg lg:rounded-xl shadow-lg shadow-emerald-200/50 p-3 sm:p-4 lg:p-6 text-white hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-200/70 transition-all duration-300 cursor-default">
+          <p className="text-xs sm:text-sm text-emerald-100">Transactions</p>
+          <p className="text-lg sm:text-2xl font-bold mt-1">{transactions.length}</p>
         </div>
-        <div className="bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl shadow-lg shadow-purple-200/50 p-6 text-white hover:-translate-y-1 hover:shadow-xl hover:shadow-purple-200/70 transition-all duration-300">
-          <p className="text-sm text-violet-100">Quick Transfer</p>
-          <Link to="/transfer" className="text-lg font-semibold mt-1 block hover:underline">
+        <div className="bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg lg:rounded-xl shadow-lg shadow-purple-200/50 p-3 sm:p-4 lg:p-6 text-white hover:-translate-y-1 hover:shadow-xl hover:shadow-purple-200/70 transition-all duration-300">
+          <p className="text-xs sm:text-sm text-violet-100">Quick Transfer</p>
+          <Link to="/transfer" className="text-sm lg:text-lg font-semibold mt-1 block hover:underline">
             Send Money &rarr;
           </Link>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+        <div className="lg:col-span-2 space-y-3 lg:space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-t-primary">Your Accounts</h2>
-            <Link to="/accounts" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">View all</Link>
+            <h2 className="text-base lg:text-lg font-semibold text-t-primary">Your Accounts</h2>
+            <Link to="/accounts" className="text-xs lg:text-sm text-indigo-600 hover:text-indigo-700 font-medium">View all</Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
             {accounts.map(account => {
               const lock = getMaturityInfo(account);
               return (
                 <Link
                   key={account.id}
                   to={`/accounts/${account.id}`}
-                  className="bg-surface rounded-xl shadow-sm border border-b-secondary p-5 hover:shadow-lg hover:shadow-indigo-100/30 hover:border-indigo-100 hover:scale-[1.02] transition-all duration-300"
+                  className="bg-surface rounded-lg lg:rounded-xl shadow-sm border border-b-secondary p-4 lg:p-5 hover:shadow-lg hover:shadow-indigo-100/30 hover:border-indigo-100 hover:scale-[1.02] transition-all duration-300"
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                    <span className={`text-[10px] lg:text-xs font-semibold px-2 lg:px-2.5 py-1 rounded-full ${
                       account.account_type === 'checking' ? 'bg-blue-50 text-blue-700' : 'bg-green-50 text-green-700'
                     }`}>
                       {account.account_type.charAt(0).toUpperCase() + account.account_type.slice(1)}
                     </span>
-                    <span className="text-xs text-t-muted">****{account.account_number.slice(-4)}</span>
+                    <span className="text-[10px] lg:text-xs text-t-muted">****{account.account_number.slice(-4)}</span>
                   </div>
-                  <p className="text-2xl font-bold text-t-primary">{formatCurrency(account.balance)}</p>
-                  <p className="text-xs text-t-muted mt-1">Available balance</p>
+                  <p className="text-lg lg:text-2xl font-bold text-t-primary">{formatCurrency(account.balance)}</p>
+                  <p className="text-[10px] lg:text-xs text-t-muted mt-1">Available balance</p>
                   {lock.isSavings && lock.locked && (
-                    <div className="mt-2 inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
+                    <div className="mt-2 inline-flex items-center gap-1 text-[10px] lg:text-xs font-medium px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
                       🔒 Locked · {lock.daysRemaining}d
                     </div>
                   )}
@@ -112,22 +112,22 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-t-primary">Quick Actions</h2>
-          <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-3 lg:space-y-4">
+          <h2 className="text-base lg:text-lg font-semibold text-t-primary">Quick Actions</h2>
+          <div className="grid grid-cols-2 gap-2 lg:gap-3">
             {[
               { to: '/add-money', label: 'Add Money', icon: 'M12 4v16m8-8H4', color: 'text-green-600 bg-green-50' },
               { to: '/transfer', label: 'Transfer', icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4', color: 'text-indigo-600 bg-indigo-50' },
               { to: '/bill-pay', label: 'Pay Bill', icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z', color: 'text-orange-600 bg-orange-50' },
               { to: '/wire-transfer', label: 'Send Wire', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z', color: 'text-purple-600 bg-purple-50' },
             ].map(action => (
-              <Link key={action.label} to={action.to} className="bg-surface rounded-xl shadow-sm border border-b-secondary p-4 text-center hover:shadow-lg hover:shadow-indigo-100/30 hover:border-indigo-100 hover:-translate-y-1 transition-all duration-300 group">
-                <div className={`w-10 h-10 rounded-full ${action.color} flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform duration-300`}>
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <Link key={action.label} to={action.to} className="bg-surface rounded-lg lg:rounded-xl shadow-sm border border-b-secondary p-3 lg:p-4 text-center hover:shadow-lg hover:shadow-indigo-100/30 hover:border-indigo-100 hover:-translate-y-1 transition-all duration-300 group">
+                <div className={`w-8 h-8 lg:w-10 lg:h-10 rounded-full ${action.color} flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform duration-300`}>
+                  <svg className="w-4 h-4 lg:w-5 lg:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={action.icon} />
                   </svg>
                 </div>
-                <span className="text-sm font-medium text-t-secondary">{action.label}</span>
+                <span className="text-xs lg:text-sm font-medium text-t-secondary">{action.label}</span>
               </Link>
             ))}
           </div>
