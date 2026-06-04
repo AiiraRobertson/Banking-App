@@ -18,7 +18,7 @@ export default function AuthShell({
   const widthClass = width === 'lg' ? 'max-w-lg' : 'max-w-md';
 
   return (
-    <div className="min-h-screen bg-auth flex items-center justify-center p-4 relative">
+    <div className="min-h-dvh bg-auth flex items-center justify-center p-4 py-8 relative">
       <ThemeToggle floating />
       <div className={`w-full ${widthClass} animate-fade-in-up`}>
         <div className="text-center mb-8">
