@@ -22,13 +22,13 @@ export default function ResourcePageLayout({ title, subtitle, icon, children }) 
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="mb-10">
-          {icon && <div className="text-5xl mb-3">{icon}</div>}
-          <h1 className="text-4xl font-bold text-t-primary">{title}</h1>
-          {subtitle && <p className="mt-3 text-lg text-t-tertiary max-w-3xl">{subtitle}</p>}
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div className="mb-6 sm:mb-10">
+          {icon && <div className="text-4xl sm:text-5xl mb-3">{icon}</div>}
+          <h1 className="text-3xl sm:text-4xl font-bold text-t-primary">{title}</h1>
+          {subtitle && <p className="mt-2 sm:mt-3 text-base sm:text-lg text-t-tertiary max-w-3xl">{subtitle}</p>}
         </div>
-        <div className="bg-surface rounded-2xl border border-b-secondary p-8 sm:p-10">
+        <div className="bg-surface rounded-2xl border border-b-secondary p-5 sm:p-8 lg:p-10">
           {children}
         </div>
       </main>

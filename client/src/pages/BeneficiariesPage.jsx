@@ -83,7 +83,7 @@ export default function BeneficiariesPage() {
       <div className="max-w-6xl mx-auto">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-t-primary">Saved Beneficiaries</h1>
+            <h1 className="text-xl lg:text-2xl font-bold text-t-primary">Saved Beneficiaries</h1>
             <p className="text-sm text-t-tertiary mt-1">
               People and accounts you've sent money to. Click any to start a new transfer.
             </p>

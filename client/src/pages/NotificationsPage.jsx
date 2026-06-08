@@ -54,8 +54,8 @@ export default function NotificationsPage() {
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-t-primary">Notifications</h1>
-          <p className="text-t-tertiary">Stay updated on your account activity</p>
+          <h1 className="text-xl lg:text-2xl font-bold text-t-primary">Notifications</h1>
+          <p className="text-sm text-t-tertiary">Stay updated on your account activity</p>
         </div>
         <button onClick={handleMarkAllRead} className="px-4 py-2 text-sm text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50">
           Mark All Read

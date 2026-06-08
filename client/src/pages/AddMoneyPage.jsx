@@ -129,8 +129,8 @@ export default function AddMoneyPage() {
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-t-primary">Add Money</h1>
-          <p className="text-t-tertiary">Fund your Kapita account from a card, bank, or crypto wallet</p>
+          <h1 className="text-xl lg:text-2xl font-bold text-t-primary">Add Money</h1>
+          <p className="text-sm text-t-tertiary">Fund your Kapita account from a card, bank, or crypto wallet</p>
         </div>
         <button onClick={() => navigate(-1)} className="px-4 py-2 text-sm text-t-secondary bg-surface border border-b-input rounded-lg hover:bg-hover">
           &larr; Back
@@ -229,7 +229,7 @@ export default function AddMoneyPage() {
                   placeholder="Chase, Bank of America…" required
                   className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-t-secondary mb-1">Routing Number</label>
                   <input type="text" inputMode="numeric" maxLength={9} value={bank.routing_number}
@@ -256,7 +256,7 @@ export default function AddMoneyPage() {
 
           {method === 'crypto' && (
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-t-secondary mb-1">Network</label>
                   <select value={crypto.network} onChange={e => setCrypto({ ...crypto, network: e.target.value })}

@@ -62,7 +62,7 @@ export default function CurrencyPage() {
       <div className="max-w-5xl mx-auto p-4 lg:p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-t-primary">Currency Rates & Converter</h1>
+            <h1 className="text-xl lg:text-2xl font-bold text-t-primary">Currency Rates & Converter</h1>
             <p className="text-t-tertiary">Live exchange rates and instant conversion</p>
           </div>
           <button onClick={() => navigate(-1)} className="px-4 py-2 text-sm text-t-secondary bg-surface border border-b-input rounded-lg hover:bg-hover">

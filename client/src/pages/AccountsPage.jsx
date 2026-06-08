@@ -39,8 +39,8 @@ export default function AccountsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-t-primary">Accounts</h1>
-          <p className="text-t-tertiary">Manage your bank accounts</p>
+          <h1 className="text-xl lg:text-2xl font-bold text-t-primary">Accounts</h1>
+          <p className="text-sm text-t-tertiary">Manage your bank accounts</p>
         </div>
         <button onClick={() => setShowModal(true)} className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors">
           + New Account

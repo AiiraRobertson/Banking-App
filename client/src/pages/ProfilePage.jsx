@@ -94,8 +94,8 @@ export default function ProfilePage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-t-primary">Profile</h1>
-        <p className="text-t-tertiary">Manage your personal information</p>
+        <h1 className="text-xl lg:text-2xl font-bold text-t-primary">Profile</h1>
+        <p className="text-sm text-t-tertiary">Manage your personal information</p>
       </div>
 
       {success && <div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">{success}</div>}
@@ -117,7 +117,7 @@ export default function ProfilePage() {
               value={form.profile_photo || null}
               onChange={(photo) => setForm((f) => ({ ...f, profile_photo: photo }))}
             />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-t-secondary mb-1">First Name</label>
                 <input type="text" value={form.first_name || ''} onChange={e => setForm({ ...form, first_name: e.target.value })}
@@ -185,7 +185,7 @@ export default function ProfilePage() {
                 )}
               </div>
             </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
               ['First Name', profile.first_name], ['Last Name', profile.last_name],
               ['Email', profile.email], ['Phone', profile.phone || '-'],

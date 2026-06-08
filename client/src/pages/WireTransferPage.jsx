@@ -260,8 +260,8 @@ export default function WireTransferPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-t-primary">International Wire Transfer</h1>
-        <p className="text-t-tertiary">Send money to the US, Canada, Europe, and Africa</p>
+        <h1 className="text-xl lg:text-2xl font-bold text-t-primary">International Wire Transfer</h1>
+        <p className="text-sm text-t-tertiary">Send money to the US, Canada, Europe, and Africa</p>
       </div>
 
       {/* Step Indicator */}
@@ -851,7 +851,8 @@ export default function WireTransferPage() {
           <div className="bg-surface rounded-xl shadow-sm border border-b-secondary p-8 text-center text-t-muted">No incoming wires yet</div>
         ) : (
           <div className="bg-surface rounded-xl shadow-sm border border-b-secondary overflow-hidden">
-            <div className="overflow-x-auto">
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-elevated">
                   <tr>
@@ -882,6 +883,29 @@ export default function WireTransferPage() {
                 </tbody>
               </table>
             </div>
+            {/* Mobile cards */}
+            <div className="md:hidden divide-y divide-b-secondary">
+              {incoming.map(w => (
+                <div key={w.id} className="p-4 space-y-1.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-t-primary truncate">{w.sender_name}</p>
+                      <p className="text-xs text-t-muted truncate">{w.sender_bank}</p>
+                    </div>
+                    <p className="text-sm font-semibold text-green-600 shrink-0">{formatCurrency(w.net_credited)}</p>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-t-tertiary">
+                    <span>{w.flag} {w.country_name}</span>
+                    <span>{formatDate(w.created_at)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-t-muted">Sent: {w.source_currency} {Number(w.original_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                    <span className="text-orange-600">Fee {formatCurrency(w.fee_amount)}</span>
+                  </div>
+                  <p className="text-xs font-mono text-t-muted">****{w.account_number.slice(-4)}</p>
+                </div>
+              ))}
+            </div>
             {incomingPagination.pages > 1 && (
               <div className="flex justify-between items-center px-4 py-3 bg-elevated text-sm">
                 <span className="text-t-tertiary">Page {incomingPagination.page} of {incomingPagination.pages}</span>
@@ -904,7 +928,8 @@ export default function WireTransferPage() {
           <div className="bg-surface rounded-xl shadow-sm border border-b-secondary p-8 text-center text-t-muted">No wire transfers yet</div>
         ) : (
           <div className="bg-surface rounded-xl shadow-sm border border-b-secondary overflow-hidden">
-            <div className="overflow-x-auto">
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-elevated">
                   <tr>
@@ -937,6 +962,32 @@ export default function WireTransferPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+            {/* Mobile cards */}
+            <div className="md:hidden divide-y divide-b-secondary">
+              {history.map(w => (
+                <div key={w.id} className="p-4 space-y-1.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-t-primary truncate">{w.recipient_name}</p>
+                      <p className="text-xs text-t-tertiary truncate">{w.recipient_country}</p>
+                    </div>
+                    <span className={`text-xs font-semibold px-2 py-1 rounded-full shrink-0 ${
+                      w.status === 'completed' ? 'bg-green-50 text-green-700' :
+                      w.status === 'processing' ? 'bg-blue-50 text-blue-700' :
+                      'bg-red-50 text-red-700'
+                    }`}>{w.status}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-t-muted">{formatDate(w.created_at)}</span>
+                    <span className="font-medium text-t-secondary">Sent {formatCurrency(w.original_amount)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-green-600">Recipient gets {w.currency} {w.converted_amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                    <span className="text-orange-600">Fee {formatCurrency(w.fee_amount)}</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

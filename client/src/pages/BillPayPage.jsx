@@ -93,8 +93,8 @@ export default function BillPayPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-t-primary">Bill Pay</h1>
-        <p className="text-t-tertiary">Manage payees and pay bills</p>
+        <h1 className="text-xl lg:text-2xl font-bold text-t-primary">Bill Pay</h1>
+        <p className="text-sm text-t-tertiary">Manage payees and pay bills</p>
       </div>
 
       {success && <div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">{success}</div>}
@@ -140,36 +140,59 @@ export default function BillPayPage() {
           <div className="bg-surface rounded-xl shadow-sm border border-b-secondary p-8 text-center text-t-muted">No scheduled payments</div>
         ) : (
           <div className="bg-surface rounded-xl shadow-sm border border-b-secondary overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-elevated">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Payee</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Amount</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Frequency</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Next Payment</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Status</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-t-tertiary uppercase">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-b-secondary">
-                {scheduled.map(sp => (
-                  <tr key={sp.id} className="hover:bg-hover">
-                    <td className="px-6 py-4 text-sm font-medium text-t-primary">{sp.payee_name}</td>
-                    <td className="px-6 py-4 text-sm text-t-secondary">{formatCurrency(sp.amount)}</td>
-                    <td className="px-6 py-4 text-sm text-t-tertiary capitalize">{sp.frequency}</td>
-                    <td className="px-6 py-4 text-sm text-t-tertiary">{formatDate(sp.next_payment_date)}</td>
-                    <td className="px-6 py-4">
-                      <span className={`text-xs font-semibold px-2 py-1 rounded-full ${sp.status === 'active' ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}`}>
-                        {sp.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button onClick={() => handleCancelScheduled(sp.id)} className="text-xs text-red-600 hover:text-red-800">Cancel</button>
-                    </td>
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-elevated">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Payee</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Amount</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Frequency</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Next Payment</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Status</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-t-tertiary uppercase">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-b-secondary">
+                  {scheduled.map(sp => (
+                    <tr key={sp.id} className="hover:bg-hover">
+                      <td className="px-6 py-4 text-sm font-medium text-t-primary">{sp.payee_name}</td>
+                      <td className="px-6 py-4 text-sm text-t-secondary">{formatCurrency(sp.amount)}</td>
+                      <td className="px-6 py-4 text-sm text-t-tertiary capitalize">{sp.frequency}</td>
+                      <td className="px-6 py-4 text-sm text-t-tertiary">{formatDate(sp.next_payment_date)}</td>
+                      <td className="px-6 py-4">
+                        <span className={`text-xs font-semibold px-2 py-1 rounded-full ${sp.status === 'active' ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}`}>
+                          {sp.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button onClick={() => handleCancelScheduled(sp.id)} className="text-xs text-red-600 hover:text-red-800">Cancel</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Mobile cards */}
+            <div className="md:hidden divide-y divide-b-secondary">
+              {scheduled.map(sp => (
+                <div key={sp.id} className="p-4 space-y-1.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-t-primary truncate">{sp.payee_name}</p>
+                      <p className="text-xs text-t-tertiary capitalize">{sp.frequency} · next {formatDate(sp.next_payment_date)}</p>
+                    </div>
+                    <span className={`text-xs font-semibold px-2 py-1 rounded-full shrink-0 ${sp.status === 'active' ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}`}>
+                      {sp.status}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-t-secondary">{formatCurrency(sp.amount)}</span>
+                    <button onClick={() => handleCancelScheduled(sp.id)} className="text-xs text-red-600 hover:text-red-800">Cancel</button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

@@ -56,8 +56,8 @@ export default function AccountDetailPage() {
       <div className="flex items-center gap-3">
         <Link to="/accounts" className="text-t-muted hover:text-t-secondary">&larr;</Link>
         <div>
-          <h1 className="text-2xl font-bold text-t-primary">Account Details</h1>
-          <p className="text-t-tertiary">{account.account_number}</p>
+          <h1 className="text-xl lg:text-2xl font-bold text-t-primary">Account Details</h1>
+          <p className="text-sm text-t-tertiary">{account.account_number}</p>
         </div>
       </div>
 
@@ -167,41 +167,73 @@ export default function AccountDetailPage() {
           {transactions.length === 0 ? (
             <div className="p-8 text-center text-t-muted">No transactions for this account</div>
           ) : (
-            <table className="w-full">
-              <thead className="bg-elevated">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Description</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-t-tertiary uppercase">Amount</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-t-tertiary uppercase">Balance</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-b-secondary">
+            <>
+              {/* Desktop table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-elevated">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Type</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Description</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-t-tertiary uppercase">Amount</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-t-tertiary uppercase">Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-b-secondary">
+                    {transactions.map(tx => {
+                      const isDebit = tx.from_account_id === account.id;
+                      return (
+                        <tr key={tx.id} className="hover:bg-hover">
+                          <td className="px-6 py-4 text-sm text-t-tertiary">{formatDateTime(tx.created_at)}</td>
+                          <td className="px-6 py-4">
+                            <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                              tx.transaction_type === 'deposit' ? 'bg-green-50 text-green-700' :
+                              tx.transaction_type === 'withdrawal' ? 'bg-red-50 text-red-700' :
+                              tx.transaction_type === 'transfer' ? 'bg-blue-50 text-blue-700' :
+                              tx.transaction_type === 'wire_transfer' ? 'bg-purple-50 text-purple-700' :
+                              'bg-orange-50 text-orange-700'
+                            }`}>{tx.transaction_type.replace('_', ' ')}</span>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-t-secondary">{tx.description}</td>
+                          <td className={`px-6 py-4 text-sm font-medium text-right ${isDebit ? 'text-red-600' : 'text-green-600'}`}>
+                            {isDebit ? '-' : '+'}{formatCurrency(tx.amount)}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-t-secondary text-right font-mono">{formatCurrency(tx.balance_after)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              {/* Mobile cards */}
+              <div className="md:hidden divide-y divide-b-secondary">
                 {transactions.map(tx => {
                   const isDebit = tx.from_account_id === account.id;
                   return (
-                    <tr key={tx.id} className="hover:bg-hover">
-                      <td className="px-6 py-4 text-sm text-t-tertiary">{formatDateTime(tx.created_at)}</td>
-                      <td className="px-6 py-4">
-                        <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                    <div key={tx.id} className="p-4 space-y-1.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <span className={`text-xs font-semibold px-2 py-1 rounded-full shrink-0 ${
                           tx.transaction_type === 'deposit' ? 'bg-green-50 text-green-700' :
                           tx.transaction_type === 'withdrawal' ? 'bg-red-50 text-red-700' :
                           tx.transaction_type === 'transfer' ? 'bg-blue-50 text-blue-700' :
                           tx.transaction_type === 'wire_transfer' ? 'bg-purple-50 text-purple-700' :
                           'bg-orange-50 text-orange-700'
                         }`}>{tx.transaction_type.replace('_', ' ')}</span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-t-secondary">{tx.description}</td>
-                      <td className={`px-6 py-4 text-sm font-medium text-right ${isDebit ? 'text-red-600' : 'text-green-600'}`}>
-                        {isDebit ? '-' : '+'}{formatCurrency(tx.amount)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-t-secondary text-right font-mono">{formatCurrency(tx.balance_after)}</td>
-                    </tr>
+                        <span className={`text-sm font-semibold ${isDebit ? 'text-red-600' : 'text-green-600'}`}>
+                          {isDebit ? '-' : '+'}{formatCurrency(tx.amount)}
+                        </span>
+                      </div>
+                      {tx.description && <p className="text-sm text-t-secondary">{tx.description}</p>}
+                      <div className="flex items-center justify-between text-xs text-t-muted">
+                        <span>{formatDateTime(tx.created_at)}</span>
+                        <span className="font-mono">Bal {formatCurrency(tx.balance_after)}</span>
+                      </div>
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
+              </div>
+            </>
           )}
         </div>
         {pagination.pages > 1 && (

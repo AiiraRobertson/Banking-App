@@ -118,6 +118,14 @@ input, select, textarea {
   color: var(--color-text-primary);
 }
 
+/* ===== Prevent iOS Safari auto-zoom on input focus =====
+   Safari zooms the whole page when a focused form control renders below 16px.
+   Force a 16px floor on small screens; pages keep their smaller text-* utility
+   sizes at sm+ (≥640px) where zoom isn't triggered. */
+@media (max-width: 639px) {
+  input, select, textarea { font-size: 16px; }
+}
+
 /* ===== 3D Backgrounds ===== */
 .bg-3d {
   background:
