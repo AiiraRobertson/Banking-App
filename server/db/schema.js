@@ -60,6 +60,7 @@ function initializeDatabase() {
       user_id INTEGER NOT NULL,
       payee_name TEXT NOT NULL,
       payee_account TEXT NOT NULL,
+      meter_number TEXT,
       category TEXT NOT NULL CHECK(category IN ('utilities', 'telecom', 'insurance', 'credit_card', 'rent', 'other')),
       nickname TEXT,
       is_active INTEGER NOT NULL DEFAULT 1,
@@ -81,6 +82,74 @@ function initializeDatabase() {
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
       FOREIGN KEY (from_account_id) REFERENCES accounts(id),
       FOREIGN KEY (payee_id) REFERENCES bill_payees(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS service_payments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      from_account_id INTEGER NOT NULL,
+      service_type TEXT NOT NULL CHECK(service_type IN ('electricity', 'water', 'airtime', 'data')),
+      provider TEXT NOT NULL,
+      customer_reference TEXT NOT NULL,
+      amount REAL NOT NULL CHECK(amount > 0),
+      package_code TEXT,
+      status TEXT NOT NULL DEFAULT 'completed' CHECK(status IN ('completed', 'failed')),
+      reference_id TEXT NOT NULL UNIQUE,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (from_account_id) REFERENCES accounts(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS payroll_groups (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      company_name TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS payroll_employees (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      group_id INTEGER,
+      full_name TEXT NOT NULL,
+      email TEXT,
+      bank_name TEXT NOT NULL,
+      bank_code TEXT,
+      account_name TEXT NOT NULL,
+      account_number TEXT NOT NULL,
+      department TEXT,
+      role TEXT,
+      is_active INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (group_id) REFERENCES payroll_groups(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS payroll_runs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      from_account_id INTEGER NOT NULL,
+      scheduled_for TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending_authorization' CHECK(status IN ('pending_authorization', 'authorized', 'processing', 'completed', 'failed', 'expired', 'cancelled')),
+      authorized_at TEXT,
+      executed_at TEXT,
+      total_amount REAL NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (from_account_id) REFERENCES accounts(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS payroll_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      payroll_run_id INTEGER NOT NULL,
+      employee_id INTEGER NOT NULL,
+      amount REAL NOT NULL CHECK(amount > 0),
+      status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'paid', 'failed')),
+      reference_id TEXT,
+      FOREIGN KEY (payroll_run_id) REFERENCES payroll_runs(id) ON DELETE CASCADE,
+      FOREIGN KEY (employee_id) REFERENCES payroll_employees(id)
     );
 
     CREATE TABLE IF NOT EXISTS notifications (
@@ -181,6 +250,9 @@ function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
     CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(user_id, is_read);
     CREATE INDEX IF NOT EXISTS idx_scheduled_payments_next ON scheduled_payments(next_payment_date, status);
+    CREATE INDEX IF NOT EXISTS idx_service_payments_user ON service_payments(user_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_payroll_runs_due ON payroll_runs(scheduled_for, status);
+    CREATE INDEX IF NOT EXISTS idx_payroll_employees_user ON payroll_employees(user_id, is_active);
 
     CREATE TABLE IF NOT EXISTS contact_messages (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -260,6 +332,11 @@ function initializeDatabase() {
 
     CREATE INDEX IF NOT EXISTS idx_deposit_sources_txn ON deposit_sources(transaction_id);
   `);
+
+  addColumnIfMissing('bill_payees', 'meter_number', 'TEXT');
+  addColumnIfMissing('payroll_employees', 'group_id', 'INTEGER');
+  addColumnIfMissing('payroll_employees', 'department', 'TEXT');
+  addColumnIfMissing('payroll_employees', 'role', 'TEXT');
 
   addColumnIfMissing('users', 'email_alerts', "INTEGER NOT NULL DEFAULT 1");
   addColumnIfMissing('users', 'sms_alerts', "INTEGER NOT NULL DEFAULT 0");

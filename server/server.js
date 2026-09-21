@@ -116,6 +116,8 @@ function startServer() {
   app.use('/api/accounts', require('./routes/accounts'));
   app.use('/api/transactions', require('./routes/transactions'));
   app.use('/api/billpay', require('./routes/billpay'));
+  const { executeDuePayrolls } = require('./routes/billpay');
+  setInterval(() => executeDuePayrolls().catch(error => console.error('Payroll worker error:', error)), 30000);
   app.use('/api/funding', require('./routes/funding'));
   app.use('/api/notifications', require('./routes/notifications'));
   app.use('/api/profile', require('./routes/profile'));

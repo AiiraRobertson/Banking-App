@@ -138,18 +138,14 @@ async function regressionTests() {
     { email_alerts: true, sms_alerts: false, alert_phone: '+15550199', alert_min_amount: 5 }, token);
   record('REG-15', 'regression', 'Profile alert prefs persisted', r.body.user?.alert_min_amount === 5 ? 'PASS' : 'FAIL', 'alert_min_amount=5', `got=${r.body.user?.alert_min_amount}`, r.ms);
 
-  // REG-16 bill payee create + pay-now
-  r = await req('POST', '/api/billpay/payees', {
-    payee_name: 'Test Utility', payee_account: 'PAY-100', category: 'utilities'
-  }, token);
-  const payeeId = r.body.payee?.id;
-  record('REG-16', 'regression', 'Bill payee created', payeeId ? 'PASS' : 'FAIL', '201', `${r.status} id=${payeeId}`, r.ms);
+  // REG-16/17 Nigerian utility catalog + electricity payment
+  r = await req('GET', '/api/billpay/catalog', null, token);
+  record('REG-16', 'regression', 'Nigerian payment catalog lists providers', r.status === 200 && r.body.electricityProviders?.length > 0 && r.body.mobileProviders?.length === 4 ? 'PASS' : 'FAIL', 'electricity + four mobile networks', `${r.status} electricity=${r.body.electricityProviders?.length}`, r.ms);
 
-  if (payeeId) {
-    r = await req('POST', '/api/billpay/pay-now',
-      { payee_id: payeeId, from_account_id: checking.id, amount: 12.00 }, token);
-    record('REG-17', 'regression', 'Pay-now debits checking', r.status === 200 ? 'PASS' : 'FAIL', '200', r.status, r.ms);
-  }
+  r = await req('POST', '/api/billpay/payments', {
+    service_type: 'electricity', provider: 'ikeja-electric', customer_reference: '1234567890', from_account_id: checking.id, amount: 100
+  }, token);
+  record('REG-17', 'regression', 'Electricity payment debits checking', r.status === 201 && r.body.referenceId ? 'PASS' : 'FAIL', '201 + referenceId', `${r.status} ref=${r.body.referenceId}`, r.ms);
 
   // REG-18 transactions paginated list
   r = await req('GET', '/api/transactions?limit=5', null, token);
