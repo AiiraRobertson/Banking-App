@@ -1,172 +1,124 @@
-# SecureBank — International Banking Made Simple
+# Kapita Banking
 
-A full-featured banking web application built with React and Node.js, supporting international wire transfers across 28+ countries in North America, Europe, and Africa.
+Kapita is a full-stack banking web application built as a realistic, interactive product demo. It lets customers explore everyday banking workflows in a browser, while administrators can inspect and manage the demo users, accounts, and transactions.
 
-## Tech Stack
+The application stores demo data in SQLite and performs its banking operations within that local application. It is not connected to a real bank, payment processor, or financial network, so use it for development, testing, and demonstration only. Currency and international wire quotes use exchange-rate data fetched from an external rates service.
 
-**Frontend:** React 18 (Vite) + Tailwind CSS + React Router v6  
-**Backend:** Node.js + Express.js  
-**Database:** SQLite (better-sqlite3)  
-**Auth:** JWT (HS256, 24h expiry) + bcryptjs (12 rounds)  
-**Security:** Helmet, express-rate-limit, express-validator, parameterized queries
+## What You Can Do
 
-## Features
+- Create an account, sign in, verify an email address, and reset a password
+- View checking and savings accounts, balances, and transaction activity
+- Add funds and make internal transfers between accounts
+- Manage beneficiaries and pay bills
+- Request international wire quotes and send demo transfers to supported destinations
+- Convert currencies and view exchange rates
+- Review transaction notifications and manage profile details
+- Use an admin dashboard to review users, accounts, and transactions
+- Browse public information pages, including FAQs, policies, contact, and feedback
 
-- **User Authentication** — Register, login, JWT-based sessions
-- **Account Management** — Checking & savings accounts with real-time balances
-- **Transfers** — Internal transfers between accounts with atomic transactions
-- **International Wire Transfers** — Send money to 28+ countries with currency conversion and fee calculation
-- **Bill Pay** — Manage payees and schedule recurring payments
-- **Transaction History** — Full history with filters (type, account, date range)
-- **Notifications** — Real-time alerts for transactions, low balances, and security events
-- **Loan Calculator** — Monthly payment and amortization calculator
-- **Profile Management** — Update personal information and change password
-- **Admin Dashboard** — User management, transaction monitoring, account overview
-- **Landing Page** — Public marketing page with feature showcase
+International wire destinations cover 28 countries in North America, Europe, and Africa. The country list, currencies, fees, and required recipient banking details are maintained by the server.
 
-## Supported Countries
+## How It Works
 
-**North America:** United States, Canada  
-**Europe:** United Kingdom, Germany, France, Netherlands, Spain, Italy, Portugal, Belgium, Ireland, Switzerland, Sweden, Norway, Denmark, Poland  
-**Africa:** Nigeria, Kenya, South Africa, Ghana, Egypt, Tanzania, Ethiopia, Rwanda, Uganda, Cameroon, Senegal, Morocco
+The frontend is a React single-page application. It calls a Node.js and Express API for authentication, account data, transfers, bill pay, notifications, profile management, and administration. SQLite persists application data locally; the server initializes its schema and seeds demo records when the database is empty.
 
-## Getting Started
+The repository also includes browser-based end-to-end tests in `e2e/`, API/security test materials, load-test utilities, and deployment configuration for Netlify and Render. See [AZURE_DEPLOYMENT_README.md](AZURE_DEPLOYMENT_README.md) for the Azure deployment notes.
 
-### Prerequisites
+## Technology
 
-- Node.js 18+
+- **Frontend:** React 19, Vite 8, React Router 7, Tailwind CSS 4
+- **Backend:** Node.js 20+, Express 5
+- **Database:** SQLite via `better-sqlite3`
+- **Authentication:** JWT sessions and bcrypt password hashing
+- **Request/security controls:** input validation, Helmet security headers, rate limiting, and parameterized SQL queries
+- **Testing:** Playwright end-to-end tests and server-side API/load test utilities
+
+## Run Locally
+
+### Requirements
+
+- Node.js 20.19 or later
 - npm
 
-### Installation
+### Install dependencies
+
+From the repository root:
 
 ```bash
-# Clone the repository
-cd bank-app
-
-# Install server dependencies
-cd server
-npm install
-
-# Install client dependencies
-cd ../client
-npm install
+npm run install:all
 ```
 
-### Running the App
+### Start the application
+
+From the repository root:
 
 ```bash
-# Terminal 1 — Start the server
-cd server
 npm run dev
-# Server runs on http://localhost:5000
-
-# Terminal 2 — Start the client
-cd client
-npm run dev
-# Client runs on http://localhost:5173
 ```
 
-### Demo Credentials
+The frontend is available at `http://localhost:5173`. The API runs at `http://localhost:3001`; Vite proxies `/api` requests to it during development. On first start, the server creates the local SQLite database and inserts demo records if the database has no users.
 
-| Role  | Email             | Password   |
-|-------|-------------------|------------|
-| Admin | admin@bank.com    | Admin123!  |
-| User  | john@example.com  | User1234!  |
+To run either process separately:
 
-## Project Structure
-
+```bash
+npm run dev:server
+npm run dev:client
 ```
+
+Build the frontend for production with:
+
+```bash
+npm run build
+```
+
+## Demo Accounts
+
+The server seeds these accounts only when the database is empty:
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Admin | `admin@bank.com` | `Admin123!` |
+| Customer | `john@example.com` | `User1234!` |
+
+These credentials are for local demonstration only. Do not use them, or the seeded balances, as production credentials or financial data.
+
+## Repository Layout
+
+```text
 bank-app/
-├── client/                     # React frontend
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── layout/         # Sidebar, Navbar, DashboardLayout, AdminLayout
-│   │   │   ├── ProtectedRoute.jsx
-│   │   │   ├── AdminRoute.jsx
-│   │   │   └── PublicRoute.jsx
-│   │   ├── context/
-│   │   │   ├── AuthContext.jsx
-│   │   │   └── NotificationContext.jsx
-│   │   ├── pages/
-│   │   │   ├── admin/          # Admin dashboard, users, transactions, accounts
-│   │   │   ├── LandingPage.jsx
-│   │   │   ├── LoginPage.jsx
-│   │   │   ├── RegisterPage.jsx
-│   │   │   ├── DashboardPage.jsx
-│   │   │   ├── AccountsPage.jsx
-│   │   │   ├── AccountDetailPage.jsx
-│   │   │   ├── TransferPage.jsx
-│   │   │   ├── WireTransferPage.jsx
-│   │   │   ├── TransactionHistoryPage.jsx
-│   │   │   ├── BillPayPage.jsx
-│   │   │   ├── LoanCalculatorPage.jsx
-│   │   │   ├── ProfilePage.jsx
-│   │   │   └── NotificationsPage.jsx
-│   │   ├── services/           # API service layer (axios)
-│   │   └── utils/              # Formatting helpers
-│   └── index.html
-├── server/                     # Express backend
-│   ├── db/
-│   │   ├── database.js         # SQLite connection (WAL mode)
-│   │   ├── schema.js           # Table definitions
-│   │   └── seed.js             # Demo data
-│   ├── middleware/
-│   │   ├── auth.js             # JWT authentication
-│   │   ├── validate.js         # Express-validator handler
-│   │   └── errorHandler.js
-│   ├── routes/
-│   │   ├── auth.js             # Register, login, profile
-│   │   ├── accounts.js
-│   │   ├── transactions.js
-│   │   ├── billpay.js
-│   │   ├── wire.js             # International transfers
-│   │   ├── notifications.js
-│   │   ├── profile.js
-│   │   ├── admin.js
-│   │   └── calculator.js
-│   ├── utils/
-│   │   ├── accountNumber.js
-│   │   └── currencies.js       # 28 countries, exchange rates, fees
-│   └── server.js
-└── README.md
+├── client/       React application, pages, components, contexts, and API services
+├── server/       Express API, middleware, SQLite schema/seeding, and route handlers
+├── e2e/          Playwright browser tests and fixtures
+├── API_SECURITY_TEST_SCENARIOS.md
+├── Kapita_Security_Tests.postman_collection.json
+├── AZURE_DEPLOYMENT_README.md
+├── netlify.toml
+└── render.yaml
 ```
 
-## API Endpoints
+## API Areas
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/register` | Register new user |
-| POST | `/api/auth/login` | Login |
-| GET | `/api/auth/me` | Get current user |
-| GET | `/api/accounts` | List user accounts |
-| POST | `/api/accounts` | Create new account |
-| GET | `/api/accounts/:id` | Account details |
-| POST | `/api/transactions/deposit` | Deposit funds |
-| POST | `/api/transactions/withdraw` | Withdraw funds |
-| POST | `/api/transactions/transfer` | Internal transfer |
-| GET | `/api/transactions` | Transaction history |
-| GET | `/api/wire/countries` | Supported countries |
-| GET | `/api/wire/rates` | Exchange rates |
-| POST | `/api/wire/quote` | Get transfer quote |
-| POST | `/api/wire/send` | Send wire transfer |
-| GET | `/api/wire/history` | Wire transfer history |
-| GET | `/api/billpay/payees` | List payees |
-| POST | `/api/billpay/payees` | Add payee |
-| POST | `/api/billpay/pay` | Make payment |
-| GET | `/api/notifications` | User notifications |
-| PUT | `/api/profile` | Update profile |
-| PUT | `/api/profile/password` | Change password |
-| GET | `/api/admin/dashboard` | Admin stats |
-| GET | `/api/admin/users` | List all users |
-| GET | `/api/admin/users/:id` | User details |
+The API is mounted under `/api` and organized by capability:
 
-## Security
+| Route prefix | Purpose |
+| --- | --- |
+| `/api/auth` | Registration, login, email verification, and password recovery |
+| `/api/accounts` | Account listing, details, and account operations |
+| `/api/transactions` | Deposits, withdrawals, transfers, and transaction history |
+| `/api/funding` | Funding workflows |
+| `/api/wire` | Supported destinations, banks, wire quotes, and transfers |
+| `/api/currency` | Exchange rates and currency conversion |
+| `/api/billpay` | Payees, bill payments, and related payment workflows |
+| `/api/beneficiaries` | Beneficiary management |
+| `/api/notifications` | Customer notifications |
+| `/api/profile` | Profile and account preferences |
+| `/api/admin` | Administrative dashboards and management |
+| `/api/resources` | Public contact and feedback resources |
 
-- JWT tokens with 24-hour expiry
-- Password hashing with bcrypt (12 salt rounds)
-- Rate limiting (200 req/15min global, 10 req/15min for auth)
-- Helmet security headers
-- Parameterized SQL queries (no SQL injection)
-- IDOR prevention — all queries scoped to authenticated user
-- Atomic database transactions for all monetary operations
-- Input validation with express-validator
+The server also provides `GET /health` as a health-check endpoint.
+
+## Configuration And Deployment
+
+The server reads environment variables through `dotenv`. Start from [`server/.env.example`](server/.env.example) when creating a local environment file. At minimum, configure a unique, sufficiently long `JWT_SECRET` for any non-demo deployment. Optional settings include `PORT`, `DB_PATH` for the SQLite file location, and `CLIENT_ORIGIN` for allowed production frontend origins. Email delivery can be configured with `RESEND_API_KEY` and `EMAIL_FROM`; without a mail provider, verification and reset links are logged by the server for development use.
+
+SQLite persistence on a hosted service requires a persistent disk. Configure `DB_PATH` to a location on that disk. Keep secrets out of source control and use the hosting provider's environment-variable settings. Review the deployment notes before deploying; this project is a demonstration application and has not been presented as a regulated production banking system.

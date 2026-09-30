@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import { getAccounts } from '../services/accountService';
 import { getTransactions } from '../services/transactionService';
 import { formatCurrency } from '../utils/formatCurrency';
-import { formatDateTime } from '../utils/formatDate';
 import { getMaturityInfo } from '../utils/savingsLock';
 
 export default function DashboardPage() {
@@ -30,7 +29,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-4 lg:space-y-6">
+    <div className="mosaic-page space-y-4 lg:space-y-6">
       <div>
         <h1 className="text-xl lg:text-2xl font-bold text-t-primary">Dashboard</h1>
         <p className="text-sm lg:text-base text-t-tertiary">Welcome back, {user?.first_name}!</p>
@@ -134,54 +133,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-t-primary">Recent Transactions</h2>
-          <Link to="/transactions" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">View all</Link>
-        </div>
-        <div className="bg-surface rounded-xl shadow-sm border border-b-secondary overflow-hidden">
-          {transactions.length === 0 ? (
-            <div className="p-8 text-center text-t-muted">No transactions yet</div>
-          ) : (
-            <table className="w-full">
-              <thead className="bg-elevated">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Description</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-t-tertiary uppercase">Amount</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-b-secondary">
-                {transactions.map(tx => {
-                  const isCredit = tx.transaction_type === 'deposit' ||
-                    (tx.transaction_type === 'transfer' && tx.to_account_id && !tx.from_account_id);
-                  return (
-                    <tr key={tx.id} className="hover:bg-indigo-50/30 transition-colors duration-200">
-                      <td className="px-6 py-4 text-sm text-t-tertiary">{formatDateTime(tx.created_at)}</td>
-                      <td className="px-6 py-4">
-                        <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                          tx.transaction_type === 'deposit' ? 'bg-green-50 text-green-700' :
-                          tx.transaction_type === 'withdrawal' ? 'bg-red-50 text-red-700' :
-                          tx.transaction_type === 'transfer' ? 'bg-blue-50 text-blue-700' :
-                          tx.transaction_type === 'wire_transfer' ? 'bg-purple-50 text-purple-700' :
-                          'bg-orange-50 text-orange-700'
-                        }`}>
-                          {tx.transaction_type.replace('_', ' ')}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-t-secondary">{tx.description}</td>
-                      <td className={`px-6 py-4 text-sm font-medium text-right ${isCredit ? 'text-green-600' : 'text-red-600'}`}>
-                        {isCredit ? '+' : '-'}{formatCurrency(tx.amount)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

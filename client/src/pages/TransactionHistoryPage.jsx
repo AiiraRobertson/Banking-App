@@ -30,7 +30,7 @@ export default function TransactionHistoryPage() {
   const accountIds = accounts.map(a => a.id);
 
   return (
-    <div className="space-y-6">
+    <div className="mosaic-page space-y-6">
       <div>
         <h1 className="text-xl lg:text-2xl font-bold text-t-primary">Transaction History</h1>
         <p className="text-sm lg:text-base text-t-tertiary">View and filter all your transactions</p>
@@ -68,6 +68,7 @@ export default function TransactionHistoryPage() {
         columns={[
           { key: 'date', label: 'Date' },
           { key: 'type', label: 'Type' },
+          { key: 'beneficiary', label: 'Beneficiary' },
           { key: 'description', label: 'Description' },
           { key: 'reference', label: 'Reference' },
           { key: 'amount', label: 'Amount', cellClassName: 'text-right' },
@@ -79,6 +80,7 @@ export default function TransactionHistoryPage() {
             id: tx.id,
             date: formatDateTime(tx.created_at),
             type: tx.transaction_type.replace('_', ' '),
+            beneficiary: tx.to_account_number ? `****${tx.to_account_number.slice(-4)}` : '—',
             description: tx.description,
             reference: tx.reference_id.slice(0, 8) + '...',
             amount: `${isDebit ? '-' : '+'}${formatCurrency(tx.amount)}`,
@@ -116,6 +118,10 @@ export default function TransactionHistoryPage() {
                   <p className="text-xs text-t-muted">Balance</p>
                   <p className="text-sm font-semibold text-t-primary">{row.balance}</p>
                 </div>
+              </div>
+              <div className="flex justify-between gap-3 text-xs">
+                <span className="text-t-muted">Beneficiary</span>
+                <span className="font-medium text-t-secondary">{row.beneficiary}</span>
               </div>
               <p className="text-xs text-t-muted font-mono">Ref: {row.reference}</p>
             </div>

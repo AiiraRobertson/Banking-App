@@ -13,7 +13,6 @@ class DashboardPage extends BasePage {
     this.totalBalanceCard = this.main.getByText('Total Balance').locator('..');
     this.accountsList = this.main.getByRole('heading', { name: 'Your Accounts' }).locator('..');
     this.quickActions = this.main.getByRole('heading', { name: 'Quick Actions' }).locator('..');
-    this.recentTxTable = this.main.getByRole('heading', { name: 'Recent Transactions' }).locator('..');
   }
 
   async goto() {

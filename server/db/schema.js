@@ -152,6 +152,30 @@ function initializeDatabase() {
       FOREIGN KEY (employee_id) REFERENCES payroll_employees(id)
     );
 
+    CREATE TABLE IF NOT EXISTS salary_payments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      payroll_run_id INTEGER NOT NULL,
+      payroll_item_id INTEGER NOT NULL UNIQUE,
+      employer_user_id INTEGER NOT NULL,
+      from_account_id INTEGER NOT NULL,
+      employee_id INTEGER NOT NULL,
+      employee_name TEXT NOT NULL,
+      bank_name TEXT NOT NULL,
+      account_name TEXT NOT NULL,
+      account_number TEXT NOT NULL,
+      amount REAL NOT NULL CHECK(amount > 0),
+      scheduled_for TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'scheduled' CHECK(status IN ('scheduled', 'processing', 'completed', 'failed')),
+      reference_id TEXT NOT NULL UNIQUE,
+      executed_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (payroll_run_id) REFERENCES payroll_runs(id) ON DELETE CASCADE,
+      FOREIGN KEY (payroll_item_id) REFERENCES payroll_items(id) ON DELETE CASCADE,
+      FOREIGN KEY (employer_user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (from_account_id) REFERENCES accounts(id),
+      FOREIGN KEY (employee_id) REFERENCES payroll_employees(id)
+    );
+
     CREATE TABLE IF NOT EXISTS notifications (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -253,6 +277,7 @@ function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_service_payments_user ON service_payments(user_id, created_at);
     CREATE INDEX IF NOT EXISTS idx_payroll_runs_due ON payroll_runs(scheduled_for, status);
     CREATE INDEX IF NOT EXISTS idx_payroll_employees_user ON payroll_employees(user_id, is_active);
+    CREATE INDEX IF NOT EXISTS idx_salary_payments_run ON salary_payments(payroll_run_id, status);
 
     CREATE TABLE IF NOT EXISTS contact_messages (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

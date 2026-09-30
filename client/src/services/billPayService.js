@@ -12,6 +12,7 @@ export const addEmployee = (data) => api.post('/billpay/payroll/employees', data
 export const updateEmployee = (id, data) => api.put(`/billpay/payroll/employees/${id}`, data);
 export const removeEmployee = (id) => api.delete(`/billpay/payroll/employees/${id}`);
 export const getPayrollRuns = () => api.get('/billpay/payroll/runs');
+export const getPayrollRunPayments = (id) => api.get(`/billpay/payroll/runs/${id}/payments`);
 export const createPayrollRun = (data) => api.post('/billpay/payroll/runs', data);
 export const authorizePayrollRun = (id) => api.post(`/billpay/payroll/runs/${id}/authorize`);
 export const cancelPayrollRun = (id) => api.post(`/billpay/payroll/runs/${id}/cancel`);

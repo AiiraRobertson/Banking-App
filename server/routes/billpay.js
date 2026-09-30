@@ -158,6 +158,15 @@ router.get('/payroll/runs', (req, res) => {
   res.json({ runs });
 });
 
+router.get('/payroll/runs/:id/payments', [param('id').isInt({ min: 1 }), handleValidation], (req, res) => {
+  const run = db.prepare('SELECT id FROM payroll_runs WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!run) return res.status(404).json({ error: 'Payroll run not found' });
+  const payments = db.prepare(`SELECT id, employee_name, bank_name, account_name, account_number, amount,
+    scheduled_for, status, reference_id, executed_at
+    FROM salary_payments WHERE payroll_run_id = ? ORDER BY employee_name`).all(run.id);
+  res.json({ payments });
+});
+
 router.post('/payroll/runs', [
   body('from_account_id').isInt({ min: 1 }), body('scheduled_for').isISO8601(), body('items').isArray({ min: 1 }),
   body('items.*.employee_id').isInt({ min: 1 }), body('items.*.amount').isFloat({ min: 0.01, max: 100000000 }), handleValidation
@@ -173,7 +182,14 @@ router.post('/payroll/runs', [
   const runId = db.transaction(() => {
     const run = db.prepare('INSERT INTO payroll_runs (user_id, from_account_id, scheduled_for, total_amount) VALUES (?, ?, ?, ?)').run(req.user.id, from_account_id, dueAt.toISOString(), total);
     const insert = db.prepare('INSERT INTO payroll_items (payroll_run_id, employee_id, amount) VALUES (?, ?, ?)');
-    items.forEach(item => insert.run(run.lastInsertRowid, item.employee_id, item.amount));
+    const insertSalary = db.prepare(`INSERT INTO salary_payments
+      (payroll_run_id, payroll_item_id, employer_user_id, from_account_id, employee_id, employee_name, bank_name, account_name, account_number, amount, scheduled_for, reference_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+    items.forEach(item => {
+      const payrollItem = insert.run(run.lastInsertRowid, item.employee_id, item.amount);
+      const employee = db.prepare('SELECT full_name, bank_name, account_name, account_number FROM payroll_employees WHERE id = ?').get(item.employee_id);
+      insertSalary.run(run.lastInsertRowid, payrollItem.lastInsertRowid, req.user.id, from_account_id, item.employee_id, employee.full_name, employee.bank_name, employee.account_name, employee.account_number, item.amount, dueAt.toISOString(), uuidv4());
+    });
     return run.lastInsertRowid;
   })();
   res.status(201).json({ run: db.prepare('SELECT * FROM payroll_runs WHERE id = ?').get(runId), message: 'Payroll created. Authorize it before the due date to allow execution.' });
@@ -209,18 +225,21 @@ async function executeDuePayrolls() {
         if (!account || account.balance < run.total_amount) throw new Error('Insufficient funds for payroll');
         const lockErr = ensureWithdrawAllowed(account);
         if (lockErr) throw new Error(lockErr.message);
-        const items = db.prepare('SELECT pi.*, pe.full_name FROM payroll_items pi JOIN payroll_employees pe ON pe.id = pi.employee_id WHERE pi.payroll_run_id = ?').all(run.id);
-        for (const item of items) {
-          const referenceId = uuidv4();
-          db.prepare('UPDATE accounts SET balance = balance - ? WHERE id = ?').run(item.amount, account.id);
+        const payments = db.prepare("SELECT * FROM salary_payments WHERE payroll_run_id = ? AND status = 'scheduled'").all(run.id);
+        for (const payment of payments) {
+          const claimedPayment = db.prepare("UPDATE salary_payments SET status = 'processing' WHERE id = ? AND status = 'scheduled'").run(payment.id);
+          if (!claimedPayment.changes) continue;
+          db.prepare('UPDATE accounts SET balance = balance - ? WHERE id = ?').run(payment.amount, account.id);
           const balance = db.prepare('SELECT balance FROM accounts WHERE id = ?').get(account.id).balance;
-          db.prepare("INSERT INTO transactions (from_account_id, transaction_type, amount, balance_after, description, reference_id) VALUES (?, 'bill_payment', ?, ?, ?, ?)").run(account.id, item.amount, balance, `Salary payment to ${item.full_name}`, referenceId);
-          db.prepare("UPDATE payroll_items SET status = 'paid', reference_id = ? WHERE id = ?").run(referenceId, item.id);
+          db.prepare("INSERT INTO transactions (from_account_id, transaction_type, amount, balance_after, description, reference_id) VALUES (?, 'bill_payment', ?, ?, ?, ?)").run(account.id, payment.amount, balance, `Salary payment to ${payment.employee_name} (${payment.bank_name} ${payment.account_number})`, payment.reference_id);
+          db.prepare("UPDATE payroll_items SET status = 'paid', reference_id = ? WHERE id = ?").run(payment.reference_id, payment.payroll_item_id);
+          db.prepare("UPDATE salary_payments SET status = 'completed', executed_at = datetime('now') WHERE id = ?").run(payment.id);
         }
         db.prepare("UPDATE payroll_runs SET status = 'completed', executed_at = datetime('now') WHERE id = ?").run(run.id);
       })();
     } catch (error) {
       db.prepare("UPDATE payroll_runs SET status = 'failed' WHERE id = ?").run(run.id);
+      db.prepare("UPDATE salary_payments SET status = 'failed' WHERE payroll_run_id = ? AND status IN ('scheduled', 'processing')").run(run.id);
     }
   }
 }

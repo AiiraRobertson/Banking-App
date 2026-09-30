@@ -7,7 +7,7 @@ test.describe('Dashboard @smoke', () => {
     await dashboardPage.expectLoaded();
     await expect(dashboardPage.totalBalanceCard).toBeVisible();
     await expect(dashboardPage.quickActions).toBeVisible();
-    await expect(dashboardPage.recentTxTable).toBeVisible();
+    await expect(dashboardPage.main.getByRole('heading', { name: 'Recent Transactions' })).toHaveCount(0);
   });
 
   test('sidebar lists all main nav entries', async ({ dashboardPage }) => {

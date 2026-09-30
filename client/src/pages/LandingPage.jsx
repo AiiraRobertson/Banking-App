@@ -283,6 +283,28 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Collection management visual */}
+      <section className="overflow-hidden border-y border-b-secondary bg-surface py-16 sm:py-20">
+        <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
+          <div className="max-w-xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-indigo-600">Clearer money movement</p>
+            <h2 className="mt-3 text-3xl font-bold text-t-primary sm:text-4xl">Keep collections in view</h2>
+            <p className="mt-4 text-base leading-relaxed text-t-secondary">
+              Get a clearer picture of payment activity with a focused view of collections and account movement.
+            </p>
+          </div>
+          <div className="relative flex min-h-64 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-50 via-white to-cyan-50 p-5 sm:p-8">
+            <div className="absolute inset-4 rounded-xl border border-indigo-100/80" aria-hidden="true" />
+            <img
+              src="https://m2p-website-static-files.s3.ap-south-1.amazonaws.com/images/collection-management-img.png"
+              alt="Illustration of a digital collection management dashboard"
+              loading="lazy"
+              className="relative z-10 h-auto max-h-[26rem] w-full max-w-2xl object-contain drop-shadow-xl transition-transform duration-500 hover:scale-[1.02]"
+            />
+          </div>
+        </div>
+      </section>
+
       {/* Global Reach — Countries with Globe */}
       <section className="py-20 relative overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-indigo-50/50 rounded-full blur-3xl" />
@@ -440,19 +462,6 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-b-secondary py-8 bg-elevated/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 group">
-            <div className="w-7 h-7 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-            </div>
-            <span className="font-semibold text-t-primary">Kapita</span>
-          </div>
-          <p className="text-sm text-t-tertiary">&copy; 2026 Kapita. All rights reserved.</p>
-        </div>
-      </footer>
     </div>
   );
 }

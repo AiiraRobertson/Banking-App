@@ -21,6 +21,7 @@ param frontendServiceName string = 'frontend'
 param nodeVersion string = 'NODE|20-lts'
 
 @minLength(32)
+@secure()
 @description('JWT secret for authentication (must be at least 32 characters, use a cryptographically random value)')
 param jwtSecret string
 

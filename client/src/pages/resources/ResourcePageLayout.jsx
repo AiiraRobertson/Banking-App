@@ -33,13 +33,6 @@ export default function ResourcePageLayout({ title, subtitle, icon, children }) 
         </div>
       </main>
 
-      <footer className="border-t border-b-secondary py-6 mt-12">
-        <div className="max-w-5xl mx-auto px-4 text-center text-sm text-t-tertiary">
-          <Link to="/welcome" className="text-indigo-600 hover:text-indigo-700">Back to home</Link>
-          <span className="mx-2">·</span>
-          &copy; 2026 Kapita
-        </div>
-      </footer>
     </div>
   );
 }

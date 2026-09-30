@@ -7,6 +7,7 @@ import AdminRoute from './components/AdminRoute';
 import PublicRoute from './components/PublicRoute';
 import DashboardLayout from './components/layout/DashboardLayout';
 import AdminLayout from './components/layout/AdminLayout';
+import AppFooter from './components/layout/AppFooter';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -54,6 +55,8 @@ export default function App() {
     <AuthProvider>
       <NotificationProvider>
         <BrowserRouter>
+                <div className="flex min-h-screen flex-col">
+                  <div className="flex-1">
           <Routes>
             <Route path="/welcome" element={<PublicRoute><LandingPage /></PublicRoute>} />
             <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
@@ -99,6 +102,9 @@ export default function App() {
 
             <Route path="*" element={<CatchAllRedirect />} />
           </Routes>
+                  </div>
+                  <AppFooter />
+                </div>
         </BrowserRouter>
       </NotificationProvider>
     </AuthProvider>
