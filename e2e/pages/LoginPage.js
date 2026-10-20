@@ -3,6 +3,7 @@ const { expect } = require('@playwright/test');
 const { BasePage } = require('./BasePage');
 
 class LoginPage extends BasePage {
+  /** @param {import('@playwright/test').Page} page */
   constructor(page) {
     super(page);
     this.emailInput = page.locator('input[type="email"]');
@@ -16,6 +17,7 @@ class LoginPage extends BasePage {
     await this.page.goto('/login');
   }
 
+  /** @param {string} email @param {string} password */
   async login(email, password) {
     await this.emailInput.fill(email);
     await this.passwordInput.fill(password);
@@ -32,6 +34,7 @@ class LoginPage extends BasePage {
     await expect(this.submitButton).toBeVisible();
   }
 
+  /** @param {string} message */
   async expectError(message) {
     await expect(this.errorBanner).toContainText(message);
   }
