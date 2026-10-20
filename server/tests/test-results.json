@@ -1,9 +1,9 @@
 {
   "summary": {
-    "total": 35,
-    "pass": 33,
+    "total": 41,
+    "pass": 41,
     "fail": 0,
-    "warn": 2
+    "warn": 0
   },
   "results": [
     {
@@ -13,7 +13,7 @@
       "status": "PASS",
       "expected": "200",
       "actual": 200,
-      "durationMs": 109,
+      "durationMs": 207,
       "notes": ""
     },
     {
@@ -23,7 +23,7 @@
       "status": "PASS",
       "expected": "200 + token",
       "actual": "200 token=true",
-      "durationMs": 602,
+      "durationMs": 960,
       "notes": ""
     },
     {
@@ -33,7 +33,7 @@
       "status": "PASS",
       "expected": ">=1 account",
       "actual": "2 accounts",
-      "durationMs": 5,
+      "durationMs": 6,
       "notes": ""
     },
     {
@@ -43,7 +43,7 @@
       "status": "PASS",
       "expected": "200",
       "actual": 200,
-      "durationMs": 13,
+      "durationMs": 11,
       "notes": ""
     },
     {
@@ -53,7 +53,7 @@
       "status": "PASS",
       "expected": "401",
       "actual": 401,
-      "durationMs": 3,
+      "durationMs": 4,
       "notes": ""
     },
     {
@@ -62,8 +62,8 @@
       "name": "Deposit credits account",
       "status": "PASS",
       "expected": "200 + new balance",
-      "actual": "200 bal=528103.8299999961",
-      "durationMs": 32,
+      "actual": "200 bal=5515.99",
+      "durationMs": 11,
       "notes": ""
     },
     {
@@ -73,7 +73,7 @@
       "status": "PASS",
       "expected": "200",
       "actual": 200,
-      "durationMs": 6,
+      "durationMs": 7,
       "notes": ""
     },
     {
@@ -93,7 +93,7 @@
       "status": "PASS",
       "expected": "200",
       "actual": 200,
-      "durationMs": 8,
+      "durationMs": 9,
       "notes": ""
     },
     {
@@ -103,7 +103,7 @@
       "status": "PASS",
       "expected": "found:true with name",
       "actual": "found=true name=Admin User",
-      "durationMs": 8,
+      "durationMs": 6,
       "notes": ""
     },
     {
@@ -113,7 +113,7 @@
       "status": "PASS",
       "expected": "200",
       "actual": 200,
-      "durationMs": 6,
+      "durationMs": 10,
       "notes": ""
     },
     {
@@ -123,37 +123,97 @@
       "status": "PASS",
       "expected": "404",
       "actual": 404,
-      "durationMs": 7,
+      "durationMs": 5,
       "notes": ""
     },
     {
       "id": "REG-08",
       "category": "regression",
-      "name": "Wire countries list available",
+      "name": "Outbound wire destinations limited to Nigeria and Ghana",
       "status": "PASS",
-      "expected": "grouped countries",
-      "actual": "200",
+      "expected": "NG/NGN and GH/GHS with supported banks",
+      "actual": "200 NG,GH",
       "durationMs": 3,
       "notes": ""
     },
     {
       "id": "REG-09",
       "category": "regression",
-      "name": "Wire quote returns rate + fee",
+      "name": "Unsupported outbound country rejected",
       "status": "PASS",
-      "expected": "rate>0 fee>0",
-      "actual": "rate=0.7344 fee=30",
-      "durationMs": 2019,
+      "expected": "400 unsupported country",
+      "actual": "400 UNSUPPORTED_DESTINATION_COUNTRY",
+      "durationMs": 5,
       "notes": ""
     },
     {
-      "id": "REG-10",
+      "id": "WIRE-NEG-1",
+      "category": "security",
+      "name": "Direct outbound wire rejects unsupported country",
+      "status": "PASS",
+      "expected": "400 without transfer",
+      "actual": "400 UNSUPPORTED_DESTINATION_COUNTRY",
+      "durationMs": 13,
+      "notes": ""
+    },
+    {
+      "id": "WIRE-NEG-2",
+      "category": "security",
+      "name": "Direct outbound wire rejects unsupported bank",
+      "status": "PASS",
+      "expected": "400 without transfer",
+      "actual": "400 UNSUPPORTED_DESTINATION_BANK",
+      "durationMs": 5,
+      "notes": ""
+    },
+    {
+      "id": "WIRE-NEG-3",
+      "category": "security",
+      "name": "Direct outbound wire rejects Ghana bank used for Nigeria",
+      "status": "PASS",
+      "expected": "400 without transfer",
+      "actual": "400 UNSUPPORTED_DESTINATION_BANK",
+      "durationMs": 6,
+      "notes": ""
+    },
+    {
+      "id": "WIRE-NEG-4",
+      "category": "security",
+      "name": "Direct outbound wire rejects malformed Nigerian account",
+      "status": "PASS",
+      "expected": "400 without transfer",
+      "actual": "400 INVALID_RECIPIENT_ACCOUNT",
+      "durationMs": 6,
+      "notes": ""
+    },
+    {
+      "id": "WIRE-NEG-5",
+      "category": "security",
+      "name": "Direct outbound wire rejects zero amount",
+      "status": "PASS",
+      "expected": "400 without transfer",
+      "actual": "400 ",
+      "durationMs": 6,
+      "notes": ""
+    },
+    {
+      "id": "WIRE-NO-SIDE-EFFECTS",
+      "category": "security",
+      "name": "Invalid wire requests do not debit or create transfer history",
+      "status": "PASS",
+      "expected": "same balance and history count",
+      "actual": "balance 5475.99 -> 5475.99; transfers 0 -> 0",
+      "durationMs": 0,
+      "notes": ""
+    },
+    {
+      "id": "REG-10-INBOUND",
       "category": "regression",
       "name": "Receive wire from foreign bank credits USD",
       "status": "PASS",
       "expected": "200",
       "actual": "200 ",
-      "durationMs": 11,
+      "durationMs": 9,
       "notes": ""
     },
     {
@@ -162,8 +222,8 @@
       "name": "Beneficiary save (upsert)",
       "status": "PASS",
       "expected": "201 + id",
-      "actual": "201 id=10",
-      "durationMs": 6,
+      "actual": "201 id=1",
+      "durationMs": 16,
       "notes": ""
     },
     {
@@ -173,7 +233,7 @@
       "status": "PASS",
       "expected": ">=1 match",
       "actual": "1 hits",
-      "durationMs": 4,
+      "durationMs": 7,
       "notes": ""
     },
     {
@@ -183,7 +243,7 @@
       "status": "PASS",
       "expected": "200",
       "actual": 200,
-      "durationMs": 5,
+      "durationMs": 4,
       "notes": ""
     },
     {
@@ -193,7 +253,7 @@
       "status": "PASS",
       "expected": "user.email",
       "actual": "email=john@example.com",
-      "durationMs": 3,
+      "durationMs": 4,
       "notes": ""
     },
     {
@@ -203,27 +263,27 @@
       "status": "PASS",
       "expected": "alert_min_amount=5",
       "actual": "got=5",
-      "durationMs": 8,
+      "durationMs": 13,
       "notes": ""
     },
     {
       "id": "REG-16",
       "category": "regression",
-      "name": "Bill payee created",
+      "name": "Nigerian payment catalog lists providers",
       "status": "PASS",
-      "expected": "201",
-      "actual": "201 id=8",
-      "durationMs": 6,
+      "expected": "electricity + four mobile networks",
+      "actual": "200 electricity=12",
+      "durationMs": 4,
       "notes": ""
     },
     {
       "id": "REG-17",
       "category": "regression",
-      "name": "Pay-now debits checking",
+      "name": "Electricity payment debits checking",
       "status": "PASS",
-      "expected": "200",
-      "actual": 200,
-      "durationMs": 5,
+      "expected": "201 + referenceId",
+      "actual": "201 ref=33aa5d37-b052-4069-8a05-7b2ca111449b",
+      "durationMs": 13,
       "notes": ""
     },
     {
@@ -233,7 +293,7 @@
       "status": "PASS",
       "expected": "array",
       "actual": "object",
-      "durationMs": 5,
+      "durationMs": 4,
       "notes": ""
     },
     {
@@ -242,48 +302,48 @@
       "name": "Currency rates fetch",
       "status": "PASS",
       "expected": "rates.EUR is number",
-      "actual": "0.849377",
-      "durationMs": 325,
+      "actual": "0.891477",
+      "durationMs": 443,
       "notes": ""
     },
     {
       "id": "REG-20",
-      "category": "regression",
-      "name": "Card top-up credits account",
+      "category": "security",
+      "name": "card direct top-up is disabled",
       "status": "PASS",
-      "expected": "200 + balance up",
-      "actual": "200 bal=528372.1199999962",
-      "durationMs": 6,
+      "expected": "410 DIRECT_FUNDING_DISABLED",
+      "actual": "410 DIRECT_FUNDING_DISABLED",
+      "durationMs": 3,
       "notes": ""
     },
     {
       "id": "REG-21",
-      "category": "regression",
-      "name": "Bank top-up credits account",
+      "category": "security",
+      "name": "bank direct top-up is disabled",
       "status": "PASS",
-      "expected": "200 + balance up",
-      "actual": "200 bal=528447.1199999962",
-      "durationMs": 4,
+      "expected": "410 DIRECT_FUNDING_DISABLED",
+      "actual": "410 DIRECT_FUNDING_DISABLED",
+      "durationMs": 7,
       "notes": ""
     },
     {
       "id": "REG-22",
-      "category": "regression",
-      "name": "Crypto top-up credits account",
+      "category": "security",
+      "name": "crypto direct top-up is disabled",
       "status": "PASS",
-      "expected": "200 + balance up",
-      "actual": "200 bal=528477.1199999962",
-      "durationMs": 4,
+      "expected": "410 DIRECT_FUNDING_DISABLED",
+      "actual": "410 DIRECT_FUNDING_DISABLED",
+      "durationMs": 3,
       "notes": ""
     },
     {
       "id": "REG-23",
-      "category": "regression",
-      "name": "Card top-up rejects bad Luhn",
+      "category": "security",
+      "name": "Disabled funding calls do not credit account",
       "status": "PASS",
-      "expected": "400",
-      "actual": "400",
-      "durationMs": 3,
+      "expected": "balance unchanged at 5640.2699999999995",
+      "actual": "balance=5640.2699999999995",
+      "durationMs": 0,
       "notes": ""
     },
     {
@@ -293,7 +353,7 @@
       "status": "PASS",
       "expected": "200 or 400 already-locked",
       "actual": "400 Savings account is already locked",
-      "durationMs": 3,
+      "durationMs": 12,
       "notes": ""
     },
     {
@@ -313,28 +373,28 @@
       "status": "PASS",
       "expected": "400",
       "actual": "400",
-      "durationMs": 2,
+      "durationMs": 6,
       "notes": ""
     },
     {
       "id": "SAN-01",
       "category": "sanity",
       "name": "Welcome notification mentions Kapita",
-      "status": "WARN",
+      "status": "PASS",
       "expected": "Kapita in message",
-      "actual": "not found",
-      "durationMs": 3,
-      "notes": "Demo data was seeded before rename — expected on existing DB"
+      "actual": "found",
+      "durationMs": 4,
+      "notes": ""
     },
     {
       "id": "SAN-02",
       "category": "sanity",
       "name": "Welcome notification carries slogan",
-      "status": "WARN",
+      "status": "PASS",
       "expected": "move money, make moves",
-      "actual": "not found",
-      "durationMs": 3,
-      "notes": "Existing DB still has old slogan"
+      "actual": "found",
+      "durationMs": 4,
+      "notes": ""
     },
     {
       "id": "SAN-03",
@@ -343,7 +403,7 @@
       "status": "PASS",
       "expected": "200",
       "actual": 200,
-      "durationMs": 3,
+      "durationMs": 19,
       "notes": "Alert delivery is logged to console + alert_log; verified by REG-15 prefs"
     },
     {
@@ -357,5 +417,5 @@
       "notes": ""
     }
   ],
-  "timestamp": "2026-05-10T23:12:23.557Z"
+  "timestamp": "2026-10-20T12:08:19.048Z"
 }

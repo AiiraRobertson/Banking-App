@@ -10,7 +10,7 @@ export default function PrimaryButton({
     <button
       {...rest}
       disabled={disabled || loading}
-      className={`group relative w-full py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg font-medium hover:from-indigo-700 hover:to-indigo-800 active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-sm hover:shadow-md ${className}`}
+      className={`group relative w-full py-2.5 bg-[#17643d] text-white rounded-lg font-semibold hover:bg-[#125332] active:scale-[0.99] transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-sm hover:shadow-md ${className}`}
     >
       <span className="inline-flex items-center justify-center gap-2">
         {loading && (

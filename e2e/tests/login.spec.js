@@ -1,6 +1,8 @@
 // @ts-check
 const { test, expect } = require('../fixtures/authFixture');
 
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test('admin can sign in and sign out', async ({ page, isNarrowViewport }) => {
   test.skip(isNarrowViewport, 'Skipping on mobile viewport - responsive nav differs');
   

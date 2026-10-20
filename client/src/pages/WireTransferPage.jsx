@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { getAccounts } from '../services/accountService';
-import { getCountries, getQuote, sendWire, getWireHistory, lookupAccount, getBanksForCountry, receiveWire, getIncomingWires } from '../services/wireService';
+import { getCountries, getDestinations, getQuote, sendWire, getWireHistory, getBanksForCountry, getOutboundBanksForCountry, receiveWire, getIncomingWires } from '../services/wireService';
 import { saveBeneficiary } from '../services/beneficiaryService';
 import BeneficiaryAutocomplete from '../components/BeneficiaryAutocomplete';
 import { formatCurrency } from '../utils/formatCurrency';
 import { formatDate } from '../utils/formatDate';
-import { generateBic } from '../utils/generateBic';
 import { getMaturityInfo } from '../utils/savingsLock';
+import { getAccountNumberValidation, supportedWireCountryCodes } from '../utils/wireDestinations';
 
 const regionLabels = { north_america: 'North America', europe: 'Europe', africa: 'Africa' };
 
@@ -14,7 +14,7 @@ export default function WireTransferPage() {
   const [step, setStep] = useState(1);
   const [accounts, setAccounts] = useState([]);
   const [countriesData, setCountriesData] = useState(null);
-  const [feesData, setFeesData] = useState(null);
+  const [destinations, setDestinations] = useState([]);
   const [quote, setQuote] = useState(null);
   const [history, setHistory] = useState([]);
   const [historyPagination, setHistoryPagination] = useState({});
@@ -24,11 +24,8 @@ export default function WireTransferPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(null);
 
-  const [bankLookup, setBankLookup] = useState(null);
-  const [bankLookupLoading, setBankLookupLoading] = useState(false);
   const [bicAutoFilled, setBicAutoFilled] = useState(false);
   const [countryBanks, setCountryBanks] = useState([]);
-  const [bankMode, setBankMode] = useState('select');
 
   const [form, setForm] = useState({
     region: '',
@@ -68,11 +65,11 @@ export default function WireTransferPage() {
   const [showReceive, setShowReceive] = useState(false);
 
   useEffect(() => {
-    Promise.all([getAccounts(), getCountries()])
-      .then(([accRes, cRes]) => {
+    Promise.all([getAccounts(), getCountries(), getDestinations()])
+      .then(([accRes, cRes, destinationsRes]) => {
         setAccounts(accRes.data.accounts);
         setCountriesData(cRes.data.countries);
-        setFeesData(cRes.data.fees);
+        setDestinations(destinationsRes.data.destinations || []);
         const firstUnlocked = accRes.data.accounts.find(a => !getMaturityInfo(a).locked);
         if (firstUnlocked) {
           setForm(f => ({ ...f, from_account_id: firstUnlocked.id.toString() }));
@@ -88,12 +85,13 @@ export default function WireTransferPage() {
 
   useEffect(() => {
     if (!form.country_code) { setCountryBanks([]); return; }
-    getBanksForCountry(form.country_code)
-      .then(res => setCountryBanks(res.data.banks || []))
-      .catch(() => setCountryBanks([]));
-    setBankMode('select');
+    let current = true;
+    getOutboundBanksForCountry(form.country_code)
+      .then(res => { if (current) setCountryBanks(res.data.banks || []); })
+      .catch(() => { if (current) setCountryBanks([]); });
     setForm(f => ({ ...f, recipient_bank: '', swift_code: '' }));
     setBicAutoFilled(false);
+    return () => { current = false; };
   }, [form.country_code]);
 
   useEffect(() => {
@@ -116,23 +114,6 @@ export default function WireTransferPage() {
       .then(res => { setIncoming(res.data.transfers); setIncomingPagination(res.data.pagination); })
       .catch(() => {});
   }, [incomingPage, receiveSuccess]);
-
-  useEffect(() => {
-    if (form.recipient_account.length < 6) { setBankLookup(null); return; }
-    setBankLookupLoading(true);
-    const timer = setTimeout(() => {
-      lookupAccount(form.recipient_account)
-        .then(res => {
-          setBankLookup(res.data);
-          if (res.data.bank_name && !form.recipient_bank) {
-            setForm(f => ({ ...f, recipient_bank: res.data.bank_name }));
-          }
-        })
-        .catch(() => setBankLookup(null))
-        .finally(() => setBankLookupLoading(false));
-    }, 500);
-    return () => { clearTimeout(timer); setBankLookupLoading(false); };
-  }, [form.recipient_account]);
 
   const selectedCountry = countriesData
     ? Object.values(countriesData).flat().find(c => c.code === form.country_code)
@@ -159,6 +140,10 @@ export default function WireTransferPage() {
     setSubmitting(true);
     setError('');
     try {
+      if (!supportedWireCountryCodes.includes(form.country_code)) throw new Error('Only Nigerian and Ghanaian bank transfers are supported.');
+      if (!countryBanks.some(bank => bank.name === form.recipient_bank)) throw new Error('Select a supported bank for the destination country.');
+      const accountRules = getAccountNumberValidation(form.country_code);
+      if (!new RegExp(accountRules.pattern).test(form.recipient_account.trim())) throw new Error(accountRules.message);
       const payload = {
         from_account_id: parseInt(form.from_account_id),
         amount: parseFloat(form.amount),
@@ -251,7 +236,6 @@ export default function WireTransferPage() {
     setQuote(null);
     setSuccess(null);
     setError('');
-    setBankLookup(null);
     setBicAutoFilled(false);
   };
 
@@ -260,13 +244,13 @@ export default function WireTransferPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-xl lg:text-2xl font-bold text-t-primary">International Wire Transfer</h1>
-        <p className="text-sm text-t-tertiary">Send money to the US, Canada, Europe, and Africa</p>
+        <h1 className="text-xl lg:text-2xl font-bold text-t-primary">Bank Transfer</h1>
+        <p className="text-sm text-t-tertiary">Send money to supported banks in Nigeria (NGN) and Ghana (GHS)</p>
       </div>
 
       {/* Step Indicator */}
       <div className="flex items-center gap-2">
-        {['Region & Country', 'Recipient', 'Amount', 'Review', 'Done'].map((label, i) => (
+        {['Country', 'Recipient', 'Amount', 'Review', 'Done'].map((label, i) => (
           <div key={i} className="flex items-center gap-2 flex-1">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 ${
               step > i + 1 ? 'bg-green-500 text-white' :
@@ -283,47 +267,32 @@ export default function WireTransferPage() {
 
       <div className="bg-surface rounded-xl shadow-sm border border-b-secondary p-6">
 
-        {/* Step 1: Region & Country */}
+        {/* Step 1: Supported Destination */}
         {step === 1 && (
           <div className="space-y-6">
-            <h2 className="text-lg font-semibold text-t-primary">Select Destination</h2>
-
             <div>
-              <label className="block text-sm font-medium text-t-secondary mb-3">Region</label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {Object.entries(regionLabels).map(([key, label]) => (
-                  <button key={key} type="button"
-                    onClick={() => setForm({ ...form, region: key, country_code: '' })}
-                    className={`p-4 rounded-xl border-2 text-left transition-all ${
-                      form.region === key ? 'border-indigo-600 bg-indigo-50' : 'border-b-primary hover:border-b-input'
-                    }`}>
-                    <p className="font-semibold text-t-primary">{label}</p>
-                    <p className="text-xs text-t-tertiary mt-1">
-                      {feesData?.[key] ? `${feesData[key].deliveryDays} | $${feesData[key].flat} + ${feesData[key].percent}% fee` : ''}
-                    </p>
+              <h2 className="text-lg font-semibold text-t-primary">Choose a destination country</h2>
+              <p className="mt-1 text-sm text-t-tertiary">Transfers are available only to supported banks in Nigeria and Ghana.</p>
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {destinations.filter(country => supportedWireCountryCodes.includes(country.code)).map(country => (
+                  <button key={country.code} type="button"
+                    onClick={() => {
+                      setCountryBanks([]);
+                      setForm(current => ({ ...current, region: country.region, country_code: country.code, recipient_name: '', recipient_bank: '', recipient_account: '', swift_code: '', iban: '', routing_number: '', beneficiary_nickname: '' }));
+                      setQuote(null);
+                      setError('');
+                      setBicAutoFilled(false);
+                    }}
+                    className={`flex items-center gap-4 rounded-xl border p-4 text-left transition-colors ${form.country_code === country.code ? 'border-[#368052] bg-[#e7f1e8] dark:bg-[#243329]' : 'border-b-primary bg-surface hover:border-[#91b69a]'}`}>
+                    <span className="text-3xl" aria-hidden="true">{country.flag}</span>
+                    <span>
+                      <span className="block font-semibold text-t-primary">{country.name}</span>
+                      <span className="mt-1 block text-sm text-t-tertiary">{country.currencyName} ({country.currency})</span>
+                    </span>
                   </button>
                 ))}
               </div>
             </div>
-
-            {form.region && countriesData?.[form.region] && (
-              <div>
-                <label className="block text-sm font-medium text-t-secondary mb-3">Country</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                  {countriesData[form.region].map(c => (
-                    <button key={c.code} type="button"
-                      onClick={() => setForm({ ...form, country_code: c.code })}
-                      className={`p-3 rounded-lg border text-left text-sm transition-all ${
-                        form.country_code === c.code ? 'border-indigo-600 bg-indigo-50' : 'border-b-primary hover:border-b-input'
-                      }`}>
-                      <span className="text-lg">{c.flag}</span>
-                      <p className="font-medium text-t-primary mt-1">{c.name}</p>
-                      <p className="text-xs text-t-tertiary">{c.currencyName} ({c.currency})</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
 
             <div className="flex justify-end">
               <button onClick={() => { if (form.country_code) { setError(''); setStep(2); } }}
@@ -368,50 +337,20 @@ export default function WireTransferPage() {
               <p className="text-xs text-t-muted mt-1">Suggestions appear as you type. Or fill in manually below.</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-t-secondary mb-1">Account Number</label>
-              <input type="text" value={form.recipient_account} onChange={e => setForm({ ...form, recipient_account: e.target.value })}
+              <label htmlFor="wire-recipient-account" className="block text-sm font-medium text-t-secondary mb-1">Account Number</label>
+              <input id="wire-recipient-account" type="text" value={form.recipient_account} onChange={e => setForm(current => ({ ...current, recipient_account: e.target.value.trimStart() }))}
                 className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                placeholder="Recipient's bank account number" required />
-              {bankLookupLoading && (
-                <p className="text-xs text-t-muted mt-1 flex items-center gap-1">
-                  <span className="inline-block w-3 h-3 border-2 border-b-input border-t-indigo-500 rounded-full animate-spin" />
-                  Looking up account...
-                </p>
-              )}
-              {bankLookup && !bankLookupLoading && (
-                <div className={`mt-1.5 text-xs px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1.5 ${
-                  bankLookup.found
-                    ? 'bg-green-50 text-green-700 border border-green-200'
-                    : 'bg-elevated text-gray-600 border border-b-primary'
-                }`}>
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21" />
-                  </svg>
-                  <span className="font-medium">{bankLookup.bank_name}</span>
-                  {bankLookup.found && <span>- {bankLookup.account_type} ({bankLookup.holder_hint})</span>}
-                  {!bankLookup.found && bankLookup.note && <span>({bankLookup.note})</span>}
-                </div>
-              )}
+                placeholder={form.country_code === 'NG' ? '10-digit Nigerian account number' : 'Ghana bank account number'}
+                maxLength={getAccountNumberValidation(form.country_code).maxLength}
+                pattern={getAccountNumberValidation(form.country_code).pattern}
+                title={getAccountNumberValidation(form.country_code).title}
+                required />
+              <p className="mt-1 text-xs text-t-muted">{form.country_code === 'NG' ? 'Nigeria uses a 10-digit NUBAN account number.' : 'Use the account number format provided by the Ghanaian bank.'}</p>
             </div>
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-sm font-medium text-t-secondary">Recipient Bank</label>
-                {countryBanks.length > 0 && (
-                  <button type="button"
-                    onClick={() => {
-                      const next = bankMode === 'select' ? 'manual' : 'select';
-                      setBankMode(next);
-                      setForm(f => ({ ...f, recipient_bank: '', swift_code: '' }));
-                      setBicAutoFilled(false);
-                    }}
-                    className="text-xs text-indigo-600 hover:text-indigo-700">
-                    {bankMode === 'select' ? 'Enter bank manually' : 'Pick from list'}
-                  </button>
-                )}
-              </div>
-
-              {bankMode === 'select' && countryBanks.length > 0 ? (
-                <select value={form.recipient_bank}
+              <label className="mb-1 block text-sm font-medium text-t-secondary">Recipient Bank</label>
+              <select value={form.recipient_bank}
+                  aria-label="Recipient bank"
                   onChange={e => {
                     const bankName = e.target.value;
                     const match = countryBanks.find(b => b.name === bankName);
@@ -432,23 +371,7 @@ export default function WireTransferPage() {
                     <option key={b.name} value={b.name}>{b.name}</option>
                   ))}
                 </select>
-              ) : (
-                <input type="text" value={form.recipient_bank}
-                  onChange={e => {
-                    const bankName = e.target.value;
-                    const updates = { recipient_bank: bankName };
-                    if (selectedCountry?.requiresSwift && bankName.length >= 2) {
-                      updates.swift_code = generateBic(bankName, form.country_code);
-                      setBicAutoFilled(true);
-                    } else if (!bankName) {
-                      updates.swift_code = '';
-                      setBicAutoFilled(false);
-                    }
-                    setForm(f => ({ ...f, ...updates }));
-                  }}
-                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                  placeholder="Deutsche Bank, Barclays, GTBank..." required />
-              )}
+              {countryBanks.length === 0 && <p className="mt-1 text-sm text-red-700">No supported banks are available for this destination.</p>}
             </div>
 
             {selectedCountry.requiresSwift && (
@@ -457,9 +380,9 @@ export default function WireTransferPage() {
                 <input type="text" value={form.swift_code}
                   onChange={e => { setForm({ ...form, swift_code: e.target.value.toUpperCase() }); setBicAutoFilled(false); }}
                   className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-mono"
-                  placeholder="e.g. DEUTDEFF" maxLength={11} required />
+                  placeholder="Select a supported bank to fill its registered code" maxLength={11} required />
                 {bicAutoFilled ? (
-                  <p className="text-xs text-indigo-500 mt-1 flex items-center gap-1">
+                    <p className="text-xs text-[#17643d] mt-1 flex items-center gap-1">
                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
                     </svg>
@@ -493,9 +416,13 @@ export default function WireTransferPage() {
             <div className="flex justify-between">
               <button onClick={() => setStep(1)} className="px-6 py-2.5 text-t-secondary bg-elevated rounded-lg hover:bg-hover">Back</button>
               <button onClick={() => {
-                if (!form.recipient_name || !form.recipient_bank || !form.recipient_account) {
+                  if (!form.recipient_name || !form.recipient_bank || !form.recipient_account) {
                   setError('Please fill in all required fields'); return;
                 }
+                  if (!supportedWireCountryCodes.includes(form.country_code)) { setError('Only Nigerian and Ghanaian bank transfers are supported'); return; }
+                  if (!countryBanks.some(bank => bank.name === form.recipient_bank)) { setError('Select a supported bank for the destination country'); return; }
+                  const accountRules = getAccountNumberValidation(form.country_code);
+                  if (!new RegExp(accountRules.pattern).test(form.recipient_account.trim())) { setError(accountRules.message); return; }
                 if (selectedCountry.requiresSwift && !form.swift_code) { setError('SWIFT code is required'); return; }
                 if (selectedCountry.requiresIban && !form.iban) { setError('IBAN is required'); return; }
                 if (selectedCountry.requiresRouting && !form.routing_number) { setError('Routing number is required'); return; }

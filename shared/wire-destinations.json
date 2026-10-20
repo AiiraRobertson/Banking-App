@@ -1,0 +1,13 @@
+{
+  "supportedCountryCodes": ["NG", "GH"],
+  "accountNumber": {
+    "maxLength": 64,
+    "allowedCharacters": "^(?=.*[A-Za-z0-9])[A-Za-z0-9 -]+$",
+    "countryRules": {
+      "NG": {
+        "pattern": "^\\d{10}$",
+        "message": "Nigerian account numbers must contain exactly 10 digits."
+      }
+    }
+  }
+}

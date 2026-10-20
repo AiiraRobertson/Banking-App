@@ -1,22 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { getAccounts, lookupAccountByNumber } from '../services/accountService';
 import { transfer } from '../services/transactionService';
-import { getCountries, getQuote, sendWire, getBanksForCountry } from '../services/wireService';
+import { getCountries, getDestinations, getQuote, sendWire, getOutboundBanksForCountry } from '../services/wireService';
 import { saveBeneficiary } from '../services/beneficiaryService';
 import { formatCurrency } from '../utils/formatCurrency';
 import BeneficiaryAutocomplete from '../components/BeneficiaryAutocomplete';
 import { getMaturityInfo, formatMaturityDate } from '../utils/savingsLock';
-import { generateBic } from '../utils/generateBic';
-
-const regionLabels = { north_america: 'North America', europe: 'Europe', africa: 'Africa' };
+import { getAccountNumberValidation, supportedWireCountryCodes } from '../utils/wireDestinations';
 
 export default function TransferPage() {
   const [accounts, setAccounts] = useState([]);
   const [countriesData, setCountriesData] = useState(null);
+  const [destinations, setDestinations] = useState([]);
   const [feesData, setFeesData] = useState(null);
   const [countryBanks, setCountryBanks] = useState([]);
-  const [bankMode, setBankMode] = useState('select');
   const [bicAutoFilled, setBicAutoFilled] = useState(false);
   const [quote, setQuote] = useState(null);
   const [quoting, setQuoting] = useState(false);
@@ -45,11 +43,13 @@ export default function TransferPage() {
   const [error, setError] = useState('');
   const [lookup, setLookup] = useState({ status: 'idle', data: null });
   const [showConfirm, setShowConfirm] = useState(false);
+  const transferAttemptRef = useRef(null);
 
   useEffect(() => {
-    Promise.all([getAccounts(), getCountries()]).then(([accRes, cRes]) => {
+    Promise.all([getAccounts(), getCountries(), getDestinations()]).then(([accRes, cRes, destinationsRes]) => {
       setAccounts(accRes.data.accounts);
       setCountriesData(cRes.data.countries);
+      setDestinations(destinationsRes.data.destinations || []);
       setFeesData(cRes.data.fees);
       const firstUnlocked = accRes.data.accounts.find(a => !getMaturityInfo(a).locked);
       if (firstUnlocked) setForm(f => ({ ...f, account_id: firstUnlocked.id.toString() }));
@@ -90,12 +90,13 @@ export default function TransferPage() {
       setCountryBanks([]);
       return;
     }
-    getBanksForCountry(form.country_code)
-      .then(res => setCountryBanks(res.data.banks || []))
-      .catch(() => setCountryBanks([]));
-    setBankMode('select');
+    let current = true;
+    getOutboundBanksForCountry(form.country_code)
+      .then(res => { if (current) setCountryBanks(res.data.banks || []); })
+      .catch(() => { if (current) setCountryBanks([]); });
     setBicAutoFilled(false);
     setForm(f => ({ ...f, recipient_bank: '', swift_code: '' }));
+    return () => { current = false; };
   }, [form.country_code, form.transferMode]);
 
   // Debounced quote refresh for Other Bank
@@ -114,6 +115,7 @@ export default function TransferPage() {
   }, [form.amount, form.country_code, form.transferMode]);
 
   const reset = () => {
+    transferAttemptRef.current = null;
     setForm(f => ({
       ...f,
       amount: '',
@@ -157,9 +159,11 @@ export default function TransferPage() {
       if (lookup.status === 'loading') { setError('Verifying account, please wait...'); return; }
     } else if (form.transferMode === 'bank') {
       if (!form.country_code) { setError('Select a destination country'); return; }
+      if (!supportedWireCountryCodes.includes(form.country_code)) { setError('Only Nigerian and Ghanaian bank transfers are supported'); return; }
       if (!form.recipient_name?.trim() && !form.to_account_name?.trim()) { setError('Enter recipient name'); return; }
-      if (!form.recipient_bank?.trim()) { setError('Select or enter the recipient bank'); return; }
-      if (!form.recipient_account?.trim()) { setError('Enter the recipient account number'); return; }
+      if (!countryBanks.some(bank => bank.name === form.recipient_bank)) { setError('Select a supported bank for the destination country'); return; }
+      const accountRules = getAccountNumberValidation(form.country_code);
+      if (!new RegExp(accountRules.pattern).test(form.recipient_account.trim())) { setError(accountRules.message); return; }
       if (selectedCountry?.requiresSwift && !form.swift_code?.trim()) { setError('SWIFT/BIC is required for this country'); return; }
       if (selectedCountry?.requiresIban && !form.iban?.trim()) { setError('IBAN is required for this country'); return; }
       if (selectedCountry?.requiresRouting && !form.routing_number?.trim()) { setError('Routing number is required for this country'); return; }
@@ -231,7 +235,12 @@ export default function TransferPage() {
       } else {
         payload.to_account_number = form.to_account_number.trim();
       }
-      const res = await transfer(payload);
+      const signature = JSON.stringify(payload);
+      if (!transferAttemptRef.current || transferAttemptRef.current.signature !== signature) {
+        transferAttemptRef.current = { signature, key: crypto.randomUUID() };
+      }
+      const res = await transfer(payload, transferAttemptRef.current.key);
+      transferAttemptRef.current = null;
       setShowConfirm(false);
       setSuccess({ message: res.data.message, referenceId: res.data.referenceId, newBalance: res.data.newBalance });
       getAccounts().then(r => setAccounts(r.data.accounts));
@@ -263,34 +272,16 @@ export default function TransferPage() {
   const lockedForDebit = sourceLock.locked;
 
   const handleBankSelectChange = (val) => {
-    if (val === '__custom__') {
-      setBankMode('custom');
-      setForm(f => ({ ...f, recipient_bank: '', swift_code: '' }));
-      setBicAutoFilled(false);
-      return;
-    }
     const bank = countryBanks.find(b => b.name === val);
-    if (bank) {
-      setForm(f => ({ ...f, recipient_bank: bank.name, swift_code: bank.swift || '' }));
-      setBicAutoFilled(!!bank.swift);
-    }
-  };
-
-  const handleCustomBankBlur = () => {
-    if (form.recipient_bank && form.country_code && !form.swift_code) {
-      const bic = generateBic(form.recipient_bank, form.country_code);
-      if (bic) {
-        setForm(f => ({ ...f, swift_code: bic }));
-        setBicAutoFilled(true);
-      }
-    }
+    setForm(f => ({ ...f, recipient_bank: bank?.name || '', swift_code: bank?.swift || '' }));
+    setBicAutoFilled(!!bank?.swift);
   };
 
   return (
     <div className="w-full max-w-2xl mx-auto px-3 sm:px-4 space-y-4 lg:space-y-6">
       <div>
         <h1 className="text-xl lg:text-2xl font-bold text-t-primary">Transfer</h1>
-        <p className="text-sm lg:text-base text-t-tertiary mt-1">Move money between your accounts, another Kapita user, or to any bank in 27 countries</p>
+        <p className="text-sm lg:text-base text-t-tertiary mt-1">Move money between your accounts, another Kapita user, or supported banks in Nigeria and Ghana</p>
       </div>
 
       <Link to="/add-money" className="block bg-green-50 border border-green-200 rounded-lg px-3 sm:px-4 py-3 hover:bg-green-100 transition-colors">
@@ -466,20 +457,20 @@ export default function TransferPage() {
                           onChange={e => {
                             const code = e.target.value;
                             const country = code && countriesData ? Object.values(countriesData).flat().find(c => c.code === code) : null;
-                            setForm(f => ({ ...f, country_code: code, region: country?.region || '' }));
+                            setCountryBanks([]);
+                            setForm(f => ({ ...f, country_code: code, region: country?.region || '', recipient_bank: '', recipient_account: '', to_account_name: '', swift_code: '', iban: '', routing_number: '', beneficiary_nickname: '' }));
+                            setQuote(null);
+                            setError('');
                           }}
                           className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
                           required
                         >
                           <option value="">Select country...</option>
-                          {countriesData && Object.entries(countriesData).map(([region, list]) => (
-                            <optgroup key={region} label={regionLabels[region]}>
-                              {list.map(c => (
-                                <option key={c.code} value={c.code}>{c.flag} {c.name} ({c.currency})</option>
-                              ))}
-                            </optgroup>
+                          {destinations.map(country => (
+                            <option key={country.code} value={country.code}>{country.flag} {country.name} ({country.currency})</option>
                           ))}
                         </select>
+                        <p className="mt-1 text-xs text-t-muted">Transfers are available only to supported banks in Nigeria (NGN) and Ghana (GHS).</p>
                         {selectedCountry && feesData && (
                           <p className="text-xs text-t-muted mt-1">
                             Fee: ${feesData[selectedCountry.region].flat.toFixed(2)} + {feesData[selectedCountry.region].percent}% · Delivery: {feesData[selectedCountry.region].deliveryDays}
@@ -503,9 +494,10 @@ export default function TransferPage() {
 
                           <div>
                             <label className="block text-xs font-medium text-t-secondary mb-1">Recipient Bank</label>
-                            {bankMode === 'select' && countryBanks.length > 0 ? (
+                            {countryBanks.length > 0 ? (
                               <select
                                 value={form.recipient_bank}
+                                aria-label="Recipient bank"
                                 onChange={e => handleBankSelectChange(e.target.value)}
                                 className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm"
                               >
@@ -513,26 +505,9 @@ export default function TransferPage() {
                                 {countryBanks.map(b => (
                                   <option key={b.name} value={b.name}>{b.name}{b.swift ? ` (${b.swift})` : ''}</option>
                                 ))}
-                                <option value="__custom__">+ Other bank (enter manually)</option>
                               </select>
                             ) : (
-                              <div className="space-y-1">
-                                <input
-                                  type="text"
-                                  value={form.recipient_bank}
-                                  onChange={e => { setForm({ ...form, recipient_bank: e.target.value }); setBicAutoFilled(false); }}
-                                  onBlur={handleCustomBankBlur}
-                                  placeholder="Bank name"
-                                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm"
-                                  required
-                                />
-                                {countryBanks.length > 0 && (
-                                  <button type="button" onClick={() => { setBankMode('select'); setBicAutoFilled(false); setForm(f => ({ ...f, recipient_bank: '', swift_code: '' })); }}
-                                    className="text-xs text-indigo-600 hover:underline">
-                                    ← Pick from {countryBanks.length} known banks
-                                  </button>
-                                )}
-                              </div>
+                              <p className="text-sm text-red-700">No supported banks are available for this destination.</p>
                             )}
                           </div>
 
@@ -541,11 +516,16 @@ export default function TransferPage() {
                             <input
                               type="text"
                               value={form.recipient_account}
-                              onChange={e => setForm({ ...form, recipient_account: e.target.value })}
-                              placeholder="Account number"
+                              onChange={e => setForm({ ...form, recipient_account: e.target.value.trimStart() })}
+                              placeholder={form.country_code === 'NG' ? '10-digit Nigerian account number' : 'Ghana bank account number'}
+                              maxLength={getAccountNumberValidation(form.country_code).maxLength}
+                              pattern={getAccountNumberValidation(form.country_code).pattern}
+                              title={getAccountNumberValidation(form.country_code).title}
+                              inputMode={getAccountNumberValidation(form.country_code).inputMode}
                               className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm font-mono"
                               required
                             />
+                            <p className="mt-1 text-xs text-t-muted">{form.country_code === 'NG' ? 'Nigeria uses a 10-digit NUBAN account number.' : 'Use the account number format provided by the Ghanaian bank.'}</p>
                           </div>
 
                           {selectedCountry?.requiresSwift && (

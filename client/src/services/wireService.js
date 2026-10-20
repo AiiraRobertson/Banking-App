@@ -1,6 +1,8 @@
 import api from './api';
 
 export const getCountries = () => api.get('/wire/countries');
+export const getDestinations = () => api.get('/wire/destinations');
+export const getOutboundBanksForCountry = (country_code) => api.get('/wire/outbound-banks', { params: { country_code } });
 export const getRates = () => api.get('/wire/rates');
 export const getQuote = (data) => api.post('/wire/quote', data);
 export const sendWire = (data) => api.post('/wire/send', data);

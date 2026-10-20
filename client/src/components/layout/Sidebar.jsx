@@ -24,7 +24,7 @@ export default function Sidebar({ open, onClose }) {
       <aside className={`fixed top-0 left-0 z-50 h-full w-60 sm:w-64 bg-surface border-r border-b-primary transform transition-transform lg:translate-x-0 lg:static lg:z-auto ${open ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-4 sm:p-6 border-b border-b-secondary">
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-indigo-600 rounded-xl flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#17643d] rounded-xl flex items-center justify-center shrink-0">
               <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
@@ -45,7 +45,7 @@ export default function Sidebar({ open, onClose }) {
               onClick={onClose}
               className={({ isActive }) =>
                 `flex items-center gap-2 sm:gap-3 px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 group ${
-                  isActive ? 'bg-[var(--color-nav-active-bg)] text-[var(--color-nav-active-text)] border-l-3 border-indigo-600' : 'text-t-secondary hover:bg-hover hover:text-[var(--color-nav-active-text)] hover:translate-x-1'
+                  isActive ? 'bg-[var(--color-nav-active-bg)] text-[var(--color-nav-active-text)] border-l-3 border-[#368052]' : 'text-t-secondary hover:bg-hover hover:text-[var(--color-nav-active-text)] hover:translate-x-1'
                 }`
               }
             >
@@ -62,7 +62,7 @@ export default function Sidebar({ open, onClose }) {
               onClick={onClose}
               className={({ isActive }) =>
                 `flex items-center gap-2 sm:gap-3 px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 group ${
-                  isActive ? 'bg-[var(--color-nav-active-bg)] text-[var(--color-nav-active-text)] border-l-3 border-indigo-600' : 'text-t-secondary hover:bg-hover hover:text-[var(--color-nav-active-text)] hover:translate-x-1'
+                  isActive ? 'bg-[var(--color-nav-active-bg)] text-[var(--color-nav-active-text)] border-l-3 border-[#368052]' : 'text-t-secondary hover:bg-hover hover:text-[var(--color-nav-active-text)] hover:translate-x-1'
                 }`
               }
             >

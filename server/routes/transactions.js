@@ -1,5 +1,6 @@
 const express = require('express');
-const { body, query } = require('express-validator');
+const { createHash } = require('crypto');
+const { body, header, query } = require('express-validator');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db/database');
 const { authenticate } = require('../middleware/auth');
@@ -126,10 +127,29 @@ router.post('/transfer', [
   body('to_account_id').optional().isInt({ min: 1 }),
   body('to_account_number').optional().isString().isLength({ min: 10, max: 10 }),
   amountValidation,
+  header('idempotency-key').isUUID().withMessage('A valid Idempotency-Key header is required'),
   handleValidation
 ], (req, res) => {
   const { from_account_id, to_account_id, to_account_number, amount, description } = req.body;
   const amt = Math.round(amount * 100) / 100;
+  const idempotencyKey = req.get('Idempotency-Key');
+  const requestHash = createHash('sha256').update(JSON.stringify({
+    from_account_id: Number(from_account_id),
+    to_account_id: to_account_id ? Number(to_account_id) : null,
+    to_account_number: to_account_number || null,
+    amount: amt,
+    description: description || 'Transfer',
+  })).digest('hex');
+
+  const existingRequest = db.prepare(
+    'SELECT request_hash, response_json FROM transfer_idempotency WHERE user_id = ? AND idempotency_key = ?'
+  ).get(req.user.id, idempotencyKey);
+  if (existingRequest) {
+    if (existingRequest.request_hash !== requestHash) {
+      return res.status(409).json({ error: 'Idempotency key was already used for a different transfer', code: 'IDEMPOTENCY_KEY_REUSED' });
+    }
+    if (existingRequest.response_json) return res.json(JSON.parse(existingRequest.response_json));
+  }
 
   const fromAccount = getUserAccount(from_account_id, req.user.id);
   if (!fromAccount) return res.status(404).json({ error: 'Source account not found' });
@@ -156,6 +176,22 @@ router.post('/transfer', [
   if (lockErr) return res.status(lockErr.status).json({ error: lockErr.message, code: lockErr.code });
 
   const transfer = db.transaction(() => {
+    const existing = db.prepare(
+      'SELECT request_hash, response_json FROM transfer_idempotency WHERE user_id = ? AND idempotency_key = ?'
+    ).get(req.user.id, idempotencyKey);
+    if (existing) {
+      if (existing.request_hash !== requestHash) {
+        const err = new Error('Idempotency key was already used for a different transfer');
+        err.status = 409;
+        err.code = 'IDEMPOTENCY_KEY_REUSED';
+        throw err;
+      }
+      if (existing.response_json) return { replayed: true, response: JSON.parse(existing.response_json) };
+    } else {
+      db.prepare('INSERT INTO transfer_idempotency (user_id, idempotency_key, request_hash) VALUES (?, ?, ?)')
+        .run(req.user.id, idempotencyKey, requestHash);
+    }
+
     const debit = db.prepare(
       'UPDATE accounts SET balance = balance - ? WHERE id = ? AND balance >= ?'
     ).run(amt, fromAccount.id, amt);
@@ -189,19 +225,24 @@ router.post('/transfer', [
         `Your account ${fromAccount.account_number} balance is $${newFromBalance.toFixed(2)}.`, 'alert');
     }
 
-    return { referenceId: refId, newBalance: newFromBalance, newToBalance, recipientUserId: toAccount.user_id, toAccountNumber: toAccount.account_number };
+    const response = { message: 'Transfer successful', referenceId: refId, newBalance: newFromBalance };
+    db.prepare('UPDATE transfer_idempotency SET response_json = ? WHERE user_id = ? AND idempotency_key = ?')
+      .run(JSON.stringify(response), req.user.id, idempotencyKey);
+
+    return { response, newToBalance, recipientUserId: toAccount.user_id, toAccountNumber: toAccount.account_number };
   });
 
   try {
     const result = transfer();
+    if (result.replayed) return res.json(result.response);
     sendTransactionAlert({
       userId: req.user.id,
       direction: 'debit',
       amount: amt,
       accountNumber: fromAccount.account_number,
-      balanceAfter: result.newBalance,
+      balanceAfter: result.response.newBalance,
       counterparty: `Transfer to ${result.toAccountNumber}`,
-      referenceId: result.referenceId
+      referenceId: result.response.referenceId
     });
     if (result.recipientUserId !== req.user.id) {
       sendTransactionAlert({
@@ -214,9 +255,10 @@ router.post('/transfer', [
         referenceId: result.referenceId
       });
     }
-    res.json({ message: 'Transfer successful', referenceId: result.referenceId, newBalance: result.newBalance });
+    res.json(result.response);
   } catch (err) {
     if (err.status === 400) return res.status(400).json({ error: err.message });
+    if (err.status === 409) return res.status(409).json({ error: err.message, code: err.code });
     throw err;
   }
 });

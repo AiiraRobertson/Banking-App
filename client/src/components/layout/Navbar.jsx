@@ -38,7 +38,7 @@ export default function Navbar({ onMenuToggle }) {
         <ThemeToggle />
 
         <Link to="/notifications" className="relative p-2 rounded-lg hover:bg-hover transition-all duration-200 group">
-          <svg className="w-6 h-6 text-t-secondary group-hover:text-indigo-600 group-hover:scale-110 transition-all duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-6 h-6 text-t-secondary group-hover:text-[#17643d] group-hover:scale-110 transition-all duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
           </svg>
           {unreadCount > 0 && (
@@ -53,7 +53,7 @@ export default function Navbar({ onMenuToggle }) {
             onClick={() => setDropdownOpen(!dropdownOpen)}
             className="flex items-center gap-2 p-2 rounded-lg hover:bg-hover transition-colors"
           >
-            <div className="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full overflow-hidden flex items-center justify-center text-sm font-semibold hover:bg-indigo-200 transition-colors duration-200">
+              <div className="w-8 h-8 bg-[#e4eee5] text-[#17643d] rounded-full overflow-hidden flex items-center justify-center text-sm font-semibold hover:bg-[#d7e8d9] transition-colors duration-200">
               {user?.profile_photo ? (
                 <img src={user.profile_photo} alt="profile" className="w-full h-full object-cover" />
               ) : (
@@ -75,7 +75,7 @@ export default function Navbar({ onMenuToggle }) {
                 <Link
                   to="/profile"
                   onClick={() => setDropdownOpen(false)}
-                  className="block px-4 py-2.5 text-sm text-t-secondary hover:bg-hover hover:text-indigo-600 transition-colors duration-150"
+                  className="block px-4 py-2.5 text-sm text-t-secondary hover:bg-hover hover:text-[#17643d] transition-colors duration-150"
                 >
                   Profile Settings
                 </Link>

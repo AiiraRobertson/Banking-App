@@ -52,6 +52,7 @@ function startServer() {
   const allowedOrigins = [
     'http://localhost:3001',
     'http://localhost:5173',
+    'http://127.0.0.1:5173',
     'http://localhost:5500',
     'http://localhost:5501',
     'http://127.0.0.1:5500',
@@ -80,7 +81,7 @@ function startServer() {
     origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key'],
     maxAge: 86400, // 24h — browsers cache preflight result, skipping OPTIONS on subsequent calls
     optionsSuccessStatus: 204
   };

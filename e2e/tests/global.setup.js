@@ -43,16 +43,16 @@ setup('authenticate as primary user', async ({ page, context }) => {
     }
   }
 
-  // Inject token and navigate
-  await page.goto(BASE_URL);
+  // Inject the token before the SPA starts so AuthContext reads it at initialization.
   if (token) {
-    await page.evaluate((t) => window.localStorage.setItem('token', t), token);
+    await context.addInitScript((value) => window.localStorage.setItem('token', value), token);
   }
+  await page.goto(BASE_URL);
   await page.goto('/');
 
   // Wait for dashboard to load (with extended timeout for slower connections)
   try {
-    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 30000 });
+    await expect(page.getByRole('heading', { name: /Dashboard|Good to see you/ })).toBeVisible({ timeout: 30000 });
   } catch (error) {
     console.error('Dashboard did not load:', msg(error));
     throw error;

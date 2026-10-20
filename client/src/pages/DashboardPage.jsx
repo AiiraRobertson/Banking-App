@@ -13,126 +13,132 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      getAccounts(),
-      getTransactions({ limit: 5 })
-    ]).then(([accRes, txRes]) => {
-      setAccounts(accRes.data.accounts);
-      setTransactions(txRes.data.transactions);
-    }).finally(() => setLoading(false));
+    Promise.all([getAccounts(), getTransactions({ limit: 5 })])
+      .then(([accountResponse, transactionResponse]) => {
+        setAccounts(accountResponse.data.accounts);
+        setTransactions(transactionResponse.data.transactions);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
-  const totalBalance = accounts.reduce((sum, a) => sum + a.balance, 0);
+  const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
 
   if (loading) {
-    return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>;
+    return <div className="flex justify-center py-20"><div className="h-10 w-10 animate-spin rounded-full border-2 border-[#d9e8dc] border-t-[#17643d]" /></div>;
   }
 
   return (
-    <div className="mosaic-page space-y-4 lg:space-y-6">
-      <div>
-        <h1 className="text-xl lg:text-2xl font-bold text-t-primary">Dashboard</h1>
-        <p className="text-sm lg:text-base text-t-tertiary">Welcome back, {user?.first_name}!</p>
+    <div className="dashboard-page space-y-6 lg:space-y-8">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#368052]">Your finances</p>
+          <h1 className="font-display text-2xl font-bold text-t-primary sm:text-3xl">Good to see you, {user?.first_name}.</h1>
+        </div>
+        <p className="text-sm text-t-tertiary">{new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</p>
       </div>
 
       {user && !user.profile_photo && (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 sm:p-4 bg-amber-50 border border-amber-200 rounded-lg lg:rounded-xl">
-          <div className="flex items-start sm:items-center gap-2 sm:gap-3 flex-1">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-amber-100 rounded-full flex items-center justify-center text-amber-700 shrink-0">
-              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-xs sm:text-sm font-medium text-amber-900">Verify your identity</p>
-              <p className="text-[10px] sm:text-xs text-amber-700">Upload a profile photo to complete verification.</p>
-            </div>
+        <div className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-amber-950">Complete your profile</p>
+            <p className="mt-0.5 text-xs text-amber-800">Add a profile photo to finish setting up your account.</p>
           </div>
-          <Link to="/profile" className="px-3 py-1.5 bg-amber-600 text-white text-xs sm:text-sm rounded-lg hover:bg-amber-700 shrink-0">
-            Add photo
-          </Link>
+          <Link to="/profile" className="inline-flex min-h-10 items-center justify-center rounded-lg bg-amber-700 px-4 text-sm font-semibold text-white hover:bg-amber-800">Update profile</Link>
         </div>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-        <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-lg lg:rounded-xl shadow-lg shadow-indigo-200/50 p-3 sm:p-4 lg:p-6 text-white hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-200/70 transition-all duration-300 cursor-default">
-          <p className="text-xs sm:text-sm text-indigo-100">Total Balance</p>
-          <p className="text-lg sm:text-2xl font-bold mt-1">{formatCurrency(totalBalance)}</p>
-        </div>
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg lg:rounded-xl shadow-lg shadow-blue-200/50 p-3 sm:p-4 lg:p-6 text-white hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-200/70 transition-all duration-300 cursor-default">
-          <p className="text-xs sm:text-sm text-blue-100">Accounts</p>
-          <p className="text-lg sm:text-2xl font-bold mt-1">{accounts.length}</p>
-        </div>
-        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg lg:rounded-xl shadow-lg shadow-emerald-200/50 p-3 sm:p-4 lg:p-6 text-white hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-200/70 transition-all duration-300 cursor-default">
-          <p className="text-xs sm:text-sm text-emerald-100">Transactions</p>
-          <p className="text-lg sm:text-2xl font-bold mt-1">{transactions.length}</p>
-        </div>
-        <div className="bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg lg:rounded-xl shadow-lg shadow-purple-200/50 p-3 sm:p-4 lg:p-6 text-white hover:-translate-y-1 hover:shadow-xl hover:shadow-purple-200/70 transition-all duration-300">
-          <p className="text-xs sm:text-sm text-violet-100">Quick Transfer</p>
-          <Link to="/transfer" className="text-sm lg:text-lg font-semibold mt-1 block hover:underline">
-            Send Money &rarr;
+      <section className="dashboard-hero relative overflow-hidden rounded-2xl p-5 text-white sm:p-8">
+        <div className="relative z-10 flex flex-col gap-7 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-medium text-white/70">Total available balance</p>
+            <p className="mt-2 font-display text-4xl font-bold tabular sm:text-5xl">{formatCurrency(totalBalance)}</p>
+            <p className="mt-3 text-sm text-white/65">Across {accounts.length} {accounts.length === 1 ? 'account' : 'accounts'}</p>
+          </div>
+          <Link to="/transfer" className="inline-flex min-h-11 w-fit items-center gap-2 rounded-lg bg-white px-5 text-sm font-bold text-[#17452d] transition-transform hover:-translate-y-0.5">
+            <span>Send money</span>
+            <span aria-hidden="true">&rarr;</span>
           </Link>
         </div>
-      </div>
+        <div className="dashboard-orbit" aria-hidden="true" />
+      </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-        <div className="lg:col-span-2 space-y-3 lg:space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base lg:text-lg font-semibold text-t-primary">Your Accounts</h2>
-            <Link to="/accounts" className="text-xs lg:text-sm text-indigo-600 hover:text-indigo-700 font-medium">View all</Link>
+      <section aria-labelledby="quick-actions-title">
+        <h2 id="quick-actions-title" className="mb-3 font-display text-lg font-bold text-t-primary">Quick actions</h2>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { to: '/add-money', label: 'Add money', icon: 'M12 4v16m8-8H4', tone: 'bg-[#e7f1e8] text-[#17643d]' },
+            { to: '/transfer', label: 'Transfer', icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4', tone: 'bg-[#eaf0ed] text-[#43544c]' },
+            { to: '/bill-pay', label: 'Pay a bill', icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6zm7-5a2 2 0 11-4 0 2 2 0 014 0z', tone: 'bg-[#f4efe3] text-[#8a6421]' },
+            { to: '/wire-transfer', label: 'Send a wire', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z', tone: 'bg-[#e8edf4] text-[#405e7d]' },
+          ].map(action => (
+            <Link key={action.label} to={action.to} className="flex min-h-[76px] items-center gap-3 rounded-xl border border-b-secondary bg-surface p-3 transition-colors hover:border-[#a9c8b0] hover:bg-[#fbfdfb] sm:p-4">
+              <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${action.tone}`}>
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7} d={action.icon} /></svg>
+              </span>
+              <span className="text-sm font-semibold text-t-secondary">{action.label}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <section aria-labelledby="accounts-title">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 id="accounts-title" className="font-display text-lg font-bold text-t-primary">Your accounts</h2>
+            <Link to="/accounts" className="text-sm font-semibold text-[#17643d] hover:underline">All accounts <span aria-hidden="true">&rarr;</span></Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
+          <div className="divide-y divide-b-secondary overflow-hidden rounded-xl border border-b-secondary bg-surface">
             {accounts.map(account => {
               const lock = getMaturityInfo(account);
               return (
-                <Link
-                  key={account.id}
-                  to={`/accounts/${account.id}`}
-                  className="bg-surface rounded-lg lg:rounded-xl shadow-sm border border-b-secondary p-4 lg:p-5 hover:shadow-lg hover:shadow-indigo-100/30 hover:border-indigo-100 hover:scale-[1.02] transition-all duration-300"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className={`text-[10px] lg:text-xs font-semibold px-2 lg:px-2.5 py-1 rounded-full ${
-                      account.account_type === 'checking' ? 'bg-blue-50 text-blue-700' : 'bg-green-50 text-green-700'
-                    }`}>
-                      {account.account_type.charAt(0).toUpperCase() + account.account_type.slice(1)}
+                <Link key={account.id} to={`/accounts/${account.id}`} className="flex items-center justify-between gap-3 p-4 transition-colors hover:bg-[#f8faf8] sm:px-5">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#e7f1e8] text-[#17643d]">
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M3 10h18M5 10V6l7-3 7 3v4M5 10v9m14-9v9M3 19h18M9 14v2m6-2v2" /></svg>
                     </span>
-                    <span className="text-[10px] lg:text-xs text-t-muted">****{account.account_number.slice(-4)}</span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold capitalize text-t-primary">{account.account_type} account</span>
+                      <span className="mt-0.5 block text-xs text-t-tertiary">•••• {account.account_number.slice(-4)}{lock.isSavings && lock.locked ? ` · Locked ${lock.daysRemaining}d` : ''}</span>
+                    </span>
                   </div>
-                  <p className="text-lg lg:text-2xl font-bold text-t-primary">{formatCurrency(account.balance)}</p>
-                  <p className="text-[10px] lg:text-xs text-t-muted mt-1">Available balance</p>
-                  {lock.isSavings && lock.locked && (
-                    <div className="mt-2 inline-flex items-center gap-1 text-[10px] lg:text-xs font-medium px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
-                      🔒 Locked · {lock.daysRemaining}d
-                    </div>
-                  )}
+                  <span className="shrink-0 text-right">
+                    <span className="block text-sm font-bold tabular text-t-primary">{formatCurrency(account.balance)}</span>
+                    <span className="mt-0.5 block text-xs text-t-tertiary">Available</span>
+                  </span>
                 </Link>
               );
             })}
+            {accounts.length === 0 && <p className="p-5 text-sm text-t-tertiary">No accounts to show yet.</p>}
           </div>
-        </div>
+        </section>
 
-        <div className="space-y-3 lg:space-y-4">
-          <h2 className="text-base lg:text-lg font-semibold text-t-primary">Quick Actions</h2>
-          <div className="grid grid-cols-2 gap-2 lg:gap-3">
-            {[
-              { to: '/add-money', label: 'Add Money', icon: 'M12 4v16m8-8H4', color: 'text-green-600 bg-green-50' },
-              { to: '/transfer', label: 'Transfer', icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4', color: 'text-indigo-600 bg-indigo-50' },
-              { to: '/bill-pay', label: 'Pay Bill', icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z', color: 'text-orange-600 bg-orange-50' },
-              { to: '/wire-transfer', label: 'Send Wire', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z', color: 'text-purple-600 bg-purple-50' },
-            ].map(action => (
-              <Link key={action.label} to={action.to} className="bg-surface rounded-lg lg:rounded-xl shadow-sm border border-b-secondary p-3 lg:p-4 text-center hover:shadow-lg hover:shadow-indigo-100/30 hover:border-indigo-100 hover:-translate-y-1 transition-all duration-300 group">
-                <div className={`w-8 h-8 lg:w-10 lg:h-10 rounded-full ${action.color} flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform duration-300`}>
-                  <svg className="w-4 h-4 lg:w-5 lg:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={action.icon} />
-                  </svg>
+        <section aria-labelledby="activity-title">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 id="activity-title" className="font-display text-lg font-bold text-t-primary">Recent activity</h2>
+            <Link to="/transactions" className="text-sm font-semibold text-[#17643d] hover:underline">See all <span aria-hidden="true">&rarr;</span></Link>
+          </div>
+          <div className="divide-y divide-b-secondary overflow-hidden rounded-xl border border-b-secondary bg-surface">
+            {transactions.map(transaction => {
+              const isDebit = transaction.from_account_id && accounts.some(account => account.id === transaction.from_account_id) && transaction.transaction_type !== 'deposit';
+              return (
+                <div key={transaction.id} className="flex items-center justify-between gap-3 p-4 sm:px-5">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${isDebit ? 'bg-[#f5eee8] text-[#9a5a35]' : 'bg-[#e7f1e8] text-[#17643d]'}`}>
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d={isDebit ? 'M12 19V5m-7 7l7-7 7 7' : 'M12 5v14m7-7l-7 7-7-7'} /></svg>
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold text-t-primary">{transaction.description || transaction.transaction_type.replaceAll('_', ' ')}</span>
+                      <span className="mt-0.5 block text-xs capitalize text-t-tertiary">{new Date(transaction.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · {transaction.transaction_type.replaceAll('_', ' ')}</span>
+                    </span>
+                  </div>
+                  <span className={`shrink-0 text-sm font-bold tabular ${isDebit ? 'text-t-primary' : 'text-[#17643d]'}`}>{isDebit ? '-' : '+'}{formatCurrency(transaction.amount)}</span>
                 </div>
-                <span className="text-xs lg:text-sm font-medium text-t-secondary">{action.label}</span>
-              </Link>
-            ))}
+              );
+            })}
+            {transactions.length === 0 && <p className="p-5 text-sm text-t-tertiary">Your latest transactions will appear here.</p>}
           </div>
-        </div>
+        </section>
       </div>
-
     </div>
   );
 }

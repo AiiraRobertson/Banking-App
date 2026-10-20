@@ -216,8 +216,14 @@ const banksByCountry = {
   ],
 };
 
+const { supportedCountryCodes: supportedWireCountryCodes } = require('../../shared/wire-destinations.json');
+
 function getBanksForCountry(countryCode) {
   return banksByCountry[countryCode] || [];
 }
 
-module.exports = { banksByCountry, getBanksForCountry };
+function isSupportedWireBank(countryCode, bankName) {
+  return getBanksForCountry(countryCode).some(bank => bank.name === bankName);
+}
+
+module.exports = { banksByCountry, getBanksForCountry, supportedWireCountryCodes, isSupportedWireBank };

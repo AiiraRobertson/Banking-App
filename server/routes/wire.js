@@ -7,6 +7,7 @@ const { handleValidation } = require('../middleware/validate');
 const { countries, exchangeRates, fees, calculateFee, convertCurrency, getCountry, getDeliveryEstimate } = require('../utils/currencies');
 const { getRates, getRate, convertLive } = require('../utils/liveRates');
 const { getBanksForCountry } = require('../utils/banks');
+const { getWireDestinations, validateWireDestination } = require('../utils/wireDestinations');
 const { sendTransactionAlert } = require('../utils/alerts');
 const { applyLockOnDeposit, ensureWithdrawAllowed } = require('../utils/savingsLock');
 
@@ -20,6 +21,19 @@ router.get('/countries', (req, res) => {
     africa: countries.filter(c => c.region === 'africa'),
   };
   res.json({ countries: grouped, fees });
+});
+
+router.get('/destinations', (req, res) => {
+  res.json({ destinations: getWireDestinations() });
+});
+
+router.get('/outbound-banks', [
+  query('country_code').isString().isLength({ min: 2, max: 2 }),
+  handleValidation
+], (req, res) => {
+  const destination = validateWireDestination({ countryCode: req.query.country_code, countryOnly: true });
+  if (destination.error) return res.status(400).json({ error: destination.error, code: destination.code });
+  res.json({ country: destination.country.name, banks: getBanksForCountry(destination.country.code) });
 });
 
 router.get('/rates', async (req, res) => {
@@ -78,12 +92,19 @@ router.post('/quote', [
   handleValidation
 ], async (req, res) => {
   const { amount, country_code } = req.body;
-  const country = getCountry(country_code);
-  if (!country) return res.status(400).json({ error: 'Unsupported country' });
+  const destination = validateWireDestination({ countryCode: country_code, countryOnly: true });
+  if (destination.error) return res.status(400).json({ error: destination.error, code: destination.code });
+  const country = destination.country;
 
   const amt = Math.round(amount * 100) / 100;
   const feeAmount = calculateFee(amt, country.region);
-  const { rate, converted, fetchedAt, source } = await convertLive(amt, country.currency);
+  let conversion;
+  try {
+    conversion = await convertLive(amt, country.currency);
+  } catch {
+    return res.status(503).json({ error: `A live ${country.currency} exchange rate is unavailable. Please try again later.`, code: 'LIVE_RATE_UNAVAILABLE' });
+  }
+  const { rate, converted, fetchedAt, source } = conversion;
   const totalDeducted = Math.round((amt + feeAmount) * 100) / 100;
   const deliveryEstimate = getDeliveryEstimate(country.region);
 
@@ -122,8 +143,17 @@ router.post('/send', [
     swift_code, iban, routing_number, description
   } = req.body;
 
-  const country = getCountry(country_code);
-  if (!country) return res.status(400).json({ error: 'Unsupported country' });
+  const destination = validateWireDestination({
+    countryCode: country_code,
+    bankName: recipient_bank,
+    accountNumber: recipient_account,
+  });
+  if (destination.error) return res.status(400).json({ error: destination.error, code: destination.code });
+  const { country, bank } = destination;
+
+  if (country.requiresSwift && swift_code !== bank.swift) {
+    return res.status(400).json({ error: 'SWIFT/BIC must match the selected supported bank.', code: 'INVALID_BANK_IDENTIFIER' });
+  }
 
   if (country.requiresSwift && !swift_code) {
     return res.status(400).json({ error: 'SWIFT/BIC code is required for this country' });
@@ -138,7 +168,13 @@ router.post('/send', [
   const amt = Math.round(amount * 100) / 100;
   const feeAmount = calculateFee(amt, country.region);
   const totalDeducted = Math.round((amt + feeAmount) * 100) / 100;
-  const { rate, converted } = await convertLive(amt, country.currency);
+  let conversion;
+  try {
+    conversion = await convertLive(amt, country.currency);
+  } catch {
+    return res.status(503).json({ error: `A live ${country.currency} exchange rate is unavailable. No transfer was created. Please try again later.`, code: 'LIVE_RATE_UNAVAILABLE' });
+  }
+  const { rate, converted } = conversion;
   const deliveryEstimate = getDeliveryEstimate(country.region);
 
   const account = db.prepare(
@@ -180,7 +216,7 @@ router.post('/send', [
     `).run(
       txResult.lastInsertRowid, req.user.id, recipient_name, recipient_bank, recipient_account,
       swift_code || null, iban || null, routing_number || null,
-      country_code, country.region, country.currency,
+      country.code, country.region, country.currency,
       amt, rate, converted, feeAmount, totalDeducted, deliveryEstimate
     );
 
@@ -260,7 +296,12 @@ router.post('/receive', [
 
   const sourceAmount = Math.round(amount * 100) / 100;
   const { rate, fetchedAt, source } = await getRate(country.currency);
-  if (!rate || rate <= 0) return res.status(400).json({ error: 'Unsupported currency' });
+  if (!rate || rate <= 0) {
+    return res.status(503).json({
+      error: `A live ${country.currency} exchange rate is unavailable. No incoming transfer was recorded. Please try again later.`,
+      code: 'LIVE_RATE_UNAVAILABLE',
+    });
+  }
 
   const creditedUsd = Math.round((sourceAmount / rate) * 100) / 100;
   const inboundFeeRate = country.region === 'north_america' ? 0.005 : country.region === 'europe' ? 0.0075 : 0.01;

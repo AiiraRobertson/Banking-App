@@ -21,16 +21,18 @@ test.describe('Transfer flows @regression', () => {
     await transferPage.expectSuccess();
   });
 
-  test('Other Bank: country selection reveals SWIFT/IBAN fields', async ({ transferPage }) => {
+  test('Other Bank: Nigeria selection reveals supported bank and SWIFT fields', async ({ transferPage }) => {
     await transferPage.goto();
     await transferPage.expectLoaded();
     await transferPage.selectMode('bank');
     await transferPage.countrySelect.selectOption(wireRecipient.countryCode);
     await expect(transferPage.swiftInput).toBeVisible({ timeout: 5000 });
-    await expect(transferPage.ibanInput).toBeVisible();
+    await expect(transferPage.bankSelect).toBeVisible();
+    await expect(transferPage.bankSelect.locator('option', { hasText: wireRecipient.bank })).toHaveCount(1);
+    await expect(transferPage.ibanInput).toHaveCount(0);
   });
 
-  test('Other Bank: live quote appears after entering amount', async ({ page, transferPage, isNarrowViewport }) => {
+  test('Other Bank: destination quote appears after entering amount', async ({ page, transferPage, isNarrowViewport }) => {
     test.skip(isNarrowViewport, 'Skipping on mobile - quote layout differs');
     
     await transferPage.goto();

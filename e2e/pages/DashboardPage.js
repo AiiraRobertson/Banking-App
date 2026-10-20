@@ -4,6 +4,9 @@ const { BasePage } = require('./BasePage');
 const { SidebarComponent } = require('./SidebarComponent');
 
 class DashboardPage extends BasePage {
+  /**
+   * @param {import('@playwright/test').Page} page
+   */
   constructor(page) {
     super(page);
     this.sidebar = new SidebarComponent(page);

@@ -2,7 +2,11 @@ const { exchangeRates: fallbackRates } = require('./currencies');
 
 const CACHE_TTL_MS = 15 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 5000;
-const TARGET_CURRENCIES = Object.keys(fallbackRates).filter(c => c !== 'USD');
+const LIVE_ONLY_CURRENCIES = ['NGN', 'GHS'];
+const TARGET_CURRENCIES = [...new Set([
+  ...Object.keys(fallbackRates).filter(c => c !== 'USD'),
+  ...LIVE_ONLY_CURRENCIES,
+])];
 
 let cache = {
   rates: { ...fallbackRates },
@@ -24,7 +28,7 @@ async function fetchLiveRates() {
     for (const cur of TARGET_CURRENCIES) {
       if (typeof data.rates[cur] === 'number') {
         rates[cur] = Math.round(data.rates[cur] * 10000) / 10000;
-      } else {
+      } else if (!LIVE_ONLY_CURRENCIES.includes(cur)) {
         rates[cur] = fallbackRates[cur];
       }
     }
@@ -52,6 +56,11 @@ async function getRates() {
 
 async function getRate(currency) {
   const { rates, fetchedAt, source } = await getRates();
+  const isLiveOnly = LIVE_ONLY_CURRENCIES.includes(currency);
+  const isFresh = fetchedAt > 0 && Date.now() - fetchedAt < CACHE_TTL_MS;
+  if (isLiveOnly && (source !== 'live' || !isFresh)) {
+    return { rate: undefined, fetchedAt, source };
+  }
   return {
     rate: rates[currency] ?? fallbackRates[currency],
     fetchedAt,

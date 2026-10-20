@@ -2,39 +2,39 @@
 
 /* ===== Theme Color Tokens ===== */
 :root {
-  --color-bg-primary: #f5f7fb;
+  --color-bg-primary: #f4f6f2;
   --color-bg-surface: #ffffff;
-  --color-bg-elevated: #eef1f7;
-  --color-bg-hover: #eef1f7;
-  --color-text-primary: #111827;
-  --color-text-secondary: #374151;
-  --color-text-tertiary: #6b7280;
-  --color-text-muted: #9ca3af;
-  --color-border-primary: #e5e7eb;
-  --color-border-secondary: #f3f4f6;
-  --color-border-input: #d1d5db;
+  --color-bg-elevated: #edf1eb;
+  --color-bg-hover: #e8eee7;
+  --color-text-primary: #15251e;
+  --color-text-secondary: #43544c;
+  --color-text-tertiary: #718078;
+  --color-text-muted: #929e97;
+  --color-border-primary: #dfe6df;
+  --color-border-secondary: #e9eee9;
+  --color-border-input: #cbd6cd;
   --color-input-bg: #ffffff;
-  --color-shadow: rgba(0,0,0,0.05);
-  --color-nav-active-bg: #eef2ff;
-  --color-nav-active-text: #4338ca;
+  --color-shadow: rgba(26, 53, 39, 0.06);
+  --color-nav-active-bg: #e4eee5;
+  --color-nav-active-text: #17643d;
 }
 
 .dark {
-  --color-bg-primary: #0f172a;
-  --color-bg-surface: #1e293b;
-  --color-bg-elevated: #334155;
-  --color-bg-hover: #334155;
-  --color-text-primary: #f1f5f9;
-  --color-text-secondary: #cbd5e1;
-  --color-text-tertiary: #94a3b8;
-  --color-text-muted: #64748b;
-  --color-border-primary: #334155;
-  --color-border-secondary: #1e293b;
-  --color-border-input: #475569;
-  --color-input-bg: #1e293b;
-  --color-shadow: rgba(0,0,0,0.4);
-  --color-nav-active-bg: rgba(99,102,241,0.15);
-  --color-nav-active-text: #818cf8;
+  --color-bg-primary: #111a15;
+  --color-bg-surface: #19251d;
+  --color-bg-elevated: #243329;
+  --color-bg-hover: #2a3a2f;
+  --color-text-primary: #eef5ef;
+  --color-text-secondary: #c5d2c8;
+  --color-text-tertiary: #98aa9d;
+  --color-text-muted: #718378;
+  --color-border-primary: #304136;
+  --color-border-secondary: #25352b;
+  --color-border-input: #43594a;
+  --color-input-bg: #19251d;
+  --color-shadow: rgba(0, 0, 0, 0.28);
+  --color-nav-active-bg: rgba(103, 191, 132, 0.14);
+  --color-nav-active-text: #8ed5a4;
 }
 
 /* Tailwind v4 theme tokens */
@@ -52,20 +52,18 @@
   --color-b-input: var(--color-border-input);
 }
 
-/* ===== Global Theme Transitions ===== */
 html { transition: background-color 0.3s ease, color 0.3s ease; }
 body {
   margin: 0;
-  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'DM Sans', sans-serif;
   font-feature-settings: 'cv11', 'ss01', 'ss03';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
+  background-image: linear-gradient(145deg, rgba(29, 112, 65, 0.035), transparent 38%);
 }
 
-/* ===== Prevent horizontal overflow (mobile Safari zooms the whole layout
-   out to fit any element wider than the viewport). Contain it at the root. ===== */
 html, body {
   max-width: 100%;
   overflow-x: hidden;
@@ -74,15 +72,13 @@ html, body {
   max-width: 100%;
   overflow-x: clip;
 }
-/* Media should never force the page wider than its container */
 img, svg, video, canvas {
   max-width: 100%;
 }
 
 /* Display heading family for hero / section titles */
 .font-display {
-  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
-  letter-spacing: -0.02em;
+  font-family: 'Manrope', 'DM Sans', sans-serif;
 }
 
 /* Tight tracking for huge numbers / balances */
@@ -93,24 +89,10 @@ img, svg, video, canvas {
 
 html.dark { color-scheme: dark; }
 
-/* ===== Light-mode banking pattern background ===== */
-body {
-  background-image:
-    radial-gradient(ellipse 60% 50% at 15% 20%, rgba(99,102,241,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 85% 75%, rgba(59,130,246,0.07) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 35% at 50% 50%, rgba(139,92,246,0.04) 0%, transparent 70%),
-    radial-gradient(circle at 1px 1px, rgba(99,102,241,0.10) 1px, transparent 0);
-  background-size: auto, auto, auto, 22px 22px;
-  background-attachment: fixed;
-}
+/* ===== Dark-mode banking canvas ===== */
 html.dark body {
   background-image:
-    radial-gradient(ellipse 60% 50% at 15% 20%, rgba(99,102,241,0.14) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 85% 75%, rgba(59,130,246,0.10) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 35% at 50% 50%, rgba(139,92,246,0.08) 0%, transparent 70%),
-    radial-gradient(circle at 1px 1px, rgba(148,163,184,0.06) 1px, transparent 0);
-  background-size: auto, auto, auto, 22px 22px;
-  background-attachment: fixed;
+    linear-gradient(145deg, rgba(72, 149, 97, 0.08), transparent 38%);
 }
 
 input, select, textarea {
@@ -221,32 +203,43 @@ input, select, textarea {
 
 /* ===== 3D Backgrounds ===== */
 .bg-3d {
-  background:
-    radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(59,130,246,0.05) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 80%, rgba(139,92,246,0.04) 0%, transparent 50%),
-    var(--color-bg-primary);
+  background: var(--color-bg-primary);
 }
 .dark .bg-3d {
-  background:
-    radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.12) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(59,130,246,0.10) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 80%, rgba(139,92,246,0.08) 0%, transparent 50%),
-    var(--color-bg-primary);
+  background: var(--color-bg-primary);
+}
+
+.dashboard-hero {
+  background: linear-gradient(115deg, #153f2b, #1f6942 62%, #328353);
+  box-shadow: 0 18px 38px rgba(31, 105, 66, 0.18);
+}
+.dashboard-orbit {
+  position: absolute;
+  top: -9rem;
+  right: 8%;
+  width: 24rem;
+  aspect-ratio: 1;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2.6rem rgba(255, 255, 255, 0.035), 0 0 0 5.2rem rgba(255, 255, 255, 0.025);
+  pointer-events: none;
+}
+.dark .dashboard-hero {
+  background: linear-gradient(115deg, #173b29, #1d6040 62%, #28734a);
 }
 
 .bg-auth {
-  background: linear-gradient(to bottom right, #eef2ff, #ffffff, #eff6ff);
+  background: linear-gradient(145deg, #edf2ec, #f8faf7 52%, #e8efe9);
 }
 .dark .bg-auth {
-  background: linear-gradient(to bottom right, #0f172a, #1e293b, #1e1b4b);
+  background: linear-gradient(145deg, #111a15, #1a271e 52%, #152119);
 }
 
 .bg-hero {
-  background: linear-gradient(to bottom right, #eef2ff, #ffffff, #eff6ff);
+  background: linear-gradient(145deg, #edf2ec, #ffffff 52%, #e8efe9);
 }
 .dark .bg-hero {
-  background: linear-gradient(to bottom right, #0f172a, #1e293b, #1e1b4b);
+  background: linear-gradient(145deg, #111a15, #1a271e 52%, #152119);
 }
 
 .card-3d {

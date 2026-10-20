@@ -15,9 +15,10 @@ function record(id, category, name, status, expected, actual, durationMs, notes 
   console.log(`${icon} [${category}] ${id} ${name} (${durationMs}ms) ${status}${notes ? ' — ' + notes : ''}`);
 }
 
-async function req(method, path, body, authToken) {
+async function req(method, path, body, authToken, extraHeaders = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (authToken) headers.Authorization = `Bearer ${authToken}`;
+  Object.assign(headers, extraHeaders);
   const start = Date.now();
   let res, json;
   try {
@@ -76,7 +77,7 @@ async function regressionTests() {
 
   // REG-04 transfer between own accounts
   r = await req('POST', '/api/transactions/transfer',
-    { from_account_id: checking.id, to_account_id: savings.id, amount: 10.00 }, token);
+    { from_account_id: checking.id, to_account_id: savings.id, amount: 10.00 }, token, { 'Idempotency-Key': require('crypto').randomUUID() });
   record('REG-04', 'regression', 'Internal transfer between own accounts', r.status === 200 ? 'PASS' : 'FAIL', '200', r.status, r.ms);
 
   // REG-05 account number lookup
@@ -86,30 +87,65 @@ async function regressionTests() {
 
   // REG-06 transfer to other user (Kapita to Kapita)
   r = await req('POST', '/api/transactions/transfer',
-    { from_account_id: checking.id, to_account_number: '1000000001', amount: 5.00 }, token);
+    { from_account_id: checking.id, to_account_number: '1000000001', amount: 5.00 }, token, { 'Idempotency-Key': require('crypto').randomUUID() });
   record('REG-06', 'regression', 'Transfer by account number to another user', r.status === 200 ? 'PASS' : 'FAIL', '200', r.status, r.ms);
 
   // REG-07 invalid transfer
   r = await req('POST', '/api/transactions/transfer',
-    { from_account_id: checking.id, to_account_number: '9999999999', amount: 1.00 }, token);
+    { from_account_id: checking.id, to_account_number: '9999999999', amount: 1.00 }, token, { 'Idempotency-Key': require('crypto').randomUUID() });
   record('REG-07', 'regression', 'Transfer to non-existent account rejected', r.status === 404 ? 'PASS' : 'FAIL', '404', r.status, r.ms);
 
-  // REG-08 wire countries
-  r = await req('GET', '/api/wire/countries', null, token);
-  record('REG-08', 'regression', 'Wire countries list available', (r.body.countries && Object.keys(r.body.countries).length) ? 'PASS' : 'FAIL', 'grouped countries', `${r.status}`, r.ms);
+  // REG-08 outbound wire destinations
+  r = await req('GET', '/api/wire/destinations', null, token);
+  const outbound = r.body.destinations || [];
+  const ng = outbound.find(country => country.code === 'NG');
+  const gh = outbound.find(country => country.code === 'GH');
+  record('REG-08', 'regression', 'Outbound wire destinations limited to Nigeria and Ghana',
+    r.status === 200 && outbound.length === 2 && ng?.currency === 'NGN' && gh?.currency === 'GHS' && ng.banks.length > 0 && gh.banks.length > 0 ? 'PASS' : 'FAIL',
+    'NG/NGN and GH/GHS with supported banks', `${r.status} ${outbound.map(country => country.code).join(',')}`, r.ms);
 
-  // REG-09 wire quote
+  // REG-09 unsupported outbound country rejected
   r = await req('POST', '/api/wire/quote', { amount: 500, country_code: 'GB' }, token);
-  record('REG-09', 'regression', 'Wire quote returns rate + fee', r.status === 200 && r.body.exchangeRate ? 'PASS' : 'FAIL', 'rate>0 fee>0', `rate=${r.body.exchangeRate} fee=${r.body.feeAmount}`, r.ms);
+  record('REG-09', 'regression', 'Unsupported outbound country rejected', r.status === 400 && r.body.code === 'UNSUPPORTED_DESTINATION_COUNTRY' ? 'PASS' : 'FAIL', '400 unsupported country', `${r.status} ${r.body.code}`, r.ms);
 
-  // REG-10 incoming wire (receive) — GB requires IBAN
+  // REG-10 invalid direct outbound requests cannot create transfer records or debit balance
+  const beforeAccount = await req('GET', `/api/accounts/${checking.id}`, null, token);
+  const beforeHistory = await req('GET', '/api/wire/history?limit=100', null, token);
+  const baseWirePayload = {
+    from_account_id: checking.id, amount: 10, country_code: 'NG',
+    recipient_name: 'Test Recipient', recipient_bank: ng?.banks[0]?.name || 'Not a bank',
+    recipient_account: '0123456789', swift_code: ng?.banks[0]?.swift || 'INVALID'
+  };
+  const invalidWireCases = [
+    { name: 'unsupported country', payload: { ...baseWirePayload, country_code: 'GB' } },
+    { name: 'unsupported bank', payload: { ...baseWirePayload, recipient_bank: 'Unsupported Bank' } },
+    { name: 'Ghana bank used for Nigeria', payload: { ...baseWirePayload, recipient_bank: gh?.banks[0]?.name || 'Ghana bank', swift_code: gh?.banks[0]?.swift || 'INVALID' } },
+    { name: 'malformed Nigerian account', payload: { ...baseWirePayload, recipient_account: '1234' } },
+    { name: 'zero amount', payload: { ...baseWirePayload, amount: 0 } },
+  ];
+  let invalidWireRejected = true;
+  for (const [index, item] of invalidWireCases.entries()) {
+    const invalidResponse = await req('POST', '/api/wire/send', item.payload, token);
+    const passed = invalidResponse.status === 400;
+    invalidWireRejected = invalidWireRejected && passed;
+    record(`WIRE-NEG-${index + 1}`, 'security', `Direct outbound wire rejects ${item.name}`, passed ? 'PASS' : 'FAIL', '400 without transfer', `${invalidResponse.status} ${invalidResponse.body.code || ''}`, invalidResponse.ms);
+  }
+  const afterAccount = await req('GET', `/api/accounts/${checking.id}`, null, token);
+  const afterHistory = await req('GET', '/api/wire/history?limit=100', null, token);
+  const noSideEffects = beforeAccount.body.account?.balance === afterAccount.body.account?.balance
+    && beforeHistory.body.pagination?.total === afterHistory.body.pagination?.total;
+  record('WIRE-NO-SIDE-EFFECTS', 'security', 'Invalid wire requests do not debit or create transfer history',
+    invalidWireRejected && noSideEffects ? 'PASS' : 'FAIL', 'same balance and history count',
+    `balance ${beforeAccount.body.account?.balance} -> ${afterAccount.body.account?.balance}; transfers ${beforeHistory.body.pagination?.total} -> ${afterHistory.body.pagination?.total}`, 0);
+
+  // REG-11 incoming wire (receive) — GB requires IBAN; inbound country coverage is unchanged
   r = await req('POST', '/api/wire/receive', {
     to_account_id: checking.id, amount: 200, country_code: 'GB',
     sender_name: 'Test Sender', sender_bank: 'Barclays',
     swift_code: 'BARCGB22', iban: 'GB29NWBK60161331926819',
     reference_note: 'Regression incoming'
   }, token);
-  record('REG-10', 'regression', 'Receive wire from foreign bank credits USD', r.status === 200 ? 'PASS' : 'FAIL', '200', `${r.status} ${r.body.error || ''}`, r.ms);
+  record('REG-10-INBOUND', 'regression', 'Receive wire from foreign bank credits USD', r.status === 200 ? 'PASS' : 'FAIL', '200', `${r.status} ${r.body.error || ''}`, r.ms);
 
   // REG-11 beneficiary save
   r = await req('POST', '/api/beneficiaries', {
@@ -155,47 +191,20 @@ async function regressionTests() {
   r = await req('GET', '/api/currency/rates?base=USD', null, token);
   record('REG-19', 'regression', 'Currency rates fetch', r.status === 200 && r.body.rates && typeof r.body.rates.EUR === 'number' ? 'PASS' : 'FAIL', 'rates.EUR is number', `${r.body && r.body.rates && r.body.rates.EUR}`, r.ms);
 
-  // REG-20 funding via card (Luhn-valid 4242…)
-  let prevBal = (await req('GET', `/api/accounts/${checking.id}`, null, token)).body.account?.balance ?? 0;
-  r = await req('POST', '/api/funding/topup', {
-    account_id: checking.id, amount: 50, method: 'card',
-    details: { card_number: '4242424242424242', exp_month: 12, exp_year: new Date().getFullYear() + 2, cvv: '123', holder: 'Test User' }
-  }, token);
-  record('REG-20', 'regression', 'Card top-up credits account',
-    r.status === 200 && r.body.newBalance > prevBal ? 'PASS' : 'FAIL',
-    '200 + balance up', `${r.status} bal=${r.body.newBalance}`, r.ms);
-
-  // REG-21 funding via bank
-  prevBal = (await req('GET', `/api/accounts/${checking.id}`, null, token)).body.account?.balance ?? 0;
-  r = await req('POST', '/api/funding/topup', {
-    account_id: checking.id, amount: 75, method: 'bank',
-    details: { bank_name: 'Chase', routing_number: '021000021', account_number: '12345678', holder: 'Test User' }
-  }, token);
-  record('REG-21', 'regression', 'Bank top-up credits account',
-    r.status === 200 && r.body.newBalance > prevBal ? 'PASS' : 'FAIL',
-    '200 + balance up', `${r.status} bal=${r.body.newBalance}`, r.ms);
-
-  // REG-22 funding via crypto
-  prevBal = (await req('GET', `/api/accounts/${checking.id}`, null, token)).body.account?.balance ?? 0;
-  r = await req('POST', '/api/funding/topup', {
-    account_id: checking.id, amount: 30, method: 'crypto',
-    details: {
-      network: 'BTC', asset: 'BTC',
-      tx_hash: 'a3f5b2c8d1e9f0a7b4c6d8e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0',
-      from_address: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa'
-    }
-  }, token);
-  record('REG-22', 'regression', 'Crypto top-up credits account',
-    r.status === 200 && r.body.newBalance > prevBal ? 'PASS' : 'FAIL',
-    '200 + balance up', `${r.status} bal=${r.body.newBalance}`, r.ms);
-
-  // REG-23 funding rejects bad Luhn
-  r = await req('POST', '/api/funding/topup', {
-    account_id: checking.id, amount: 10, method: 'card',
-    details: { card_number: '4242424242424241', exp_month: 12, exp_year: new Date().getFullYear() + 2, cvv: '123', holder: 'Test' }
-  }, token);
-  record('REG-23', 'regression', 'Card top-up rejects bad Luhn',
-    r.status === 400 ? 'PASS' : 'FAIL', '400', `${r.status}`, r.ms);
+  // REG-20/21/22 unsupported direct funding methods are disabled
+  const fundingBalanceBefore = (await req('GET', `/api/accounts/${checking.id}`, null, token)).body.account?.balance ?? 0;
+  for (const [id, method] of [['REG-20', 'card'], ['REG-21', 'bank'], ['REG-22', 'crypto']]) {
+    r = await req('POST', '/api/funding/topup', {
+      account_id: checking.id, amount: 10, method, details: {}
+    }, token);
+    record(id, 'security', `${method} direct top-up is disabled`,
+      r.status === 410 && r.body.code === 'DIRECT_FUNDING_DISABLED' ? 'PASS' : 'FAIL',
+      '410 DIRECT_FUNDING_DISABLED', `${r.status} ${r.body.code || ''}`, r.ms);
+  }
+  const fundingBalanceAfter = (await req('GET', `/api/accounts/${checking.id}`, null, token)).body.account?.balance ?? 0;
+  record('REG-23', 'security', 'Disabled funding calls do not credit account',
+    fundingBalanceAfter === fundingBalanceBefore ? 'PASS' : 'FAIL',
+    `balance unchanged at ${fundingBalanceBefore}`, `balance=${fundingBalanceAfter}`, 0);
 
   // REG-24 explicit lock-savings endpoint (200 on first lock, or 400 if already locked from REG-04 deposit)
   r = await req('POST', `/api/accounts/${savings.id}/lock-savings`, { days: 30 }, token);

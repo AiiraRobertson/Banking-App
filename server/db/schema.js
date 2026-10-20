@@ -55,6 +55,16 @@ function initializeDatabase() {
       FOREIGN KEY (to_account_id) REFERENCES accounts(id)
     );
 
+    CREATE TABLE IF NOT EXISTS transfer_idempotency (
+      user_id INTEGER NOT NULL,
+      idempotency_key TEXT NOT NULL,
+      request_hash TEXT NOT NULL,
+      response_json TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (user_id, idempotency_key),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
     CREATE TABLE IF NOT EXISTS bill_payees (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,

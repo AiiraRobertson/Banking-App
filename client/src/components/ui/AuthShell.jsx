@@ -22,21 +22,21 @@ export default function AuthShell({
       <ThemeToggle floating />
       <div className={`w-full ${widthClass} animate-fade-in-up`}>
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-2xl mb-4 shadow-lg shadow-indigo-200 animate-pulse-glow">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#17643d] mb-4 shadow-lg shadow-emerald-900/15 animate-pulse-glow">
             {icon}
           </div>
           <h1 className="text-3xl font-bold text-t-primary">{title}</h1>
-          {tagline && <p className="text-xs text-indigo-600 font-medium uppercase tracking-wider mt-0.5">{tagline}</p>}
+          {tagline && <p className="text-xs text-[#28734a] dark:text-[#8ed5a4] font-medium uppercase tracking-wider mt-0.5">{tagline}</p>}
           {subtitle && <p className="text-t-tertiary mt-2">{subtitle}</p>}
         </div>
 
-        <div className="bg-surface rounded-2xl shadow-xl shadow-[var(--color-shadow)] border border-b-secondary p-8 transition-shadow hover:shadow-2xl">
+        <div className="bg-surface rounded-xl shadow-xl shadow-[var(--color-shadow)] border border-b-secondary p-6 sm:p-8">
           {children}
         </div>
 
         {backLink && (
           <p className="mt-6 text-center text-sm text-t-muted">
-            <Link to={backLink.to} className="hover:text-indigo-600 transition-colors">{backLink.label}</Link>
+            <Link to={backLink.to} className="hover:text-[#17643d] dark:hover:text-[#8ed5a4] transition-colors">{backLink.label}</Link>
           </p>
         )}
       </div>

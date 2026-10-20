@@ -6,7 +6,7 @@ import AuthShell, { Icons } from '../components/ui/AuthShell';
 import Alert from '../components/ui/Alert';
 import PrimaryButton from '../components/ui/PrimaryButton';
 
-const inputClass = "w-full px-3 py-2.5 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-xs sm:text-sm hover:border-indigo-300";
+const inputClass = "w-full px-3 py-2.5 border border-b-input rounded-lg focus:ring-2 focus:ring-[#368052] focus:border-[#368052] outline-none transition-all text-xs sm:text-sm hover:border-[#91b69a]";
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -25,7 +25,9 @@ export default function LoginPage() {
       navigate('/');
     } catch (err) {
       const status = err.response?.status;
-      const message = err.response?.data?.error || 'Login failed. Please try again.';
+      const message = err.response?.data?.error || (err.response
+        ? 'Sign-in failed. Please check your email and password.'
+        : 'Unable to reach the sign-in service. Check your connection and try again.');
       setError({ status, message });
     } finally {
       setLoading(false);
@@ -64,7 +66,7 @@ export default function LoginPage() {
         <div>
           <div className="flex items-baseline justify-between mb-1.5 sm:mb-2">
             <label htmlFor="login-password" className="block text-xs sm:text-sm font-medium text-t-secondary">Password</label>
-            <Link to="/forgot-password" className="text-[10px] sm:text-xs text-indigo-600 hover:text-indigo-700 font-medium transition-colors">
+            <Link to="/forgot-password" className="text-[10px] sm:text-xs text-[#17643d] dark:text-[#8ed5a4] hover:underline font-medium transition-colors">
               Forgot password?
             </Link>
           </div>
@@ -87,7 +89,7 @@ export default function LoginPage() {
 
       <p className="mt-4 sm:mt-6 text-center text-xs sm:text-sm text-t-tertiary">
         Don't have an account?{' '}
-        <Link to="/register" className="text-indigo-600 font-medium hover:text-indigo-700 transition-colors">
+        <Link to="/register" className="text-[#17643d] dark:text-[#8ed5a4] font-medium hover:underline transition-colors">
           Create one
         </Link>
       </p>
