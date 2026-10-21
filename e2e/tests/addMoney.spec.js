@@ -8,9 +8,17 @@ test.describe('Add Money receiving details @regression', () => {
     await page.goto('/add-money');
 
     await expect(page.getByRole('heading', { name: 'Add Money' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Funding methods' })).toBeVisible();
+    await expect(page.getByText('Debit or credit card')).toBeVisible();
+    await expect(page.getByText('Gift cards')).toBeVisible();
+    await expect(page.getByText('Cryptocurrency')).toBeVisible();
+    await expect(page.getByText('Bank transfer (Nigeria and Ghana)')).toBeVisible();
+    await expect(page.getByText('Unavailable', { exact: true })).toHaveCount(4);
+    await expect(page.getByText('Available', { exact: true })).toHaveCount(1);
+    await expect(page.locator('aside').getByRole('link', { name: 'Notifications' })).toHaveCount(0);
     await expect(page.getByText('Kapita (simulated)')).toBeVisible();
     await expect(page.getByText(account.account_number, { exact: true })).toBeVisible();
-    await expect(page.getByText(/external bank transfers are not available/i)).toBeVisible();
+    await expect(page.getByText(/these Kapita account details are simulated/i)).toBeVisible();
     await expect(page.getByRole('button', { name: /card|crypto|add \$/i })).toHaveCount(0);
   });
 

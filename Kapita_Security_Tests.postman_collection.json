@@ -206,7 +206,7 @@
       "name": "2 — Authorization / BOLA & BOPLA (API1 + API3)",
       "item": [
         {
-          "name": "SEC-AUTHZ-02 Deposit into another user's account",
+          "name": "SEC-AUTHZ-02 Direct deposit endpoint is disabled",
           "request": {
             "method": "POST",
             "header": [
@@ -456,7 +456,7 @@
           ]}}]
         },
         {
-          "name": "SEC-INJ-06 Stored XSS in deposit description",
+          "name": "SEC-INJ-06 Direct deposit description is not stored",
           "request": {
             "method": "POST",
             "header": [
@@ -467,9 +467,7 @@
             "url": { "raw": "{{baseUrl}}/api/transactions/deposit", "host": ["{{baseUrl}}"], "path": ["api","transactions","deposit"] }
           },
           "event": [{ "listen": "test", "script": { "exec": [
-            "// API stores raw text — XSS only realises if client renders unsafely.",
-            "// This test just confirms the API accepts the value without 5xx; the UI render is verified manually.",
-            "pm.test('200 (or 400 if descriptions are sanitised at API)', () => pm.expect([200,400]).to.include(pm.response.code));"
+            "pm.test('direct deposit is disabled', () => pm.expect(pm.response.code).to.equal(410));"
           ]}}]
         },
         {
@@ -497,7 +495,7 @@
       "name": "5 — Business-logic abuse (API6)",
       "item": [
         {
-          "name": "SEC-BIZ-01 Negative-amount deposit",
+          "name": "SEC-BIZ-01 Unverified direct deposit is disabled",
           "request": {
             "method": "POST",
             "header": [
@@ -508,7 +506,10 @@
             "url": { "raw": "{{baseUrl}}/api/transactions/deposit", "host": ["{{baseUrl}}"], "path": ["api","transactions","deposit"] }
           },
           "event": [{ "listen": "test", "script": { "exec": [
-            "pm.test('400', () => pm.response.to.have.status(400));"
+            "pm.test('410 DIRECT_FUNDING_DISABLED', () => {",
+            "  pm.response.to.have.status(410);",
+            "  pm.expect(pm.response.json().code).to.equal('DIRECT_FUNDING_DISABLED');",
+            "});"
           ]}}]
         },
         {
@@ -542,7 +543,7 @@
           ]}}]
         },
         {
-          "name": "SEC-BIZ-04 Zero-amount deposit",
+          "name": "SEC-BIZ-04 Direct deposit cannot credit a zero amount",
           "request": {
             "method": "POST",
             "header": [
@@ -553,7 +554,10 @@
             "url": { "raw": "{{baseUrl}}/api/transactions/deposit", "host": ["{{baseUrl}}"], "path": ["api","transactions","deposit"] }
           },
           "event": [{ "listen": "test", "script": { "exec": [
-            "pm.test('400', () => pm.response.to.have.status(400));"
+            "pm.test('410 DIRECT_FUNDING_DISABLED', () => {",
+            "  pm.response.to.have.status(410);",
+            "  pm.expect(pm.response.json().code).to.equal('DIRECT_FUNDING_DISABLED');",
+            "});"
           ]}}]
         },
         {

@@ -366,6 +366,59 @@ function initializeDatabase() {
     );
 
     CREATE INDEX IF NOT EXISTS idx_deposit_sources_txn ON deposit_sources(transaction_id);
+
+    CREATE TABLE IF NOT EXISTS funding_quotes (
+      id TEXT PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      account_id INTEGER NOT NULL,
+      method TEXT NOT NULL CHECK(method IN ('card', 'bank_transfer')),
+      source_amount REAL NOT NULL CHECK(source_amount > 0),
+      source_currency TEXT NOT NULL CHECK(source_currency IN ('NGN', 'GHS')),
+      usd_per_source_unit REAL NOT NULL CHECK(usd_per_source_unit > 0),
+      usd_amount REAL NOT NULL CHECK(usd_amount > 0),
+      rate_source TEXT NOT NULL,
+      rate_fetched_at TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      FOREIGN KEY (account_id) REFERENCES accounts(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS external_funding (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      account_id INTEGER NOT NULL,
+      quote_id TEXT NOT NULL UNIQUE,
+      idempotency_key TEXT NOT NULL,
+      provider TEXT NOT NULL,
+      method TEXT NOT NULL CHECK(method IN ('card', 'bank_transfer', 'crypto')),
+      tx_ref TEXT NOT NULL UNIQUE,
+      provider_transaction_id TEXT UNIQUE,
+      source_amount REAL NOT NULL CHECK(source_amount > 0),
+      source_currency TEXT NOT NULL CHECK(source_currency IN ('NGN', 'GHS')),
+      usd_per_source_unit REAL NOT NULL CHECK(usd_per_source_unit > 0),
+      usd_amount REAL NOT NULL CHECK(usd_amount > 0),
+      status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'completed', 'failed', 'cancelled')),
+      checkout_url TEXT,
+      transfer_account TEXT,
+      transfer_bank TEXT,
+      transfer_amount REAL,
+      transfer_reference TEXT,
+      transfer_note TEXT,
+      transfer_expires_at TEXT,
+      transaction_id INTEGER UNIQUE,
+      failure_reason TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      FOREIGN KEY (account_id) REFERENCES accounts(id),
+      FOREIGN KEY (quote_id) REFERENCES funding_quotes(id),
+      FOREIGN KEY (transaction_id) REFERENCES transactions(id),
+      UNIQUE (user_id, idempotency_key)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_external_funding_user_created
+      ON external_funding(user_id, created_at DESC);
   `);
 
   addColumnIfMissing('bill_payees', 'meter_number', 'TEXT');

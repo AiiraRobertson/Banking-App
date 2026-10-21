@@ -44,7 +44,7 @@ User A and User B both exist. Find User B's `account_id` and `transaction_id` fr
 | ID | Scenario | Request | Expected | Fail signature |
 |---|---|---|---|---|
 | SEC-AUTHZ-01 | Cannot read another user's accounts | User A's token, `GET /api/accounts/:id` for B's account | `404` or `403` | 200 with B's data |
-| SEC-AUTHZ-02 | Cannot deposit into another user's account | A's token, `POST /api/transactions/deposit { account_id: <B's> }` | 4xx | 200 (funds materialise in B) |
+| SEC-AUTHZ-02 | Direct deposit endpoint cannot credit any account | A's token, `POST /api/transactions/deposit { account_id: <A's or B's> }` | `410 DIRECT_FUNDING_DISABLED`; no account balance changes | 2xx / balance changes |
 | SEC-AUTHZ-03 | Cannot withdraw from another user's account | A's token, `POST /api/transactions/withdraw { account_id: <B's> }` | 4xx | 200 |
 | SEC-AUTHZ-04 | Cannot transfer from someone else's account | A's token, `POST /api/transactions/transfer { from_account_id: <B's>, to_account_id: <A's>, amount: 1 }` | 4xx | 200 (theft) |
 | SEC-AUTHZ-05 | Cannot read another user's transactions | A's token, `GET /api/transactions?account_id=<B's>` | empty list or 4xx | rows from B's history |
@@ -87,7 +87,7 @@ The app uses parameterised queries (`db.prepare(...).run(...)`), so most SQL inj
 | SEC-INJ-03 | SQL in admin search | `GET /api/admin/users?search=%' UNION SELECT password_hash,...--` | sanitized via parameterised LIKE — no extra columns leak | password hashes returned |
 | SEC-INJ-04 | NoSQL-style operator in JSON | `POST /api/auth/login {email:{"$ne":null}, password:{"$ne":null}}` | 400 (validator requires string email) | 200 token |
 | SEC-INJ-05 | Path traversal in static fallback | `GET /../../../etc/passwd` (or `..\\..\\windows\\win.ini`) | 404 / served `index.html` | file contents returned |
-| SEC-INJ-06 | XSS stored in description | `POST /api/transactions/deposit {description:"<img src=x onerror=alert(1)>"}` | persisted as text; client renders escaped | rendered as live HTML in UI |
+| SEC-INJ-06 | Direct deposit does not persist client descriptions | `POST /api/transactions/deposit {description:"<img src=x onerror=alert(1)>"}` | `410 DIRECT_FUNDING_DISABLED`; no description is stored | 2xx / description stored |
 | SEC-INJ-07 | XSS in beneficiary nickname | save a beneficiary with `<script>` in nickname; view list | escaped | script executes |
 | SEC-INJ-08 | HTML injection in alert email body | trigger an alert with description `</p><script>` | logged literal in `[EMAIL ALERT]`; if real SMTP added, must be HTML-escaped before send | unescaped HTML in template |
 | SEC-INJ-09 | Header injection via user-supplied data | `email` containing `\r\nBcc:` | rejected by validator (normalizeEmail) | email header injected if SMTP wired |
@@ -99,10 +99,10 @@ The app uses parameterised queries (`db.prepare(...).run(...)`), so most SQL inj
 
 | ID | Scenario | Request | Expected | Fail signature |
 |---|---|---|---|---|
-| SEC-BIZ-01 | Negative-amount deposit rejected | `POST /api/transactions/deposit {amount:-100}` | 400 | 200, balance decreases or other account credited |
+| SEC-BIZ-01 | Unverified deposits are disabled | Any `POST /api/transactions/deposit`, including negative amounts | `410 DIRECT_FUNDING_DISABLED`; balance unchanged | 2xx / any balance change |
 | SEC-BIZ-02 | Negative-amount withdrawal rejected | `POST /api/transactions/withdraw {amount:-100}` | 400 | 200, balance increases |
 | SEC-BIZ-03 | Negative transfer rejected | `POST /api/transactions/transfer {amount:-50}` | 400 | 200, "from" gains, "to" loses (theft) |
-| SEC-BIZ-04 | Zero / sub-cent amount rejected | `amount:0` or `amount:0.001` | 400 | 200 |
+| SEC-BIZ-04 | Zero / sub-cent withdrawal rejected; direct deposits remain disabled | `POST /api/transactions/withdraw {amount:0}` or any direct deposit request | withdrawal: `400`; deposit: `410 DIRECT_FUNDING_DISABLED` | withdrawal succeeds or direct deposit credits funds |
 | SEC-BIZ-05 | Float precision abuse | Repeated `0.1 + 0.2`-style amounts; verify cents math | balances stay exact | drift / lost cents over many ops |
 | SEC-BIZ-06 | Overdraft prevented under concurrency | Two parallel withdrawals each = full balance | one succeeds, one returns 400 | both succeed; balance goes negative |
 | SEC-BIZ-07 | Transfer to self forbidden or no-op | `from_account_id == to_account_id` | 400 or no double-entry | inflated transaction history with no effect on net balance |
@@ -215,12 +215,12 @@ curl -s -o /dev/null -w '%{http_code}\n' $BASE/api/admin/stats \
   -H "Authorization: Bearer $USER_TOKEN"
 # Expect: 403
 
-# SEC-BIZ-01 — negative amount
+# SEC-BIZ-01 — unverified direct deposit disabled
 curl -s $BASE/api/transactions/deposit \
   -H "Authorization: Bearer $USER_TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"account_id":<ACCT>,"amount":-100,"description":"neg"}'
-# Expect: 400
+# Expect: 410 DIRECT_FUNDING_DISABLED
 
 # SEC-INJ-01 — SQL in login
 curl -s $BASE/api/auth/login -H 'Content-Type: application/json' \

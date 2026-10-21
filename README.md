@@ -24,6 +24,30 @@ The frontend is a React single-page application. It calls a Node.js and Express 
 
 The repository also includes browser-based end-to-end tests in `e2e/`, API/security test materials, load-test utilities, and deployment configuration for Netlify and Render. See [AZURE_DEPLOYMENT_README.md](AZURE_DEPLOYMENT_README.md) for the Azure deployment notes.
 
+## Funding provider sandbox
+
+The Add Money screen can exercise Flutterwave-hosted card checkout and provider-issued local bank transfer instructions in **sandbox only**. These flows credit simulated USD balances only after the backend verifies the provider transaction. The app will keep these options unavailable unless all of the following server environment variables are configured:
+
+```text
+FLW_MODE=sandbox
+FLW_SECRET_KEY=FLWSECK_TEST-<sandbox-secret-key>
+FLW_WEBHOOK_SECRET=<same-random-secret-hash-configured-in-Flutterwave>
+FLW_REDIRECT_URL=http://localhost:5173/add-money
+FLW_ENABLE_CARD_NGN=true
+FLW_ENABLE_CARD_GHS=true
+FLW_ENABLE_BANK_TRANSFER_NGN=true
+# Enable only after confirming GHS bank-transfer collection for your merchant account:
+FLW_ENABLE_BANK_TRANSFER_GHS=false
+```
+
+Use sandbox credentials from an approved Flutterwave merchant account. In the provider dashboard, configure the webhook URL as `https://<your-api-host>/api/funding/flutterwave/webhook` and set its secret hash to the same value as `FLW_WEBHOOK_SECRET`. Ensure the merchant account permits the per-payment `payment_options` setting used for card checkout. For local webhook testing, use a secure HTTPS tunnel and configure its URL in the dashboard. Do not commit secrets, use production keys, or set `FLW_MODE=live`; this implementation deliberately rejects live funding.
+
+Nigeria uses NGN and Ghana uses GHS. Methods and currencies are hidden unless explicitly enabled with the corresponding flags above. Flutterwave's specific NGN/GHS bank-transfer guides describe local collection, but its general payment-methods table does not list GHS bank transfer; keep `FLW_ENABLE_BANK_TRANSFER_GHS=false` unless your merchant dashboard and sandbox confirm it. The server obtains an indicative live FX rate from `open.er-api.com`, stores a five-minute quote, and shows the estimated USD credit. This is not a provider-guaranteed settlement or real-money FX quote. The estimate excludes any provider fees, which must be checked in the hosted provider flow. Provider merchant approval, enabled payment methods, and actual transfer availability remain subject to Flutterwave account settings and regional rules. This is a demo sandbox and must not be used to accept real funds.
+
+Refunds, chargebacks, settlement reconciliation, reversals after credit, production limits, and production FX/fee guarantees are not implemented. Do not adapt this sandbox into a live-money service without adding and testing provider-specific handling and obtaining the required legal, compliance, and operational approvals.
+
+Crypto funding is intentionally unavailable. To add a provider later, implement its hosted/invoice or wallet-deposit creation flow, signed webhook verification, independent transaction/network confirmation, underpayment/overpayment handling, FX/settlement rules, and idempotent crediting through the existing funding ledger. Do not enable a crypto method by setting an environment variable alone; provider-specific security, compliance, and tests are required.
+
 ## Technology
 
 - **Frontend:** React 19, Vite 8, React Router 7, Tailwind CSS 4

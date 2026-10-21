@@ -29,41 +29,11 @@ function createNotification(userId, title, message, type = 'transaction') {
   ).run(userId, title, message, type);
 }
 
-router.post('/deposit', [accountValidation, amountValidation, handleValidation], (req, res) => {
-  const { account_id, amount, description } = req.body;
-  const amt = Math.round(amount * 100) / 100;
-
-  const account = getUserAccount(account_id, req.user.id);
-  if (!account) return res.status(404).json({ error: 'Account not found' });
-
-  const deposit = db.transaction(() => {
-    db.prepare('UPDATE accounts SET balance = balance + ? WHERE id = ?').run(amt, account_id);
-    applyLockOnDeposit(account_id);
-    const newBalance = db.prepare('SELECT balance FROM accounts WHERE id = ?').get(account_id).balance;
-
-    const refId = uuidv4();
-    db.prepare(`
-      INSERT INTO transactions (from_account_id, to_account_id, transaction_type, amount, balance_after, description, reference_id)
-      VALUES (NULL, ?, 'deposit', ?, ?, ?, ?)
-    `).run(account_id, amt, newBalance, description || 'Deposit', refId);
-
-    createNotification(req.user.id, 'Deposit Received',
-      `$${amt.toFixed(2)} deposited to account ${account.account_number}.`);
-
-    return { referenceId: refId, newBalance };
+router.post('/deposit', (req, res) => {
+  res.status(410).json({
+    error: 'Direct account deposits are unavailable. Only independently verified provider payments can credit an account.',
+    code: 'DIRECT_FUNDING_DISABLED',
   });
-
-  const result = deposit();
-  sendTransactionAlert({
-    userId: req.user.id,
-    direction: 'credit',
-    amount: amt,
-    accountNumber: account.account_number,
-    balanceAfter: result.newBalance,
-    counterparty: 'Cash deposit',
-    referenceId: result.referenceId
-  });
-  res.json({ message: 'Deposit successful', ...result });
 });
 
 router.post('/withdraw', [accountValidation, amountValidation, handleValidation], (req, res) => {

@@ -3,7 +3,7 @@ import ResourcePageLayout from './ResourcePageLayout';
 
 const faqs = [
   { q: 'How do I open a Kapita account?', a: 'Click "Open Account" on the homepage, fill in your personal details, and accept our Terms. You\'ll receive an instant checking account with a $1,000 welcome bonus.' },
-  { q: 'How do I add money to my account?', a: 'From your dashboard, click Add Money and choose your source: credit/debit card, another bank, or a crypto wallet. Funds are credited instantly.' },
+  { q: 'How do I add money to my account?', a: 'Use Add Money for an internal demo transfer, or test card and supported local bank funding through Flutterwave sandbox when the server is configured. Sandbox transactions do not move real money. Crypto deposits remain unavailable until a suitable provider and required approvals are in place. The displayed Kapita account is simulated and must not be used to send real money.' },
   { q: 'Which countries does Kapita support?', a: 'We currently serve 27 countries across North America (US, Canada), Europe (16 countries including UK, Germany, France), and Africa (10 countries including Nigeria, Kenya, South Africa, Ghana).' },
   { q: 'How long does an international wire transfer take?', a: 'North America: 1-2 business days. Europe: 2-4 business days. Africa: 3-5 business days. Cutoff times vary by recipient bank.' },
   { q: 'What are your fees?', a: 'Internal transfers between Kapita accounts are free. International wires: $5 + 0.5% (NA), $25 + 1.0% (EU), $20 + 1.5% (AF). No monthly maintenance fees.' },

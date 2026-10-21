@@ -1,0 +1,418 @@
+{
+  "timestamp": "2026-10-05T11:57:28.9347944Z",
+  "host": {
+    "cpuCount": 4,
+    "memoryGiB": 7.9
+  },
+  "sharedTemporaryDatabase": "C:\\Users\\CROWNH~1\\AppData\\Local\\Temp\\kapita-load-300-dc7a483b64734303a06e46b158d59d0d\\load-test.db",
+  "configurations": [
+    {
+      "instanceCount": 1,
+      "scenarios": [
+        {
+          "name": "GET /health",
+          "targetCount": 1,
+          "requests": 600,
+          "successes": 600,
+          "errors": 0,
+          "successRatePercent": 100,
+          "requestsPerSecond": 299.4,
+          "durationMs": 2004,
+          "p50Ms": 436,
+          "p95Ms": 1178,
+          "p99Ms": 1181,
+          "maxMs": 1183,
+          "statusCounts": {
+            "200": 600
+          },
+          "perTarget": [
+            {
+              "target": "http://127.0.0.1:3301",
+              "requests": 600,
+              "successes": 600,
+              "errors": 0,
+              "p50Ms": 436,
+              "p95Ms": 1178,
+              "p99Ms": 1181,
+              "maxMs": 1183
+            }
+          ],
+          "startedAt": "2026-10-05T11:53:47.601Z"
+        },
+        {
+          "name": "GET /api/accounts (authenticated)",
+          "targetCount": 1,
+          "requests": 600,
+          "successes": 600,
+          "errors": 0,
+          "successRatePercent": 100,
+          "requestsPerSecond": 326.44,
+          "durationMs": 1838,
+          "p50Ms": 264,
+          "p95Ms": 662,
+          "p99Ms": 781,
+          "maxMs": 788,
+          "statusCounts": {
+            "200": 600
+          },
+          "perTarget": [
+            {
+              "target": "http://127.0.0.1:3301",
+              "requests": 600,
+              "successes": 600,
+              "errors": 0,
+              "p50Ms": 264,
+              "p95Ms": 662,
+              "p99Ms": 781,
+              "maxMs": 788
+            }
+          ],
+          "startedAt": "2026-10-05T11:53:49.617Z"
+        },
+        {
+          "name": "POST /api/auth/login (bcrypt)",
+          "targetCount": 1,
+          "requests": 300,
+          "successes": 52,
+          "errors": 248,
+          "successRatePercent": 17.33,
+          "requestsPerSecond": 4.97,
+          "durationMs": 60342,
+          "p50Ms": 60111,
+          "p95Ms": 60239,
+          "p99Ms": 60240,
+          "maxMs": 60241,
+          "statusCounts": {
+            "200": 52,
+            "network_error": 248
+          },
+          "perTarget": [
+            {
+              "target": "http://127.0.0.1:3301",
+              "requests": 300,
+              "successes": 52,
+              "errors": 248,
+              "p50Ms": 60111,
+              "p95Ms": 60239,
+              "p99Ms": 60240,
+              "maxMs": 60241
+            }
+          ],
+          "startedAt": "2026-10-05T11:53:51.457Z"
+        }
+      ]
+    },
+    {
+      "instanceCount": 2,
+      "scenarios": [
+        {
+          "name": "GET /health",
+          "targetCount": 2,
+          "requests": 600,
+          "successes": 600,
+          "errors": 0,
+          "successRatePercent": 100,
+          "requestsPerSecond": 331.31,
+          "durationMs": 1811,
+          "p50Ms": 383,
+          "p95Ms": 1096,
+          "p99Ms": 1108,
+          "maxMs": 1109,
+          "statusCounts": {
+            "200": 600
+          },
+          "perTarget": [
+            {
+              "target": "http://127.0.0.1:3301",
+              "requests": 300,
+              "successes": 300,
+              "errors": 0,
+              "p50Ms": 383,
+              "p95Ms": 1095,
+              "p99Ms": 1108,
+              "maxMs": 1109
+            },
+            {
+              "target": "http://127.0.0.1:3302",
+              "requests": 300,
+              "successes": 300,
+              "errors": 0,
+              "p50Ms": 383,
+              "p95Ms": 1096,
+              "p99Ms": 1103,
+              "maxMs": 1109
+            }
+          ],
+          "startedAt": "2026-10-05T11:55:01.935Z"
+        },
+        {
+          "name": "GET /api/accounts (authenticated)",
+          "targetCount": 2,
+          "requests": 600,
+          "successes": 600,
+          "errors": 0,
+          "successRatePercent": 100,
+          "requestsPerSecond": 865.8,
+          "durationMs": 693,
+          "p50Ms": 190,
+          "p95Ms": 233,
+          "p99Ms": 238,
+          "maxMs": 248,
+          "statusCounts": {
+            "200": 600
+          },
+          "perTarget": [
+            {
+              "target": "http://127.0.0.1:3301",
+              "requests": 300,
+              "successes": 300,
+              "errors": 0,
+              "p50Ms": 183,
+              "p95Ms": 215,
+              "p99Ms": 216,
+              "maxMs": 216
+            },
+            {
+              "target": "http://127.0.0.1:3302",
+              "requests": 300,
+              "successes": 300,
+              "errors": 0,
+              "p50Ms": 196,
+              "p95Ms": 236,
+              "p99Ms": 245,
+              "maxMs": 248
+            }
+          ],
+          "startedAt": "2026-10-05T11:55:03.752Z"
+        },
+        {
+          "name": "POST /api/auth/login (bcrypt)",
+          "targetCount": 2,
+          "requests": 300,
+          "successes": 148,
+          "errors": 152,
+          "successRatePercent": 49.33,
+          "requestsPerSecond": 4.99,
+          "durationMs": 60140,
+          "p50Ms": 60003,
+          "p95Ms": 60066,
+          "p99Ms": 60071,
+          "maxMs": 60072,
+          "statusCounts": {
+            "200": 148,
+            "network_error": 152
+          },
+          "perTarget": [
+            {
+              "target": "http://127.0.0.1:3301",
+              "requests": 150,
+              "successes": 74,
+              "errors": 76,
+              "p50Ms": 60003,
+              "p95Ms": 60066,
+              "p99Ms": 60071,
+              "maxMs": 60072
+            },
+            {
+              "target": "http://127.0.0.1:3302",
+              "requests": 150,
+              "successes": 74,
+              "errors": 76,
+              "p50Ms": 60003,
+              "p95Ms": 60066,
+              "p99Ms": 60072,
+              "maxMs": 60072
+            }
+          ],
+          "startedAt": "2026-10-05T11:55:04.446Z"
+        }
+      ]
+    },
+    {
+      "instanceCount": 4,
+      "scenarios": [
+        {
+          "name": "GET /health",
+          "targetCount": 4,
+          "requests": 600,
+          "successes": 600,
+          "errors": 0,
+          "successRatePercent": 100,
+          "requestsPerSecond": 469.85,
+          "durationMs": 1277,
+          "p50Ms": 247,
+          "p95Ms": 717,
+          "p99Ms": 725,
+          "maxMs": 727,
+          "statusCounts": {
+            "200": 600
+          },
+          "perTarget": [
+            {
+              "target": "http://127.0.0.1:3301",
+              "requests": 150,
+              "successes": 150,
+              "errors": 0,
+              "p50Ms": 247,
+              "p95Ms": 717,
+              "p99Ms": 725,
+              "maxMs": 727
+            },
+            {
+              "target": "http://127.0.0.1:3302",
+              "requests": 150,
+              "successes": 150,
+              "errors": 0,
+              "p50Ms": 247,
+              "p95Ms": 717,
+              "p99Ms": 724,
+              "maxMs": 727
+            },
+            {
+              "target": "http://127.0.0.1:3303",
+              "requests": 150,
+              "successes": 150,
+              "errors": 0,
+              "p50Ms": 247,
+              "p95Ms": 717,
+              "p99Ms": 726,
+              "maxMs": 727
+            },
+            {
+              "target": "http://127.0.0.1:3304",
+              "requests": 150,
+              "successes": 150,
+              "errors": 0,
+              "p50Ms": 247,
+              "p95Ms": 718,
+              "p99Ms": 726,
+              "maxMs": 726
+            }
+          ],
+          "startedAt": "2026-10-05T11:56:25.243Z"
+        },
+        {
+          "name": "GET /api/accounts (authenticated)",
+          "targetCount": 4,
+          "requests": 600,
+          "successes": 600,
+          "errors": 0,
+          "successRatePercent": 100,
+          "requestsPerSecond": 489.8,
+          "durationMs": 1225,
+          "p50Ms": 244,
+          "p95Ms": 472,
+          "p99Ms": 497,
+          "maxMs": 514,
+          "statusCounts": {
+            "200": 600
+          },
+          "perTarget": [
+            {
+              "target": "http://127.0.0.1:3301",
+              "requests": 150,
+              "successes": 150,
+              "errors": 0,
+              "p50Ms": 278,
+              "p95Ms": 490,
+              "p99Ms": 512,
+              "maxMs": 514
+            },
+            {
+              "target": "http://127.0.0.1:3302",
+              "requests": 150,
+              "successes": 150,
+              "errors": 0,
+              "p50Ms": 240,
+              "p95Ms": 459,
+              "p99Ms": 480,
+              "maxMs": 487
+            },
+            {
+              "target": "http://127.0.0.1:3303",
+              "requests": 150,
+              "successes": 150,
+              "errors": 0,
+              "p50Ms": 239,
+              "p95Ms": 459,
+              "p99Ms": 479,
+              "maxMs": 486
+            },
+            {
+              "target": "http://127.0.0.1:3304",
+              "requests": 150,
+              "successes": 150,
+              "errors": 0,
+              "p50Ms": 240,
+              "p95Ms": 458,
+              "p99Ms": 479,
+              "maxMs": 485
+            }
+          ],
+          "startedAt": "2026-10-05T11:56:26.526Z"
+        },
+        {
+          "name": "POST /api/auth/login (bcrypt)",
+          "targetCount": 4,
+          "requests": 300,
+          "successes": 234,
+          "errors": 66,
+          "successRatePercent": 78,
+          "requestsPerSecond": 4.98,
+          "durationMs": 60202,
+          "p50Ms": 38789,
+          "p95Ms": 60034,
+          "p99Ms": 60059,
+          "maxMs": 60061,
+          "statusCounts": {
+            "200": 234,
+            "network_error": 66
+          },
+          "perTarget": [
+            {
+              "target": "http://127.0.0.1:3301",
+              "requests": 75,
+              "successes": 59,
+              "errors": 16,
+              "p50Ms": 38789,
+              "p95Ms": 60034,
+              "p99Ms": 60059,
+              "maxMs": 60059
+            },
+            {
+              "target": "http://127.0.0.1:3302",
+              "requests": 75,
+              "successes": 58,
+              "errors": 17,
+              "p50Ms": 39652,
+              "p95Ms": 60034,
+              "p99Ms": 60059,
+              "maxMs": 60059
+            },
+            {
+              "target": "http://127.0.0.1:3303",
+              "requests": 75,
+              "successes": 58,
+              "errors": 17,
+              "p50Ms": 39834,
+              "p95Ms": 60034,
+              "p99Ms": 60059,
+              "maxMs": 60059
+            },
+            {
+              "target": "http://127.0.0.1:3304",
+              "requests": 75,
+              "successes": 59,
+              "errors": 16,
+              "p50Ms": 38706,
+              "p95Ms": 60034,
+              "p99Ms": 60061,
+              "maxMs": 60061
+            }
+          ],
+          "startedAt": "2026-10-05T11:56:27.753Z"
+        }
+      ]
+    }
+  ]
+}

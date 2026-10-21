@@ -69,6 +69,8 @@ TEST_BASE=http://127.0.0.1:3002 node tests/load-test.js
 
 > **Goal:** verify previously-shipped features still work after the recent batch of changes (Kapita rename + slogan, alert system, beneficiaries, incoming wires, transfer confirmation flow).
 
+> **Historical baseline:** this report predates the provider-verified funding flow. The previously successful direct cash deposit endpoint is now intentionally retired (`410 DIRECT_FUNDING_DISABLED`); only a provider-verified sandbox payment may credit a demo balance.
+
 ### 4.1 Transactions
 
 | ID | Case | Steps | Expected | Actual | Status |

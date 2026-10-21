@@ -21,7 +21,7 @@ function pct(arr, p) {
 }
 
 async function probe(method, url, body, token, ip) {
-  const headers = { 'Content-Type': 'application/json', 'X-Forwarded-For': ip };
+  const headers = { 'Content-Type': 'application/json', 'X-Forwarded-For': ip, 'Idempotency-Key': require('crypto').randomUUID() };
   if (token) headers.Authorization = `Bearer ${token}`;
   const start = Date.now();
   try {

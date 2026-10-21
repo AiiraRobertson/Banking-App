@@ -60,10 +60,18 @@ async function regressionTests() {
   const checking = accounts.find(a => a.account_type === 'checking');
   const savings = accounts.find(a => a.account_type === 'savings');
 
-  // REG-01 deposit
+  // REG-01 unverified direct deposits stay disabled
+  let balanceResponse = await req('GET', `/api/accounts/${checking.id}`, null, token);
+  const balanceBeforeDirectDeposit = balanceResponse.body.account?.balance;
   let r = await req('POST', '/api/transactions/deposit',
     { account_id: checking.id, amount: 100.50, description: 'Test deposit' }, token);
-  record('REG-01', 'regression', 'Deposit credits account', r.status === 200 ? 'PASS' : 'FAIL', '200 + new balance', `${r.status} bal=${r.body.newBalance}`, r.ms);
+  balanceResponse = await req('GET', `/api/accounts/${checking.id}`, null, token);
+  const balanceAfterDirectDeposit = balanceResponse.body.account?.balance;
+  record('REG-01', 'regression', 'Unverified direct deposit is rejected without balance change',
+    r.status === 410 && r.body.code === 'DIRECT_FUNDING_DISABLED' &&
+      balanceBeforeDirectDeposit === balanceAfterDirectDeposit ? 'PASS' : 'FAIL',
+    '410 DIRECT_FUNDING_DISABLED and unchanged balance',
+    `${r.status} ${r.body.code || ''} balance=${balanceAfterDirectDeposit}`, r.ms);
 
   // REG-02 withdrawal
   r = await req('POST', '/api/transactions/withdraw',
@@ -239,12 +247,12 @@ async function sanityTests() {
   record('SAN-02', 'sanity', 'Welcome notification carries slogan', slogan ? 'PASS' : 'WARN', 'move money, make moves',
     slogan ? 'found' : 'not found', r.ms, slogan ? '' : 'Existing DB still has old slogan');
 
-  // SAN-03 alert log entries are being written
+  // SAN-03 unverified deposits cannot trigger credit alerts
   const r2 = await req('POST', '/api/transactions/deposit',
     { account_id: accounts[0].id, amount: 7.50, description: 'Sanity alert deposit' }, token);
-  record('SAN-03', 'sanity', 'Deposit succeeds (alerts simulated server-side)',
-    r2.status === 200 ? 'PASS' : 'FAIL', '200', r2.status, r2.ms,
-    'Alert delivery is logged to console + alert_log; verified by REG-15 prefs');
+  record('SAN-03', 'sanity', 'Unverified deposit does not credit an account',
+    r2.status === 410 && r2.body.code === 'DIRECT_FUNDING_DISABLED' ? 'PASS' : 'FAIL',
+    '410 DIRECT_FUNDING_DISABLED', `${r2.status} ${r2.body.code || ''}`, r2.ms);
 
   // SAN-04 helmet headers + rate limit headers
   const headRes = await fetch(`${BASE}/health`);
