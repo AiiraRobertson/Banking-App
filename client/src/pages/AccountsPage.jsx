@@ -47,6 +47,82 @@ export default function AccountsPage() {
         </button>
       </div>
 
+      <section aria-label="Money management">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="bg-surface rounded-xl shadow-sm border border-b-secondary p-6 flex flex-col">
+            <div className="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4" aria-hidden="true">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 8v8m-4-4h8m7 0a11 11 0 11-22 0 11 11 0 0122 0z" />
+              </svg>
+            </div>
+            <h2 className="text-lg font-semibold text-t-primary">Add Money</h2>
+            <p className="text-sm text-t-tertiary mt-1 mb-5 flex-1">
+              Fund your account using the available deposit methods.
+            </p>
+            <Link
+              to="/add-money"
+              className="inline-flex items-center justify-center px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 transition-colors"
+            >
+              Add Money
+            </Link>
+          </div>
+
+          <div className="bg-surface rounded-xl shadow-sm border border-b-secondary p-6 flex flex-col">
+            <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4" aria-hidden="true">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M7 7h13m0 0-4-4m4 4-4 4M17 17H4m0 0 4 4m-4-4 4-4" />
+              </svg>
+            </div>
+            <h2 className="text-lg font-semibold text-t-primary">Transfer Money</h2>
+            <p className="text-sm text-t-tertiary mt-1 mb-5 flex-1">
+              Send money to your own accounts or other supported bank accounts.
+            </p>
+            <Link
+              to="/transfer"
+              className="inline-flex items-center justify-center px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 transition-colors"
+            >
+              Make a Transfer
+            </Link>
+          </div>
+
+          <div className="bg-surface rounded-xl shadow-sm border border-b-secondary p-6 flex flex-col">
+            <div className="w-11 h-11 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-4" aria-hidden="true">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2m16 0v-2a4 4 0 00-3-3.87M14 3.13a4 4 0 010 7.75M14 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </div>
+            <h2 className="text-lg font-semibold text-t-primary">Beneficiaries</h2>
+            <p className="text-sm text-t-tertiary mt-1 mb-5 flex-1">
+              Manage your saved transfer recipients.
+            </p>
+            <Link
+              to="/beneficiaries"
+              className="inline-flex items-center justify-center px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 transition-colors"
+            >
+              Manage Beneficiaries
+            </Link>
+          </div>
+
+          <div className="bg-surface rounded-xl shadow-sm border border-b-secondary p-6 flex flex-col">
+            <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4" aria-hidden="true">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 7h13m0 0-3-3m3 3-3 3M20 17H7m0 0 3 3m-3-3 3-3" />
+              </svg>
+            </div>
+            <h2 className="text-lg font-semibold text-t-primary">Convert Currency</h2>
+            <p className="text-sm text-t-tertiary mt-1 mb-5 flex-1">
+              Exchange between your USD, NGN, and GHS accounts using clearly labelled development test rates.
+            </p>
+            <Link
+              to="/convert"
+              className="inline-flex items-center justify-center px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 transition-colors"
+            >
+              Convert Money
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {accounts.map(account => {
           const lock = getMaturityInfo(account);
@@ -58,7 +134,8 @@ export default function AccountsPage() {
                 </span>
                 <span className="text-sm text-t-muted">****{account.account_number.slice(-4)}</span>
               </div>
-              <p className="text-3xl font-bold text-t-primary mb-1">{formatCurrency(account.balance)}</p>
+              <p className="text-3xl font-bold text-t-primary mb-1">{formatCurrency(account.balance, account.currency)}</p>
+              <p className="text-xs text-t-muted">{account.currency} {account.account_type}</p>
               <p className="text-xs text-t-muted">Opened {formatDate(account.created_at)}</p>
               <p className="text-xs text-t-muted mt-1">Account: {account.account_number}</p>
               {lock.isSavings && (
@@ -84,8 +161,8 @@ export default function AccountsPage() {
               <div>
                 <label className="block text-sm font-medium text-t-secondary mb-1">Account Type</label>
                 <select value={newType} onChange={e => setNewType(e.target.value)} className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
-                  <option value="checking">Checking</option>
-                  <option value="savings">Savings</option>
+                  <option value="checking">USD Checking</option>
+                  <option value="savings">USD Savings</option>
                 </select>
               </div>
               <div className="flex gap-3 justify-end">

@@ -6,6 +6,7 @@ const BASE = process.env.TEST_BASE || 'http://127.0.0.1:3001';
 const results = [];
 let token = null;
 let recipientToken = null;
+let adminToken = null;
 let accounts = [];
 let recipientAccounts = [];
 
@@ -44,6 +45,31 @@ async function smokeTests() {
   r = await req('GET', '/api/accounts', null, token);
   accounts = r.body.accounts || [];
   record('SMOKE-03', 'smoke', 'Authenticated user can list accounts', accounts.length > 0 ? 'PASS' : 'FAIL', '>=1 account', `${accounts.length} accounts`, r.ms);
+  const currencies = [...new Set(accounts.map(account => account.currency))];
+  record('SMOKE-03A', 'smoke', 'User has USD, NGN, and GHS wallets',
+    ['USD', 'NGN', 'GHS'].every(currency => currencies.includes(currency)) ? 'PASS' : 'FAIL',
+    'USD, NGN, GHS', currencies.join(', '), r.ms);
+
+  const registration = await req('POST', '/api/auth/register', {
+    email: `currency-test-${Date.now()}@example.com`,
+    password: 'TestUser123!',
+    first_name: 'Currency',
+    last_name: 'Tester',
+    nationality: 'NG',
+    date_of_birth: '1990-01-01',
+    address: '1 Test Road',
+    city: 'Lagos',
+    state: 'Lagos',
+    zip_code: '100001',
+    terms_accepted: 'true'
+  });
+  const registeredWallets = registration.body.token
+    ? await req('GET', '/api/accounts', null, registration.body.token)
+    : { body: { accounts: [] } };
+  const registrationCurrencies = (registeredWallets.body.accounts || []).map(account => account.currency);
+  record('SMOKE-03B', 'smoke', 'New user receives all three wallets',
+    ['USD', 'NGN', 'GHS'].every(currency => registrationCurrencies.includes(currency)) ? 'PASS' : 'FAIL',
+    'USD, NGN, GHS', registrationCurrencies.join(', '), registration.ms);
 
   // SMOKE-04 list notifications
   r = await req('GET', '/api/notifications', null, token);
@@ -56,8 +82,10 @@ async function smokeTests() {
 
 async function regressionTests() {
   if (!token) return;
-  const checking = accounts.find(a => a.account_type === 'checking');
-  const savings = accounts.find(a => a.account_type === 'savings');
+  const checking = accounts.find(a => a.account_type === 'checking' && a.currency === 'USD');
+  const savings = accounts.find(a => a.account_type === 'savings' && a.currency === 'USD');
+  const naira = accounts.find(a => a.currency === 'NGN');
+  const cedis = accounts.find(a => a.currency === 'GHS');
 
   // REG-01 deposit
   let r = await req('POST', '/api/transactions/deposit',
@@ -77,7 +105,51 @@ async function regressionTests() {
   // REG-04 transfer between own accounts
   r = await req('POST', '/api/transactions/transfer',
     { from_account_id: checking.id, to_account_id: savings.id, amount: 10.00 }, token);
-  record('REG-04', 'regression', 'Internal transfer between own accounts', r.status === 200 ? 'PASS' : 'FAIL', '200', r.status, r.ms);
+  record('REG-04', 'regression', 'Same-currency transfer charges 0.1% fee',
+    r.status === 200 && r.body.feeAmount === 0.01 && r.body.totalDeducted === 10.01 ? 'PASS' : 'FAIL',
+    '200, fee=0.01, debit=10.01', `${r.status} fee=${r.body.feeAmount} debit=${r.body.totalDeducted}`, r.ms);
+
+  const insufficientTransfer = await req('POST', '/api/transactions/transfer',
+    { from_account_id: checking.id, to_account_id: savings.id, amount: 1000000 }, token);
+  record('REG-04X', 'regression', 'Transfer rejects insufficient funds including fees',
+    insufficientTransfer.status === 400 ? 'PASS' : 'FAIL',
+    '400 insufficient funds', `${insufficientTransfer.status} ${insufficientTransfer.body.error || ''}`, insufficientTransfer.ms);
+
+  // REG-04A cross-currency transfer is rejected in favor of explicit conversion.
+  r = await req('POST', '/api/transactions/transfer',
+    { from_account_id: checking.id, to_account_id: cedis.id, amount: 10.00 }, token);
+  record('REG-04A', 'regression', 'Cross-currency transfer requires explicit conversion',
+    r.status === 400 && r.body.code === 'CURRENCY_MISMATCH' ? 'PASS' : 'FAIL',
+    '400 CURRENCY_MISMATCH', `${r.status} ${r.body.code || ''}`, r.ms);
+
+  // REG-04B get and execute a server-priced development currency quote.
+  r = await req('POST', '/api/exchange/quote', {
+    from_account_id: checking.id, to_account_id: naira.id, amount: 100
+  }, token);
+  const exchangeQuote = r.body.quoteId ? r.body : null;
+  record('REG-04B', 'regression', 'Exchange quote uses development rates and 0.4% fee',
+    !!exchangeQuote && exchangeQuote.rateMode === 'DEVELOPMENT TEST RATE' && exchangeQuote.feeAmount === 0.4
+      ? 'PASS' : 'FAIL',
+    'quote, development label, fee=0.40', `${r.status} fee=${r.body.feeAmount}`, r.ms);
+  if (exchangeQuote) {
+    const conversion = await req('POST', '/api/exchange/convert', { quote_id: exchangeQuote.quoteId }, token);
+    record('REG-04C', 'regression', 'Quoted conversion credits destination wallet',
+      conversion.status === 200 && conversion.body.destinationAmount === 155000
+        ? 'PASS' : 'FAIL',
+      '200 and NGN 155,000', `${conversion.status} amount=${conversion.body.destinationAmount}`, conversion.ms);
+    const replay = await req('POST', '/api/exchange/convert', { quote_id: exchangeQuote.quoteId }, token);
+    record('REG-04D', 'regression', 'Exchange quote cannot be reused',
+      replay.status === 409 ? 'PASS' : 'FAIL', '409', replay.status, replay.ms);
+  }
+  const insufficientQuote = await req('POST', '/api/exchange/quote', {
+    from_account_id: checking.id, to_account_id: naira.id, amount: 1000000
+  }, token);
+  const insufficientConversion = insufficientQuote.body.quoteId
+    ? await req('POST', '/api/exchange/convert', { quote_id: insufficientQuote.body.quoteId }, token)
+    : insufficientQuote;
+  record('REG-04E', 'regression', 'Conversion rejects insufficient source balance',
+    insufficientConversion.status === 400 ? 'PASS' : 'FAIL',
+    '400 insufficient funds', `${insufficientConversion.status} ${insufficientConversion.body.error || ''}`, insufficientConversion.ms);
 
   // REG-05 account number lookup
   const otherAcctNum = '1000000001'; // admin checking
@@ -89,6 +161,25 @@ async function regressionTests() {
     { from_account_id: checking.id, to_account_number: '1000000001', amount: 5.00 }, token);
   record('REG-06', 'regression', 'Transfer by account number to another user', r.status === 200 ? 'PASS' : 'FAIL', '200', r.status, r.ms);
 
+  r = await req('POST', '/api/auth/login', { email: 'admin@bank.com', password: 'Admin123!' });
+  adminToken = r.body.token;
+  const adminAccountResponse = await req('GET', '/api/accounts', null, adminToken);
+  const adminGhs = (adminAccountResponse.body.accounts || []).find(account => account.currency === 'GHS');
+  await req('POST', '/api/transactions/deposit',
+    { account_id: cedis.id, amount: 100, description: 'GHS cross-border test funding' }, token);
+  const crossBorder = await req('POST', '/api/transactions/transfer',
+    { from_account_id: cedis.id, to_account_number: adminGhs?.account_number, amount: 10 }, token);
+  record('REG-06A', 'regression', 'Ghana-to-Nigeria GHS transfer is supported',
+    crossBorder.status === 200 && crossBorder.body.currency === 'GHS' ? 'PASS' : 'FAIL',
+    '200 GHS transfer', `${crossBorder.status} ${crossBorder.body.currency || crossBorder.body.error || ''}`, crossBorder.ms);
+  const reverseCrossBorder = await req('POST', '/api/transactions/transfer',
+    { from_account_id: adminGhs?.id, to_account_number: cedis.account_number, amount: 1 }, adminToken);
+  record('REG-06B', 'regression', 'Nigeria-to-Ghana GHS transfer is rejected',
+    reverseCrossBorder.status === 400 && reverseCrossBorder.body.code === 'CROSS_BORDER_CURRENCY_NOT_SUPPORTED'
+      ? 'PASS' : 'FAIL',
+    '400 CROSS_BORDER_CURRENCY_NOT_SUPPORTED',
+    `${reverseCrossBorder.status} ${reverseCrossBorder.body.code || ''}`, reverseCrossBorder.ms);
+
   // REG-07 invalid transfer
   r = await req('POST', '/api/transactions/transfer',
     { from_account_id: checking.id, to_account_number: '9999999999', amount: 1.00 }, token);
@@ -96,20 +187,31 @@ async function regressionTests() {
 
   // REG-08 wire countries
   r = await req('GET', '/api/wire/countries', null, token);
-  record('REG-08', 'regression', 'Wire countries list available', (r.body.countries && Object.keys(r.body.countries).length) ? 'PASS' : 'FAIL', 'grouped countries', `${r.status}`, r.ms);
+  const wireCountries = r.body.countries?.africa || [];
+  record('REG-08', 'regression', 'Wire countries restricted to Nigeria and Ghana',
+    wireCountries.length === 2 && wireCountries.every(country => ['NG', 'GH'].includes(country.code)) ? 'PASS' : 'FAIL',
+    'NG and GH only', `${r.status} ${wireCountries.map(country => country.code).join(',')}`, r.ms);
 
-  // REG-09 wire quote
-  r = await req('POST', '/api/wire/quote', { amount: 500, country_code: 'GB' }, token);
-  record('REG-09', 'regression', 'Wire quote returns rate + fee', r.status === 200 && r.body.exchangeRate ? 'PASS' : 'FAIL', 'rate>0 fee>0', `rate=${r.body.exchangeRate} fee=${r.body.feeAmount}`, r.ms);
+  // REG-09 outgoing external wires fail closed until settlement is integrated.
+  r = await req('POST', '/api/wire/quote', { amount: 500, country_code: 'NG' }, token);
+  record('REG-09', 'regression', 'External bank wire quote is unavailable',
+    r.status === 503 ? 'PASS' : 'FAIL', '503 provider unavailable', `${r.status} ${r.body.error || ''}`, r.ms);
 
-  // REG-10 incoming wire (receive) — GB requires IBAN
+  // REG-10 incoming USD wire simulator is limited to USD accounts in NG/GH.
   r = await req('POST', '/api/wire/receive', {
-    to_account_id: checking.id, amount: 200, country_code: 'GB',
+    to_account_id: checking.id, amount: 200, country_code: 'NG',
     sender_name: 'Test Sender', sender_bank: 'Barclays',
-    swift_code: 'BARCGB22', iban: 'GB29NWBK60161331926819',
     reference_note: 'Regression incoming'
   }, token);
-  record('REG-10', 'regression', 'Receive wire from foreign bank credits USD', r.status === 200 ? 'PASS' : 'FAIL', '200', `${r.status} ${r.body.error || ''}`, r.ms);
+  record('REG-10', 'regression', 'USD wire development simulation credits USD account',
+    r.status === 200 && r.body.simulated && r.body.currency === 'USD' ? 'PASS' : 'FAIL',
+    '200 simulated USD credit', `${r.status} ${r.body.error || ''}`, r.ms);
+  const invalidWireTarget = await req('POST', '/api/wire/receive', {
+    to_account_id: cedis.id, amount: 10, country_code: 'NG',
+    sender_name: 'Test Sender', sender_bank: 'Test Bank'
+  }, token);
+  record('REG-10A', 'regression', 'Incoming wire rejects non-USD destination',
+    invalidWireTarget.status === 400 ? 'PASS' : 'FAIL', '400', invalidWireTarget.status, invalidWireTarget.ms);
 
   // REG-11 beneficiary save
   r = await req('POST', '/api/beneficiaries', {
@@ -138,7 +240,7 @@ async function regressionTests() {
     { email_alerts: true, sms_alerts: false, alert_phone: '+15550199', alert_min_amount: 5 }, token);
   record('REG-15', 'regression', 'Profile alert prefs persisted', r.body.user?.alert_min_amount === 5 ? 'PASS' : 'FAIL', 'alert_min_amount=5', `got=${r.body.user?.alert_min_amount}`, r.ms);
 
-  // REG-16 bill payee create + pay-now
+  // REG-16 payees remain manageable, but unintegrated bill payments must not debit balances.
   r = await req('POST', '/api/billpay/payees', {
     payee_name: 'Test Utility', payee_account: 'PAY-100', category: 'utilities'
   }, token);
@@ -146,14 +248,43 @@ async function regressionTests() {
   record('REG-16', 'regression', 'Bill payee created', payeeId ? 'PASS' : 'FAIL', '201', `${r.status} id=${payeeId}`, r.ms);
 
   if (payeeId) {
-    r = await req('POST', '/api/billpay/pay-now',
+    const balanceBefore = (await req('GET', `/api/accounts/${checking.id}`, null, token)).body.account?.balance;
+    const scheduleCountBefore = (await req('GET', '/api/billpay/scheduled', null, token)).body.payments?.length;
+    const payment = await req('POST', '/api/billpay/pay-now',
       { payee_id: payeeId, from_account_id: checking.id, amount: 12.00 }, token);
-    record('REG-17', 'regression', 'Pay-now debits checking', r.status === 200 ? 'PASS' : 'FAIL', '200', r.status, r.ms);
+    const schedule = await req('POST', '/api/billpay/scheduled', {
+      payee_id: payeeId,
+      from_account_id: checking.id,
+      amount: 12.00,
+      frequency: 'monthly',
+      next_payment_date: new Date(Date.now() + 86400000).toISOString().slice(0, 10)
+    }, token);
+    const balanceAfter = (await req('GET', `/api/accounts/${checking.id}`, null, token)).body.account?.balance;
+    const scheduleCountAfter = (await req('GET', '/api/billpay/scheduled', null, token)).body.payments?.length;
+    const blockedWithoutChanges = payment.status === 503
+      && payment.body.code === 'BILL_PAYMENT_PROVIDER_UNAVAILABLE'
+      && schedule.status === 503
+      && schedule.body.code === 'BILL_PAYMENT_PROVIDER_UNAVAILABLE'
+      && balanceBefore === balanceAfter
+      && scheduleCountBefore === scheduleCountAfter;
+    record('REG-17', 'regression', 'Bill payment and scheduling fail closed without provider',
+      blockedWithoutChanges ? 'PASS' : 'FAIL',
+      '503 provider unavailable, no balance or schedule changes',
+      `pay=${payment.status} schedule=${schedule.status} balance=${balanceBefore}→${balanceAfter}`,
+      payment.ms + schedule.ms);
   }
 
   // REG-18 transactions paginated list
   r = await req('GET', '/api/transactions?limit=5', null, token);
   record('REG-18', 'regression', 'Transactions paginated list', Array.isArray(r.body.transactions) ? 'PASS' : 'FAIL', 'array', typeof r.body.transactions, r.ms);
+
+  r = await req('GET', '/api/transactions?type=wire_transfer&limit=5', null, token);
+  const wireFilterOk = r.status === 200
+    && Array.isArray(r.body.transactions)
+    && r.body.transactions.every(tx => tx.transaction_type === 'wire_transfer');
+  record('REG-18A', 'regression', 'Wire transfer history filter is accepted',
+    wireFilterOk ? 'PASS' : 'FAIL', '200 and only wire transfers',
+    `${r.status}, ${r.body.transactions?.length ?? 0} rows`, r.ms);
 
   // REG-19 currency rates
   r = await req('GET', '/api/currency/rates?base=USD', null, token);

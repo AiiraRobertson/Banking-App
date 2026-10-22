@@ -1,33 +1,24 @@
 import { useState, useEffect } from 'react';
-import { getPayees, addPayee, deletePayee, getScheduledPayments, schedulePayment, cancelScheduledPayment, payNow } from '../services/billPayService';
-import { getAccounts } from '../services/accountService';
+import { getPayees, addPayee, deletePayee, getScheduledPayments, cancelScheduledPayment } from '../services/billPayService';
 import { formatCurrency } from '../utils/formatCurrency';
 import { formatDate } from '../utils/formatDate';
-import { getMaturityInfo } from '../utils/savingsLock';
 
 const categories = ['utilities', 'telecom', 'insurance', 'credit_card', 'rent', 'other'];
 
 export default function BillPayPage() {
   const [payees, setPayees] = useState([]);
   const [scheduled, setScheduled] = useState([]);
-  const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showPayeeModal, setShowPayeeModal] = useState(false);
-  const [showPayModal, setShowPayModal] = useState(null);
-  const [showScheduleModal, setShowScheduleModal] = useState(null);
   const [payeeForm, setPayeeForm] = useState({ payee_name: '', payee_account: '', category: 'utilities', nickname: '' });
-  const [payForm, setPayForm] = useState({ from_account_id: '', amount: '' });
-  const [scheduleForm, setScheduleForm] = useState({ from_account_id: '', amount: '', frequency: 'monthly', next_payment_date: '' });
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const fetchAll = () => {
-    Promise.all([getPayees(), getScheduledPayments(), getAccounts()])
-      .then(([p, s, a]) => {
+    Promise.all([getPayees(), getScheduledPayments()])
+      .then(([p, s]) => {
         setPayees(p.data.payees);
         setScheduled(s.data.payments);
-        setAccounts(a.data.accounts);
       }).finally(() => setLoading(false));
   };
 
@@ -51,37 +42,6 @@ export default function BillPayPage() {
     fetchAll();
   };
 
-  const handlePayNow = async (e) => {
-    e.preventDefault();
-    setSubmitting(true); setError(''); setSuccess('');
-    try {
-      const res = await payNow({ payee_id: showPayModal.id, from_account_id: parseInt(payForm.from_account_id), amount: parseFloat(payForm.amount) });
-      setSuccess(res.data.message);
-      setShowPayModal(null);
-      setPayForm({ from_account_id: '', amount: '' });
-      fetchAll();
-    } catch (err) { setError(err.response?.data?.error || 'Payment failed'); }
-    finally { setSubmitting(false); }
-  };
-
-  const handleSchedule = async (e) => {
-    e.preventDefault();
-    setSubmitting(true); setError('');
-    try {
-      await schedulePayment({
-        payee_id: showScheduleModal.id,
-        from_account_id: parseInt(scheduleForm.from_account_id),
-        amount: parseFloat(scheduleForm.amount),
-        frequency: scheduleForm.frequency,
-        next_payment_date: scheduleForm.next_payment_date
-      });
-      setShowScheduleModal(null);
-      setScheduleForm({ from_account_id: '', amount: '', frequency: 'monthly', next_payment_date: '' });
-      fetchAll();
-    } catch (err) { setError(err.response?.data?.error || 'Failed'); }
-    finally { setSubmitting(false); }
-  };
-
   const handleCancelScheduled = async (id) => {
     if (!confirm('Cancel this scheduled payment?')) return;
     await cancelScheduledPayment(id);
@@ -93,11 +53,13 @@ export default function BillPayPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-t-primary">Bill Pay</h1>
-        <p className="text-t-tertiary">Manage payees and pay bills</p>
+        <h1 className="text-2xl font-bold text-t-primary">Bill Payments</h1>
+        <p className="text-t-tertiary">Manage your saved bill-payee details.</p>
       </div>
 
-      {success && <div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">{success}</div>}
+      <div role="status" className="p-4 bg-amber-50 border border-amber-200 text-amber-900 rounded-lg text-sm">
+        Bill payments and automatic scheduling are unavailable because no verified bill-payment provider is configured. Saved payees and schedule records are not payment instructions and will not be processed.
+      </div>
 
       <div>
         <div className="flex items-center justify-between mb-4">
@@ -119,12 +81,10 @@ export default function BillPayPage() {
                   </div>
                   <span className="text-xs font-medium px-2 py-1 rounded-full bg-elevated text-t-secondary capitalize">{p.category.replace('_', ' ')}</span>
                 </div>
-                <p className="text-sm text-t-tertiary mb-4">Account: {p.payee_account}</p>
+                <p className="text-sm text-t-tertiary mb-4">Saved account or customer reference: {p.payee_account}</p>
                 <div className="flex gap-2">
-                  <button onClick={() => { const first = accounts.find(a => !getMaturityInfo(a).locked); setShowPayModal(p); setPayForm({ from_account_id: first?.id?.toString() || '', amount: '' }); setError(''); }}
-                    className="flex-1 px-3 py-1.5 bg-indigo-600 text-white text-xs rounded-lg hover:bg-indigo-700">Pay Now</button>
-                  <button onClick={() => { const first = accounts.find(a => !getMaturityInfo(a).locked); setShowScheduleModal(p); setScheduleForm({ from_account_id: first?.id?.toString() || '', amount: '', frequency: 'monthly', next_payment_date: '' }); setError(''); }}
-                    className="flex-1 px-3 py-1.5 bg-elevated text-t-secondary text-xs rounded-lg hover:bg-hover">Schedule</button>
+                  <button type="button" disabled title="No verified bill-payment provider is configured"
+                    className="flex-1 px-3 py-1.5 bg-elevated text-t-muted text-xs rounded-lg cursor-not-allowed">Payments unavailable</button>
                   <button onClick={() => handleDeletePayee(p.id)}
                     className="px-3 py-1.5 text-red-600 text-xs rounded-lg hover:bg-red-50">Delete</button>
                 </div>
@@ -135,7 +95,10 @@ export default function BillPayPage() {
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold text-t-primary mb-4">Scheduled Payments</h2>
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold text-t-primary">Saved Schedule Records</h2>
+          <p className="text-sm text-t-tertiary mt-1">These records are not automatically processed while a payment provider is unavailable.</p>
+        </div>
         {scheduled.length === 0 ? (
           <div className="bg-surface rounded-xl shadow-sm border border-b-secondary p-8 text-center text-t-muted">No scheduled payments</div>
         ) : (
@@ -213,79 +176,6 @@ export default function BillPayPage() {
         </div>
       )}
 
-      {showPayModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-surface rounded-xl shadow-xl w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold text-t-primary mb-1">Pay {showPayModal.payee_name}</h3>
-            <p className="text-sm text-t-tertiary mb-4">Account: {showPayModal.payee_account}</p>
-            {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
-            <form onSubmit={handlePayNow} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-t-secondary mb-1">From Account</label>
-                <select value={payForm.from_account_id} onChange={e => setPayForm({ ...payForm, from_account_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" required>
-                  {accounts.filter(a => !getMaturityInfo(a).locked).map(a => <option key={a.id} value={a.id}>{a.account_type} (****{a.account_number.slice(-4)}) - {formatCurrency(a.balance)}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-t-secondary mb-1">Amount ($)</label>
-                <input type="number" value={payForm.amount} onChange={e => setPayForm({ ...payForm, amount: e.target.value })}
-                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" min="0.01" step="0.01" required />
-              </div>
-              <div className="flex gap-3 justify-end">
-                <button type="button" onClick={() => setShowPayModal(null)} className="px-4 py-2 text-t-secondary bg-elevated rounded-lg hover:bg-hover">Cancel</button>
-                <button type="submit" disabled={submitting} className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-                  {submitting ? 'Paying...' : 'Pay Now'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {showScheduleModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-surface rounded-xl shadow-xl w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold text-t-primary mb-4">Schedule Payment - {showScheduleModal.payee_name}</h3>
-            {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
-            <form onSubmit={handleSchedule} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-t-secondary mb-1">From Account</label>
-                <select value={scheduleForm.from_account_id} onChange={e => setScheduleForm({ ...scheduleForm, from_account_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" required>
-                  {accounts.filter(a => !getMaturityInfo(a).locked).map(a => <option key={a.id} value={a.id}>{a.account_type} (****{a.account_number.slice(-4)}) - {formatCurrency(a.balance)}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-t-secondary mb-1">Amount ($)</label>
-                <input type="number" value={scheduleForm.amount} onChange={e => setScheduleForm({ ...scheduleForm, amount: e.target.value })}
-                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" min="0.01" step="0.01" required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-t-secondary mb-1">Frequency</label>
-                <select value={scheduleForm.frequency} onChange={e => setScheduleForm({ ...scheduleForm, frequency: e.target.value })}
-                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                  <option value="once">Once</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="biweekly">Biweekly</option>
-                  <option value="monthly">Monthly</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-t-secondary mb-1">Start Date</label>
-                <input type="date" value={scheduleForm.next_payment_date} onChange={e => setScheduleForm({ ...scheduleForm, next_payment_date: e.target.value })}
-                  className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" required />
-              </div>
-              <div className="flex gap-3 justify-end">
-                <button type="button" onClick={() => setShowScheduleModal(null)} className="px-4 py-2 text-t-secondary bg-elevated rounded-lg hover:bg-hover">Cancel</button>
-                <button type="submit" disabled={submitting} className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-                  {submitting ? 'Scheduling...' : 'Schedule'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

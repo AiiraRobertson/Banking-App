@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getAccount, lockSavings } from '../services/accountService';
 import { getTransactions } from '../services/transactionService';
@@ -9,6 +9,7 @@ import { getMaturityInfo, formatMaturityDate } from '../utils/savingsLock';
 export default function AccountDetailPage() {
   const { id } = useParams();
   const [account, setAccount] = useState(null);
+  const [accountError, setAccountError] = useState('');
   const [transactions, setTransactions] = useState([]);
   const [pagination, setPagination] = useState({});
   const [page, setPage] = useState(1);
@@ -17,13 +18,18 @@ export default function AccountDetailPage() {
   const [locking, setLocking] = useState(false);
   const [lockError, setLockError] = useState('');
 
-  const refetchAccount = () => {
-    getAccount(id).then(res => setAccount(res.data.account)).catch(() => {});
-  };
+  const refetchAccount = useCallback(() => {
+    getAccount(id)
+      .then(res => {
+        setAccount(res.data.account);
+        setAccountError('');
+      })
+      .catch(err => setAccountError(err.response?.data?.error || 'Could not load account details.'));
+  }, [id]);
 
   useEffect(() => {
     refetchAccount();
-  }, [id]);
+  }, [refetchAccount]);
 
   const handleLockSavings = async () => {
     setLocking(true);
@@ -49,7 +55,7 @@ export default function AccountDetailPage() {
   }, [id, page]);
 
   if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>;
-  if (!account) return <div className="text-center py-20 text-t-tertiary">Account not found</div>;
+  if (!account) return <div role={accountError ? 'alert' : undefined} className="text-center py-20 text-t-tertiary">{accountError || 'Account not found'}</div>;
 
   return (
     <div className="space-y-6">
@@ -69,7 +75,8 @@ export default function AccountDetailPage() {
           </div>
           <div>
             <p className="text-sm text-t-tertiary">Balance</p>
-            <p className="text-lg font-semibold text-t-primary">{formatCurrency(account.balance)}</p>
+            <p className="text-lg font-semibold text-t-primary">{formatCurrency(account.balance, account.currency)}</p>
+            <p className="text-xs text-t-muted">{account.currency}</p>
           </div>
           <div>
             <p className="text-sm text-t-tertiary">Account Number</p>
@@ -180,6 +187,8 @@ export default function AccountDetailPage() {
               <tbody className="divide-y divide-b-secondary">
                 {transactions.map(tx => {
                   const isDebit = tx.from_account_id === account.id;
+                  const amount = isDebit ? tx.amount + (tx.fee_amount || 0) : (tx.destination_amount ?? tx.amount);
+                  const balanceAfter = isDebit ? tx.balance_after : (tx.destination_balance_after ?? tx.balance_after);
                   return (
                     <tr key={tx.id} className="hover:bg-hover">
                       <td className="px-6 py-4 text-sm text-t-tertiary">{formatDateTime(tx.created_at)}</td>
@@ -194,9 +203,10 @@ export default function AccountDetailPage() {
                       </td>
                       <td className="px-6 py-4 text-sm text-t-secondary">{tx.description}</td>
                       <td className={`px-6 py-4 text-sm font-medium text-right ${isDebit ? 'text-red-600' : 'text-green-600'}`}>
-                        {isDebit ? '-' : '+'}{formatCurrency(tx.amount)}
+                        {isDebit ? '-' : '+'}{formatCurrency(amount, account.currency)}
+                        {isDebit && tx.fee_amount > 0 && <span className="block text-xs font-normal text-t-muted">Includes {formatCurrency(tx.fee_amount, account.currency)} fee</span>}
                       </td>
-                      <td className="px-6 py-4 text-sm text-t-secondary text-right font-mono">{formatCurrency(tx.balance_after)}</td>
+                      <td className="px-6 py-4 text-sm text-t-secondary text-right font-mono">{formatCurrency(balanceAfter, account.currency)}</td>
                     </tr>
                   );
                 })}

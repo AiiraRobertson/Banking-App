@@ -5,19 +5,19 @@ const insertLog = db.prepare(`
   VALUES (?, ?, ?, ?, ?, ?, ?)
 `);
 
-function fmtAmount(n) {
-  return `$${Number(n).toFixed(2)}`;
+function fmtAmount(n, currency = 'USD') {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(Number(n));
 }
 
-function buildMessage({ direction, amount, accountNumber, balanceAfter, counterparty, channel }) {
+function buildMessage({ direction, amount, accountNumber, balanceAfter, counterparty, channel, currency }) {
   const last4 = accountNumber ? `****${String(accountNumber).slice(-4)}` : 'your account';
   const verb = direction === 'credit' ? 'credited to' : 'debited from';
   const arrow = direction === 'credit' ? '+' : '-';
-  const subject = `${direction === 'credit' ? 'Credit' : 'Debit'} alert: ${arrow}${fmtAmount(amount)}`;
+  const subject = `${direction === 'credit' ? 'Credit' : 'Debit'} alert: ${arrow}${fmtAmount(amount, currency)}`;
   const lines = [
-    `${arrow}${fmtAmount(amount)} has been ${verb} ${last4}.`,
+    `${arrow}${fmtAmount(amount, currency)} has been ${verb} ${last4}.`,
     counterparty ? `Counterparty: ${counterparty}` : null,
-    balanceAfter !== undefined && balanceAfter !== null ? `Available balance: ${fmtAmount(balanceAfter)}` : null,
+    balanceAfter !== undefined && balanceAfter !== null ? `Available balance: ${fmtAmount(balanceAfter, currency)}` : null,
     `Time: ${new Date().toLocaleString()}`,
     channel === 'sms' ? null : 'If you did not authorize this, contact Kapita immediately.'
   ].filter(Boolean);
@@ -41,7 +41,8 @@ function sendTransactionAlert({
   accountNumber,
   balanceAfter,
   counterparty,
-  referenceId
+  referenceId,
+  currency = 'USD'
 }) {
   if (!userId || !amount || amount <= 0) return;
 
@@ -52,7 +53,7 @@ function sendTransactionAlert({
 
   const minAmount = Number(user.alert_min_amount || 0);
   if (amount < minAmount) {
-    insertLog.run(userId, 'inapp', null, `Suppressed (below ${fmtAmount(minAmount)} threshold)`, '', 'skipped', referenceId || null);
+    insertLog.run(userId, 'inapp', null, `Suppressed (below ${fmtAmount(minAmount, currency)} threshold)`, '', 'skipped', referenceId || null);
     return;
   }
 
@@ -61,7 +62,7 @@ function sendTransactionAlert({
   const wantsSms = !!user.sms_alerts && !!phone;
 
   if (wantsEmail) {
-    const { subject, body } = buildMessage({ direction, amount, accountNumber, balanceAfter, counterparty, channel: 'email' });
+    const { subject, body } = buildMessage({ direction, amount, accountNumber, balanceAfter, counterparty, channel: 'email', currency });
     try {
       logSimulatedDelivery('email', user.email, subject, body);
       insertLog.run(userId, 'email', user.email, subject, body, 'simulated', referenceId || null);
@@ -71,7 +72,7 @@ function sendTransactionAlert({
   }
 
   if (wantsSms) {
-    const { subject, body } = buildMessage({ direction, amount, accountNumber, balanceAfter, counterparty, channel: 'sms' });
+    const { subject, body } = buildMessage({ direction, amount, accountNumber, balanceAfter, counterparty, channel: 'sms', currency });
     try {
       logSimulatedDelivery('sms', phone, subject, body);
       insertLog.run(userId, 'sms', phone, subject, body, 'simulated', referenceId || null);
@@ -81,7 +82,7 @@ function sendTransactionAlert({
   }
 
   if (!wantsEmail && !wantsSms) {
-    const { subject, body } = buildMessage({ direction, amount, accountNumber, balanceAfter, counterparty, channel: 'inapp' });
+    const { subject, body } = buildMessage({ direction, amount, accountNumber, balanceAfter, counterparty, channel: 'inapp', currency });
     insertLog.run(userId, 'inapp', null, subject, body, 'skipped', referenceId || null);
   }
 }

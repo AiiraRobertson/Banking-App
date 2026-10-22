@@ -131,8 +131,13 @@ router.post('/register', authLimiter, registerValidation, (req, res) => {
     const accountNumber = generateAccountNumber('checking');
 
     db.prepare(
-      'INSERT INTO accounts (user_id, account_number, account_type, balance) VALUES (?, ?, ?, ?)'
-    ).run(userId, accountNumber, 'checking', 1000.00);
+      'INSERT INTO accounts (user_id, account_number, account_type, balance, currency) VALUES (?, ?, ?, ?, ?)'
+    ).run(userId, accountNumber, 'checking', 1000.00, 'USD');
+    for (const currency of ['NGN', 'GHS']) {
+      db.prepare(
+        'INSERT INTO accounts (user_id, account_number, account_type, balance, currency) VALUES (?, ?, ?, 0, ?)'
+      ).run(userId, generateAccountNumber('checking'), 'checking', currency);
+    }
 
     db.prepare(
       'INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)'

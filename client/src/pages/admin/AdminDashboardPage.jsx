@@ -18,10 +18,18 @@ export default function AdminDashboardPage() {
     { label: 'Active Users', value: stats.active_users, color: 'text-green-600' },
     { label: 'New Users (30d)', value: stats.new_users_30d, color: 'text-blue-600' },
     { label: 'Total Accounts', value: stats.total_accounts, color: 'text-purple-600' },
-    { label: 'Total Deposits', value: formatCurrency(stats.total_deposits), color: 'text-emerald-600' },
     { label: 'Transactions (24h)', value: stats.transactions_24h, color: 'text-orange-600' },
-    { label: 'Volume (24h)', value: formatCurrency(stats.volume_24h), color: 'text-red-600' },
     { label: 'Total Transactions', value: stats.total_transactions, color: 'text-slate-600' },
+    ...['USD', 'NGN', 'GHS'].map(currency => ({
+      label: `${currency} Account Balances`,
+      value: formatCurrency(stats.balances_by_currency?.[currency] || 0, currency),
+      color: 'text-emerald-600'
+    })),
+    ...['USD', 'NGN', 'GHS'].map(currency => ({
+      label: `${currency} Volume (24h)`,
+      value: formatCurrency(stats.volume_by_currency_24h?.[currency] || 0, currency),
+      color: 'text-red-600'
+    }))
   ];
 
   return (

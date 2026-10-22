@@ -261,6 +261,13 @@ function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_deposit_sources_txn ON deposit_sources(transaction_id);
   `);
 
+  addColumnIfMissing('accounts', 'currency', "TEXT NOT NULL DEFAULT 'USD'");
+  addColumnIfMissing('transactions', 'currency', "TEXT NOT NULL DEFAULT 'USD'");
+  addColumnIfMissing('transactions', 'destination_currency', 'TEXT');
+  addColumnIfMissing('transactions', 'fee_amount', 'REAL NOT NULL DEFAULT 0');
+  addColumnIfMissing('transactions', 'destination_amount', 'REAL');
+  addColumnIfMissing('transactions', 'destination_balance_after', 'REAL');
+  addColumnIfMissing('transactions', 'exchange_rate', 'REAL');
   addColumnIfMissing('users', 'email_alerts', "INTEGER NOT NULL DEFAULT 1");
   addColumnIfMissing('users', 'sms_alerts', "INTEGER NOT NULL DEFAULT 0");
   addColumnIfMissing('users', 'alert_phone', "TEXT");
@@ -268,6 +275,50 @@ function initializeDatabase() {
   addColumnIfMissing('users', 'profile_photo', "TEXT");
   addColumnIfMissing('accounts', 'maturity_days', "INTEGER NOT NULL DEFAULT 30");
   addColumnIfMissing('accounts', 'matures_at', "TEXT");
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS currency_exchange_quotes (
+      id TEXT PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      from_account_id INTEGER NOT NULL,
+      to_account_id INTEGER NOT NULL,
+      source_amount REAL NOT NULL,
+      fee_amount REAL NOT NULL,
+      destination_amount REAL NOT NULL,
+      exchange_rate REAL NOT NULL,
+      expires_at TEXT NOT NULL,
+      used_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (from_account_id) REFERENCES accounts(id),
+      FOREIGN KEY (to_account_id) REFERENCES accounts(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_exchange_quotes_user ON currency_exchange_quotes(user_id, expires_at);
+  `);
+
+  const users = db.prepare('SELECT id FROM users').all();
+  const hasCurrencyAccount = db.prepare(
+    'SELECT 1 FROM accounts WHERE user_id = ? AND currency = ? AND is_active = 1'
+  );
+  const insertCurrencyAccount = db.prepare(`
+    INSERT INTO accounts (user_id, account_number, account_type, balance, currency)
+    VALUES (?, ?, 'checking', 0, ?)
+  `);
+  const ensureWallets = db.transaction(() => {
+    for (const { id: userId } of users) {
+      for (const currency of ['NGN', 'GHS']) {
+        if (hasCurrencyAccount.get(userId, currency)) continue;
+
+        let accountNumber;
+        do {
+          accountNumber = `10${Math.floor(10000000 + Math.random() * 90000000)}`;
+        } while (db.prepare('SELECT 1 FROM accounts WHERE account_number = ?').get(accountNumber));
+
+        insertCurrencyAccount.run(userId, accountNumber, currency);
+      }
+    }
+  });
+  ensureWallets();
 }
 
 module.exports = { initializeDatabase };

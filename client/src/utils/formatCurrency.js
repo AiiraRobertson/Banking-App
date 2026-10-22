@@ -1,6 +1,6 @@
-export function formatCurrency(amount) {
+export function formatCurrency(amount, currency = 'USD') {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'USD'
+    currency: ['USD', 'NGN', 'GHS'].includes(currency) ? currency : 'USD'
   }).format(amount);
 }

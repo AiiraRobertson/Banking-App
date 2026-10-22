@@ -11,7 +11,8 @@ router.use(authenticate);
 
 router.get('/', (req, res) => {
   const accounts = db.prepare(
-    'SELECT * FROM accounts WHERE user_id = ? AND is_active = 1 ORDER BY created_at'
+    `SELECT * FROM accounts WHERE user_id = ? AND is_active = 1
+     ORDER BY CASE currency WHEN 'NGN' THEN 0 WHEN 'GHS' THEN 1 ELSE 2 END, created_at`
   ).all(req.user.id);
   res.json({ accounts });
 });
@@ -21,7 +22,7 @@ router.get('/lookup', [
   handleValidation
 ], (req, res) => {
   const row = db.prepare(`
-    SELECT a.account_number, a.account_type, u.first_name, u.last_name
+    SELECT a.account_number, a.account_type, a.currency, u.first_name, u.last_name
     FROM accounts a
     JOIN users u ON a.user_id = u.id
     WHERE a.account_number = ? AND a.is_active = 1 AND u.is_active = 1
@@ -33,6 +34,7 @@ router.get('/lookup', [
     found: true,
     account_number: row.account_number,
     account_type: row.account_type,
+    currency: row.currency,
     account_name: `${row.first_name} ${row.last_name}`,
     bank_name: 'Kapita'
   });
@@ -65,14 +67,14 @@ router.post('/', [
   const accountNumber = generateAccountNumber(req.body.account_type);
 
   const result = db.prepare(
-    'INSERT INTO accounts (user_id, account_number, account_type, balance) VALUES (?, ?, ?, 0.00)'
-  ).run(req.user.id, accountNumber, req.body.account_type);
+    'INSERT INTO accounts (user_id, account_number, account_type, balance, currency) VALUES (?, ?, ?, 0.00, ?)'
+  ).run(req.user.id, accountNumber, req.body.account_type, 'USD');
 
   const account = db.prepare('SELECT * FROM accounts WHERE id = ?').get(result.lastInsertRowid);
 
   db.prepare(
     'INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)'
-  ).run(req.user.id, 'New Account', `Your new ${req.body.account_type} account (${accountNumber}) has been created.`, 'info');
+  ).run(req.user.id, 'New Account', `Your new USD ${req.body.account_type} account (${accountNumber}) has been created.`, 'info');
 
   res.status(201).json({ account });
 });

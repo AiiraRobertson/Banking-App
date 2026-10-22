@@ -112,6 +112,7 @@ function startServer() {
 
   app.use('/api/auth', require('./routes/auth'));
   app.use('/api/accounts', require('./routes/accounts'));
+  app.use('/api/exchange', require('./routes/exchange'));
   app.use('/api/transactions', require('./routes/transactions'));
   app.use('/api/billpay', require('./routes/billpay'));
   app.use('/api/funding', require('./routes/funding'));

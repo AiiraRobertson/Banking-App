@@ -15,8 +15,8 @@ function seedDatabase() {
   `);
 
   const insertAccount = db.prepare(`
-    INSERT INTO accounts (user_id, account_number, account_type, balance)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO accounts (user_id, account_number, account_type, balance, currency)
+    VALUES (?, ?, ?, ?, ?)
   `);
 
   const insertTransaction = db.prepare(`
@@ -32,19 +32,23 @@ function seedDatabase() {
   const seed = db.transaction(() => {
     const admin = insertUser.run(
       'admin@bank.com', adminHash, 'Admin', 'User', '555-0100',
-      '100 Bank Street', 'New York', 'NY', '10001', 'US', '1985-03-15', 1, 'admin'
+      '100 Bank Street', 'Lagos', 'Lagos', '100001', 'NG', '1985-03-15', 1, 'admin'
     );
 
     const demoUser = insertUser.run(
       'john@example.com', userHash, 'John', 'Doe', '555-0123',
-      '456 Oak Avenue', 'San Francisco', 'CA', '94102', 'US', '1990-01-15', 1, 'user'
+      '456 Oak Avenue', 'Accra', 'Greater Accra', '00233', 'GH', '1990-01-15', 1, 'user'
     );
 
-    insertAccount.run(admin.lastInsertRowid, '1000000001', 'checking', 50000.00);
-    insertAccount.run(admin.lastInsertRowid, '2000000001', 'savings', 100000.00);
+    insertAccount.run(admin.lastInsertRowid, '1000000001', 'checking', 50000.00, 'USD');
+    insertAccount.run(admin.lastInsertRowid, '2000000001', 'savings', 100000.00, 'USD');
 
-    const checking = insertAccount.run(demoUser.lastInsertRowid, '1000000002', 'checking', 5420.50);
-    const savings = insertAccount.run(demoUser.lastInsertRowid, '2000000002', 'savings', 12750.00);
+    const checking = insertAccount.run(demoUser.lastInsertRowid, '1000000002', 'checking', 5420.50, 'USD');
+    const savings = insertAccount.run(demoUser.lastInsertRowid, '2000000002', 'savings', 12750.00, 'USD');
+    insertAccount.run(admin.lastInsertRowid, '1000000003', 'checking', 0, 'NGN');
+    insertAccount.run(admin.lastInsertRowid, '1000000004', 'checking', 0, 'GHS');
+    insertAccount.run(demoUser.lastInsertRowid, '1000000005', 'checking', 0, 'NGN');
+    insertAccount.run(demoUser.lastInsertRowid, '1000000006', 'checking', 0, 'GHS');
 
     const checkingId = checking.lastInsertRowid;
     const savingsId = savings.lastInsertRowid;

@@ -9,12 +9,22 @@ export default function TransactionHistoryPage() {
   const [accounts, setAccounts] = useState([]);
   const [pagination, setPagination] = useState({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [accountsError, setAccountsError] = useState('');
   const [filters, setFilters] = useState({ type: '', account_id: '', from_date: '', to_date: '', page: 1 });
 
-  useEffect(() => { getAccounts().then(res => setAccounts(res.data.accounts)); }, []);
+  const updateFilters = (nextFilters) => {
+    setLoading(true);
+    setFilters(nextFilters);
+  };
 
   useEffect(() => {
-    setLoading(true);
+    getAccounts()
+      .then(res => setAccounts(res.data.accounts))
+      .catch(() => setAccountsError('Could not load your accounts. Account filtering may be unavailable.'));
+  }, []);
+
+  useEffect(() => {
     const params = { limit: 15, page: filters.page };
     if (filters.type) params.type = filters.type;
     if (filters.account_id) params.account_id = filters.account_id;
@@ -22,7 +32,16 @@ export default function TransactionHistoryPage() {
     if (filters.to_date) params.to_date = filters.to_date;
 
     getTransactions(params)
-      .then(res => { setTransactions(res.data.transactions); setPagination(res.data.pagination); })
+      .then(res => {
+        setTransactions(res.data.transactions);
+        setPagination(res.data.pagination);
+        setError('');
+      })
+      .catch(() => {
+        setTransactions([]);
+        setPagination({});
+        setError('Could not load transactions. Please refresh or try again shortly.');
+      })
       .finally(() => setLoading(false));
   }, [filters]);
 
@@ -35,9 +54,21 @@ export default function TransactionHistoryPage() {
         <p className="text-t-tertiary">View and filter all your transactions</p>
       </div>
 
+      {import.meta.env.DEV && (
+        <div role="status" className="p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-lg text-sm">
+          Development mode — showing simulated transactions from the local app database. These are not real bank records.
+        </div>
+      )}
+
+      {(accountsError || error) && (
+        <div role="alert" className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+          {accountsError || error}
+        </div>
+      )}
+
       <div className="bg-surface rounded-xl shadow-sm border border-b-secondary p-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          <select value={filters.type} onChange={e => setFilters({ ...filters, type: e.target.value, page: 1 })}
+          <select value={filters.type} onChange={e => updateFilters({ ...filters, type: e.target.value, page: 1 })}
             className="px-3 py-2 border border-b-input rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
             <option value="">All Types</option>
             <option value="deposit">Deposit</option>
@@ -46,16 +77,16 @@ export default function TransactionHistoryPage() {
             <option value="bill_payment">Bill Payment</option>
             <option value="wire_transfer">Wire Transfer</option>
           </select>
-          <select value={filters.account_id} onChange={e => setFilters({ ...filters, account_id: e.target.value, page: 1 })}
+          <select value={filters.account_id} onChange={e => updateFilters({ ...filters, account_id: e.target.value, page: 1 })}
             className="px-3 py-2 border border-b-input rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
             <option value="">All Accounts</option>
-            {accounts.map(a => <option key={a.id} value={a.id}>****{a.account_number.slice(-4)} ({a.account_type})</option>)}
+            {accounts.map(a => <option key={a.id} value={a.id}>{a.currency} ****{a.account_number.slice(-4)} ({a.account_type})</option>)}
           </select>
-          <input type="date" value={filters.from_date} onChange={e => setFilters({ ...filters, from_date: e.target.value, page: 1 })}
+          <input type="date" value={filters.from_date} onChange={e => updateFilters({ ...filters, from_date: e.target.value, page: 1 })}
             className="px-3 py-2 border border-b-input rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="From date" />
-          <input type="date" value={filters.to_date} onChange={e => setFilters({ ...filters, to_date: e.target.value, page: 1 })}
+          <input type="date" value={filters.to_date} onChange={e => updateFilters({ ...filters, to_date: e.target.value, page: 1 })}
             className="px-3 py-2 border border-b-input rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="To date" />
-          <button onClick={() => setFilters({ type: '', account_id: '', from_date: '', to_date: '', page: 1 })}
+          <button onClick={() => updateFilters({ type: '', account_id: '', from_date: '', to_date: '', page: 1 })}
             className="px-3 py-2 text-sm text-t-secondary bg-elevated rounded-lg hover:bg-hover transition-colors">
             Clear Filters
           </button>
@@ -83,6 +114,11 @@ export default function TransactionHistoryPage() {
               <tbody className="divide-y divide-b-secondary">
                 {transactions.map(tx => {
                   const isDebit = tx.from_account_id && accountIds.includes(tx.from_account_id) && tx.transaction_type !== 'deposit';
+                  const currency = isDebit ? (tx.from_currency || tx.currency) : (tx.to_currency || tx.currency);
+                  const amount = isDebit
+                    ? tx.amount + (tx.fee_amount || 0)
+                    : (tx.destination_amount ?? tx.amount);
+                  const balanceAfter = isDebit ? tx.balance_after : (tx.destination_balance_after ?? tx.balance_after);
                   return (
                     <tr key={tx.id} className="hover:bg-hover">
                       <td className="px-6 py-4 text-sm text-t-tertiary whitespace-nowrap">{formatDateTime(tx.created_at)}</td>
@@ -98,9 +134,10 @@ export default function TransactionHistoryPage() {
                       <td className="px-6 py-4 text-sm text-t-secondary">{tx.description}</td>
                       <td className="px-6 py-4 text-xs text-t-muted font-mono">{tx.reference_id.slice(0, 8)}...</td>
                       <td className={`px-6 py-4 text-sm font-medium text-right ${isDebit ? 'text-red-600' : 'text-green-600'}`}>
-                        {isDebit ? '-' : '+'}{formatCurrency(tx.amount)}
+                        {isDebit ? '-' : '+'}{formatCurrency(amount, currency)}
+                        {isDebit && tx.fee_amount > 0 && <span className="block text-xs font-normal text-t-muted">Includes {formatCurrency(tx.fee_amount, currency)} fee</span>}
                       </td>
-                      <td className="px-6 py-4 text-sm text-t-secondary text-right font-mono">{formatCurrency(tx.balance_after)}</td>
+                      <td className="px-6 py-4 text-sm text-t-secondary text-right font-mono">{formatCurrency(balanceAfter, currency)}</td>
                     </tr>
                   );
                 })}
@@ -116,9 +153,9 @@ export default function TransactionHistoryPage() {
             Showing {((pagination.page - 1) * pagination.limit) + 1}-{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
           </p>
           <div className="flex gap-2">
-            <button onClick={() => setFilters(f => ({ ...f, page: f.page - 1 }))} disabled={filters.page === 1}
+            <button onClick={() => updateFilters({ ...filters, page: filters.page - 1 })} disabled={filters.page === 1}
               className="px-3 py-1.5 text-sm border border-b-input rounded-lg disabled:opacity-50 hover:bg-hover">Prev</button>
-            <button onClick={() => setFilters(f => ({ ...f, page: f.page + 1 }))} disabled={filters.page === pagination.pages}
+            <button onClick={() => updateFilters({ ...filters, page: filters.page + 1 })} disabled={filters.page === pagination.pages}
               className="px-3 py-1.5 text-sm border border-b-input rounded-lg disabled:opacity-50 hover:bg-hover">Next</button>
           </div>
         </div>

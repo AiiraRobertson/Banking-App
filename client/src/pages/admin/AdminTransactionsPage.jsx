@@ -74,7 +74,12 @@ export default function AdminTransactionsPage() {
                       {tx.to_account_number && <span className="text-xs">****{tx.to_account_number.slice(-4)}</span>}
                     </td>
                     <td className="px-4 py-3 text-sm text-t-secondary">{tx.description}</td>
-                    <td className="px-4 py-3 text-sm font-medium text-right text-t-primary">{formatCurrency(tx.amount)}</td>
+                    <td className="px-4 py-3 text-sm font-medium text-right text-t-primary">
+                      {formatCurrency(tx.amount + (tx.fee_amount || 0), tx.from_currency || tx.currency)}
+                      {tx.destination_currency && tx.destination_currency !== (tx.from_currency || tx.currency) && (
+                        <span className="block text-xs font-normal text-t-muted">→ {formatCurrency(tx.destination_amount, tx.destination_currency)}</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
                         tx.status === 'completed' ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'

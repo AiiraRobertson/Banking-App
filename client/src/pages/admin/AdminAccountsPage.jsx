@@ -46,10 +46,10 @@ export default function AdminAccountsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className={`text-xs font-semibold px-2 py-1 rounded-full ${a.account_type === 'checking' ? 'bg-blue-50 text-blue-700' : 'bg-green-50 text-green-700'}`}>
-                        {a.account_type}
+                        {a.currency} {a.account_type}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm font-medium text-right text-t-primary font-mono">{formatCurrency(a.balance)}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-right text-t-primary font-mono">{formatCurrency(a.balance, a.currency)}</td>
                     <td className="px-6 py-4">
                       <span className={`text-xs font-semibold px-2 py-1 rounded-full ${a.is_active ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
                         {a.is_active ? 'Active' : 'Closed'}

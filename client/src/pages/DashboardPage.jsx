@@ -2,28 +2,24 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getAccounts } from '../services/accountService';
-import { getTransactions } from '../services/transactionService';
 import { formatCurrency } from '../utils/formatCurrency';
-import { formatDateTime } from '../utils/formatDate';
 import { getMaturityInfo } from '../utils/savingsLock';
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const [accounts, setAccounts] = useState([]);
-  const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      getAccounts(),
-      getTransactions({ limit: 5 })
-    ]).then(([accRes, txRes]) => {
+    getAccounts().then(accRes => {
       setAccounts(accRes.data.accounts);
-      setTransactions(txRes.data.transactions);
     }).finally(() => setLoading(false));
   }, []);
 
-  const totalBalance = accounts.reduce((sum, a) => sum + a.balance, 0);
+  const balancesByCurrency = accounts.reduce((totals, account) => {
+    totals[account.currency] = (totals[account.currency] || 0) + account.balance;
+    return totals;
+  }, { NGN: 0, GHS: 0, USD: 0 });
 
   if (loading) {
     return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>;
@@ -55,23 +51,47 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-xl shadow-lg shadow-indigo-200/50 p-6 text-white hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-200/70 transition-all duration-300 cursor-default">
-          <p className="text-sm text-indigo-100">Total Balance</p>
-          <p className="text-2xl font-bold mt-1">{formatCurrency(totalBalance)}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+        {[
+          { currency: 'NGN', label: 'Naira balance', iconClass: 'bg-emerald-50 text-emerald-700' },
+          { currency: 'GHS', label: 'Cedis balance', iconClass: 'bg-blue-50 text-blue-700' },
+          { currency: 'USD', label: 'Dollar balance', iconClass: 'bg-indigo-50 text-indigo-700' }
+        ].map(item => (
+          <div key={item.currency} className="min-w-0 rounded-2xl border border-b-secondary bg-surface p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">
+            <div className="mb-5 flex items-center gap-3">
+              <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${item.iconClass}`}>
+                {item.currency}
+              </span>
+              <p className="text-sm font-medium text-t-secondary">{item.label}</p>
+            </div>
+            <p className="break-words text-xl font-semibold tracking-tight text-t-primary">
+              {formatCurrency(balancesByCurrency[item.currency], item.currency)}
+            </p>
+          </div>
+        ))}
+        <div className="min-w-0 rounded-2xl border border-b-secondary bg-surface p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">
+          <div className="mb-5 flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-700" aria-hidden="true">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 10h18M5 6h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2zm11 9h3" />
+              </svg>
+            </span>
+            <p className="text-sm font-medium text-t-secondary">Accounts</p>
+          </div>
+          <p className="text-2xl font-semibold tracking-tight text-t-primary">{accounts.length}</p>
         </div>
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg shadow-blue-200/50 p-6 text-white hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-200/70 transition-all duration-300 cursor-default">
-          <p className="text-sm text-blue-100">Accounts</p>
-          <p className="text-2xl font-bold mt-1">{accounts.length}</p>
-        </div>
-        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-lg shadow-emerald-200/50 p-6 text-white hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-200/70 transition-all duration-300 cursor-default">
-          <p className="text-sm text-emerald-100">Recent Transactions</p>
-          <p className="text-2xl font-bold mt-1">{transactions.length}</p>
-        </div>
-        <div className="bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl shadow-lg shadow-purple-200/50 p-6 text-white hover:-translate-y-1 hover:shadow-xl hover:shadow-purple-200/70 transition-all duration-300">
-          <p className="text-sm text-violet-100">Quick Transfer</p>
-          <Link to="/transfer" className="text-lg font-semibold mt-1 block hover:underline">
-            Send Money &rarr;
+        <div className="min-w-0 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">
+          <div className="mb-5 flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-indigo-700 shadow-sm" aria-hidden="true">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M7 7h13m0 0-4-4m4 4-4 4M17 17H4m0 0 4 4m-4-4 4-4" />
+              </svg>
+            </span>
+            <p className="text-sm font-medium text-indigo-900">Quick transfer</p>
+          </div>
+          <Link to="/transfer" className="inline-flex items-center gap-2 text-base font-semibold text-indigo-700 hover:text-indigo-900 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
+            Send money
+            <span aria-hidden="true">&rarr;</span>
           </Link>
         </div>
       </div>
@@ -99,7 +119,8 @@ export default function DashboardPage() {
                     </span>
                     <span className="text-xs text-t-muted">****{account.account_number.slice(-4)}</span>
                   </div>
-                  <p className="text-2xl font-bold text-t-primary">{formatCurrency(account.balance)}</p>
+                  <p className="text-2xl font-bold text-t-primary">{formatCurrency(account.balance, account.currency)}</p>
+                  <p className="text-xs text-t-muted mt-1">{account.currency} balance</p>
                   <p className="text-xs text-t-muted mt-1">Available balance</p>
                   {lock.isSavings && lock.locked && (
                     <div className="mt-2 inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
@@ -119,7 +140,8 @@ export default function DashboardPage() {
               { to: '/add-money', label: 'Add Money', icon: 'M12 4v16m8-8H4', color: 'text-green-600 bg-green-50' },
               { to: '/transfer', label: 'Transfer', icon: 'M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4', color: 'text-indigo-600 bg-indigo-50' },
               { to: '/bill-pay', label: 'Pay Bill', icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z', color: 'text-orange-600 bg-orange-50' },
-              { to: '/wire-transfer', label: 'Send Wire', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z', color: 'text-purple-600 bg-purple-50' },
+              { to: '/wire-transfer', label: 'Receive USD', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z', color: 'text-purple-600 bg-purple-50' },
+              { to: '/convert', label: 'Convert Currency', icon: 'M4 7h13m0 0-3-3m3 3-3 3M20 17H7m0 0 3 3m-3-3 3-3', color: 'text-amber-600 bg-amber-50' },
             ].map(action => (
               <Link key={action.label} to={action.to} className="bg-surface rounded-xl shadow-sm border border-b-secondary p-4 text-center hover:shadow-lg hover:shadow-indigo-100/30 hover:border-indigo-100 hover:-translate-y-1 transition-all duration-300 group">
                 <div className={`w-10 h-10 rounded-full ${action.color} flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform duration-300`}>
@@ -134,54 +156,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-t-primary">Recent Transactions</h2>
-          <Link to="/transactions" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">View all</Link>
-        </div>
-        <div className="bg-surface rounded-xl shadow-sm border border-b-secondary overflow-hidden">
-          {transactions.length === 0 ? (
-            <div className="p-8 text-center text-t-muted">No transactions yet</div>
-          ) : (
-            <table className="w-full">
-              <thead className="bg-elevated">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Description</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-t-tertiary uppercase">Amount</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-b-secondary">
-                {transactions.map(tx => {
-                  const isCredit = tx.transaction_type === 'deposit' ||
-                    (tx.transaction_type === 'transfer' && tx.to_account_id && !tx.from_account_id);
-                  return (
-                    <tr key={tx.id} className="hover:bg-indigo-50/30 transition-colors duration-200">
-                      <td className="px-6 py-4 text-sm text-t-tertiary">{formatDateTime(tx.created_at)}</td>
-                      <td className="px-6 py-4">
-                        <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                          tx.transaction_type === 'deposit' ? 'bg-green-50 text-green-700' :
-                          tx.transaction_type === 'withdrawal' ? 'bg-red-50 text-red-700' :
-                          tx.transaction_type === 'transfer' ? 'bg-blue-50 text-blue-700' :
-                          tx.transaction_type === 'wire_transfer' ? 'bg-purple-50 text-purple-700' :
-                          'bg-orange-50 text-orange-700'
-                        }`}>
-                          {tx.transaction_type.replace('_', ' ')}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-t-secondary">{tx.description}</td>
-                      <td className={`px-6 py-4 text-sm font-medium text-right ${isCredit ? 'text-green-600' : 'text-red-600'}`}>
-                        {isCredit ? '+' : '-'}{formatCurrency(tx.amount)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

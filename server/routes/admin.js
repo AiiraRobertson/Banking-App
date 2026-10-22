@@ -14,13 +14,28 @@ router.get('/stats', (req, res) => {
       (SELECT COUNT(*) FROM users WHERE is_active = 1) as active_users,
       (SELECT COUNT(*) FROM users WHERE created_at >= date('now', '-30 days')) as new_users_30d,
       (SELECT COUNT(*) FROM accounts) as total_accounts,
-      (SELECT COALESCE(SUM(balance), 0) FROM accounts) as total_deposits,
       (SELECT COUNT(*) FROM transactions WHERE created_at >= datetime('now', '-24 hours')) as transactions_24h,
-      (SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE created_at >= datetime('now', '-24 hours')) as volume_24h,
       (SELECT COUNT(*) FROM transactions) as total_transactions
   `).get();
 
-  res.json({ stats });
+  const accountBalances = db.prepare(`
+    SELECT currency, COALESCE(SUM(balance), 0) AS amount
+    FROM accounts GROUP BY currency
+  `).all();
+  const transactionVolumes = db.prepare(`
+    SELECT currency, COALESCE(SUM(amount + fee_amount), 0) AS amount
+    FROM transactions
+    WHERE created_at >= datetime('now', '-24 hours')
+    GROUP BY currency
+  `).all();
+
+  res.json({
+    stats: {
+      ...stats,
+      balances_by_currency: Object.fromEntries(accountBalances.map(row => [row.currency, row.amount])),
+      volume_by_currency_24h: Object.fromEntries(transactionVolumes.map(row => [row.currency, row.amount]))
+    }
+  });
 });
 
 router.get('/users', [
@@ -47,16 +62,23 @@ router.get('/users', [
 
   const users = db.prepare(`
     SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.is_active, u.created_at,
-      (SELECT COUNT(*) FROM accounts WHERE user_id = u.id AND is_active = 1) as account_count,
-      (SELECT COALESCE(SUM(balance), 0) FROM accounts WHERE user_id = u.id AND is_active = 1) as total_balance
+      (SELECT COUNT(*) FROM accounts WHERE user_id = u.id AND is_active = 1) as account_count
     FROM users u
     ${where}
     ORDER BY u.created_at DESC
     LIMIT ? OFFSET ?
   `).all(...params, limit, offset);
+  const getBalances = db.prepare(`
+    SELECT currency, COALESCE(SUM(balance), 0) AS amount
+    FROM accounts WHERE user_id = ? AND is_active = 1 GROUP BY currency
+  `);
+  const usersWithBalances = users.map(user => ({
+    ...user,
+    balances_by_currency: Object.fromEntries(getBalances.all(user.id).map(row => [row.currency, row.amount]))
+  }));
 
   res.json({
-    users,
+    users: usersWithBalances,
     pagination: { page, limit, total, pages: Math.ceil(total / limit) }
   });
 });
@@ -74,7 +96,8 @@ router.get('/users/:id', [
 
   const accounts = db.prepare('SELECT * FROM accounts WHERE user_id = ?').all(req.params.id);
   const recentTransactions = db.prepare(`
-    SELECT t.*, fa.account_number as from_account_number, ta.account_number as to_account_number
+    SELECT t.*, fa.account_number as from_account_number, ta.account_number as to_account_number,
+      fa.currency as from_currency, ta.currency as to_currency
     FROM transactions t
     LEFT JOIN accounts fa ON t.from_account_id = fa.id
     LEFT JOIN accounts ta ON t.to_account_id = ta.id
@@ -103,7 +126,7 @@ router.put('/users/:id/status', [
 router.get('/transactions', [
   query('page').optional().isInt({ min: 1 }).toInt(),
   query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
-  query('type').optional().isIn(['deposit', 'withdrawal', 'transfer', 'bill_payment']),
+  query('type').optional().isIn(['deposit', 'withdrawal', 'transfer', 'bill_payment', 'wire_transfer']),
   handleValidation
 ], (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -125,6 +148,8 @@ router.get('/transactions', [
     SELECT t.*,
       fa.account_number as from_account_number,
       ta.account_number as to_account_number,
+      fa.currency as from_currency,
+      ta.currency as to_currency,
       fu.first_name || ' ' || fu.last_name as from_user_name,
       tu.first_name || ' ' || tu.last_name as to_user_name
     FROM transactions t

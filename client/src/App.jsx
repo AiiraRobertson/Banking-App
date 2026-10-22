@@ -13,10 +13,13 @@ import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import AccountsPage from './pages/AccountsPage';
 import AccountDetailPage from './pages/AccountDetailPage';
+import CurrencyConversionPage from './pages/CurrencyConversionPage';
 import TransferPage from './pages/TransferPage';
 import WireTransferPage from './pages/WireTransferPage';
 import TransactionHistoryPage from './pages/TransactionHistoryPage';
 import BillPayPage from './pages/BillPayPage';
+import ServicesPage from './pages/ServicesPage';
+import MobileServiceUnavailablePage from './pages/MobileServiceUnavailablePage';
 import AddMoneyPage from './pages/AddMoneyPage';
 import CurrencyPage from './pages/CurrencyPage';
 import ProfilePage from './pages/ProfilePage';
@@ -73,11 +76,15 @@ export default function App() {
               <Route index element={<DashboardPage />} />
               <Route path="accounts" element={<AccountsPage />} />
               <Route path="accounts/:id" element={<AccountDetailPage />} />
+              <Route path="convert" element={<CurrencyConversionPage />} />
               <Route path="transfer" element={<TransferPage />} />
               <Route path="wire-transfer" element={<WireTransferPage />} />
               <Route path="beneficiaries" element={<BeneficiariesPage />} />
               <Route path="transactions" element={<TransactionHistoryPage />} />
-              <Route path="bill-pay" element={<BillPayPage />} />
+              <Route path="bill-pay" element={<ServicesPage />} />
+              <Route path="bill-pay/payments" element={<BillPayPage />} />
+              <Route path="airtime" element={<MobileServiceUnavailablePage service="airtime" />} />
+              <Route path="data" element={<MobileServiceUnavailablePage service="data" />} />
               <Route path="add-money" element={<AddMoneyPage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="notifications" element={<NotificationsPage />} />

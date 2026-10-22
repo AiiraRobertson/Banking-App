@@ -47,7 +47,7 @@ export default function AdminUsersPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Email</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Role</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Accounts</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-t-tertiary uppercase">Balance</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-t-tertiary uppercase">Balances by Currency</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Joined</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-t-tertiary uppercase">Actions</th>
@@ -66,7 +66,11 @@ export default function AdminUsersPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-t-secondary">{u.account_count}</td>
-                    <td className="px-6 py-4 text-sm text-t-secondary text-right font-mono">{formatCurrency(u.total_balance)}</td>
+                    <td className="px-6 py-4 text-sm text-t-secondary text-right font-mono">
+                      {['USD', 'NGN', 'GHS'].map(currency => (
+                        <span key={currency} className="block whitespace-nowrap">{formatCurrency(u.balances_by_currency?.[currency] || 0, currency)}</span>
+                      ))}
+                    </td>
                     <td className="px-6 py-4">
                       <span className={`text-xs font-semibold px-2 py-1 rounded-full ${u.is_active ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
                         {u.is_active ? 'Active' : 'Inactive'}

@@ -1,11 +1,8 @@
 const express = require('express');
 const { body, param } = require('express-validator');
-const { v4: uuidv4 } = require('uuid');
 const db = require('../db/database');
 const { authenticate } = require('../middleware/auth');
 const { handleValidation } = require('../middleware/validate');
-const { sendTransactionAlert } = require('../utils/alerts');
-const { ensureWithdrawAllowed } = require('../utils/savingsLock');
 
 const router = express.Router();
 router.use(authenticate);
@@ -91,21 +88,10 @@ router.post('/scheduled', [
   body('end_date').optional().isISO8601(),
   handleValidation
 ], (req, res) => {
-  const { payee_id, from_account_id, amount, frequency, next_payment_date, end_date } = req.body;
-
-  const payee = db.prepare('SELECT * FROM bill_payees WHERE id = ? AND user_id = ?').get(payee_id, req.user.id);
-  if (!payee) return res.status(404).json({ error: 'Payee not found' });
-
-  const account = db.prepare('SELECT * FROM accounts WHERE id = ? AND user_id = ? AND is_active = 1').get(from_account_id, req.user.id);
-  if (!account) return res.status(404).json({ error: 'Account not found' });
-
-  const result = db.prepare(`
-    INSERT INTO scheduled_payments (user_id, from_account_id, payee_id, amount, frequency, next_payment_date, end_date)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(req.user.id, from_account_id, payee_id, amount, frequency, next_payment_date, end_date || null);
-
-  const payment = db.prepare('SELECT * FROM scheduled_payments WHERE id = ?').get(result.lastInsertRowid);
-  res.status(201).json({ payment });
+  res.status(503).json({
+    error: 'Scheduled bill payments are unavailable until a verified bill-payment provider is configured.',
+    code: 'BILL_PAYMENT_PROVIDER_UNAVAILABLE'
+  });
 });
 
 router.put('/scheduled/:id', [
@@ -143,48 +129,10 @@ router.post('/pay-now', [
   body('amount').isFloat({ min: 0.01, max: 1000000 }),
   handleValidation
 ], (req, res) => {
-  const { payee_id, from_account_id, amount } = req.body;
-  const amt = Math.round(amount * 100) / 100;
-
-  const payee = db.prepare('SELECT * FROM bill_payees WHERE id = ? AND user_id = ?').get(payee_id, req.user.id);
-  if (!payee) return res.status(404).json({ error: 'Payee not found' });
-
-  const account = db.prepare('SELECT * FROM accounts WHERE id = ? AND user_id = ? AND is_active = 1').get(from_account_id, req.user.id);
-  if (!account) return res.status(404).json({ error: 'Account not found' });
-  if (account.balance < amt) return res.status(400).json({ error: 'Insufficient funds' });
-
-  const lockErr = ensureWithdrawAllowed(account);
-  if (lockErr) return res.status(lockErr.status).json({ error: lockErr.message, code: lockErr.code });
-
-  const pay = db.transaction(() => {
-    db.prepare('UPDATE accounts SET balance = balance - ? WHERE id = ?').run(amt, from_account_id);
-    const newBalance = db.prepare('SELECT balance FROM accounts WHERE id = ?').get(from_account_id).balance;
-
-    const refId = uuidv4();
-    db.prepare(`
-      INSERT INTO transactions (from_account_id, to_account_id, transaction_type, amount, balance_after, description, reference_id)
-      VALUES (?, NULL, 'bill_payment', ?, ?, ?, ?)
-    `).run(from_account_id, amt, newBalance, `Bill payment to ${payee.payee_name}`, refId);
-
-    db.prepare(
-      'INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)'
-    ).run(req.user.id, 'Bill Payment Processed',
-      `$${amt.toFixed(2)} paid to ${payee.payee_name} from account ${account.account_number}.`, 'transaction');
-
-    return { referenceId: refId, newBalance };
+  res.status(503).json({
+    error: 'Bill payments are unavailable until a verified bill-payment provider is configured.',
+    code: 'BILL_PAYMENT_PROVIDER_UNAVAILABLE'
   });
-
-  const result = pay();
-  sendTransactionAlert({
-    userId: req.user.id,
-    direction: 'debit',
-    amount: amt,
-    accountNumber: account.account_number,
-    balanceAfter: result.newBalance,
-    counterparty: `Bill payment to ${payee.payee_name}`,
-    referenceId: result.referenceId
-  });
-  res.json({ message: 'Payment successful', ...result });
 });
 
 module.exports = router;

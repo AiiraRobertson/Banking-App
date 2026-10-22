@@ -55,7 +55,8 @@ export default function AdminUserDetailPage() {
                 </span>
               </div>
               <p className="text-sm text-t-tertiary">{a.account_number}</p>
-              <p className="text-2xl font-bold text-t-primary mt-1">{formatCurrency(a.balance)}</p>
+              <p className="text-sm text-t-muted mt-1">{a.currency}</p>
+              <p className="text-2xl font-bold text-t-primary mt-1">{formatCurrency(a.balance, a.currency)}</p>
             </div>
           ))}
         </div>
@@ -90,7 +91,12 @@ export default function AdminUserDetailPage() {
                       }`}>{tx.transaction_type.replace('_', ' ')}</span>
                     </td>
                     <td className="px-6 py-4 text-sm text-t-secondary">{tx.description}</td>
-                    <td className="px-6 py-4 text-sm font-medium text-right text-t-primary">{formatCurrency(tx.amount)}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-right text-t-primary">
+                      {formatCurrency(tx.amount + (tx.fee_amount || 0), tx.from_currency || tx.currency)}
+                      {tx.destination_currency && tx.destination_currency !== (tx.from_currency || tx.currency) && (
+                        <span className="block text-xs text-t-muted">→ {formatCurrency(tx.destination_amount, tx.destination_currency)}</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

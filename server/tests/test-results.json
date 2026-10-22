@@ -1,9 +1,9 @@
 {
   "summary": {
-    "total": 35,
-    "pass": 33,
+    "total": 47,
+    "pass": 47,
     "fail": 0,
-    "warn": 2
+    "warn": 0
   },
   "results": [
     {
@@ -13,7 +13,7 @@
       "status": "PASS",
       "expected": "200",
       "actual": 200,
-      "durationMs": 109,
+      "durationMs": 419,
       "notes": ""
     },
     {
@@ -23,7 +23,7 @@
       "status": "PASS",
       "expected": "200 + token",
       "actual": "200 token=true",
-      "durationMs": 602,
+      "durationMs": 2568,
       "notes": ""
     },
     {
@@ -32,8 +32,28 @@
       "name": "Authenticated user can list accounts",
       "status": "PASS",
       "expected": ">=1 account",
-      "actual": "2 accounts",
-      "durationMs": 5,
+      "actual": "4 accounts",
+      "durationMs": 11,
+      "notes": ""
+    },
+    {
+      "id": "SMOKE-03A",
+      "category": "smoke",
+      "name": "User has USD, NGN, and GHS wallets",
+      "status": "PASS",
+      "expected": "USD, NGN, GHS",
+      "actual": "NGN, GHS, USD",
+      "durationMs": 11,
+      "notes": ""
+    },
+    {
+      "id": "SMOKE-03B",
+      "category": "smoke",
+      "name": "New user receives all three wallets",
+      "status": "PASS",
+      "expected": "USD, NGN, GHS",
+      "actual": "NGN, GHS, USD",
+      "durationMs": 1998,
       "notes": ""
     },
     {
@@ -43,7 +63,7 @@
       "status": "PASS",
       "expected": "200",
       "actual": 200,
-      "durationMs": 13,
+      "durationMs": 9,
       "notes": ""
     },
     {
@@ -62,8 +82,8 @@
       "name": "Deposit credits account",
       "status": "PASS",
       "expected": "200 + new balance",
-      "actual": "200 bal=528103.8299999961",
-      "durationMs": 32,
+      "actual": "200 bal=5521",
+      "durationMs": 279,
       "notes": ""
     },
     {
@@ -73,7 +93,7 @@
       "status": "PASS",
       "expected": "200",
       "actual": 200,
-      "durationMs": 6,
+      "durationMs": 70,
       "notes": ""
     },
     {
@@ -83,17 +103,77 @@
       "status": "PASS",
       "expected": "400 insufficient funds",
       "actual": "400 undefined",
-      "durationMs": 7,
+      "durationMs": 8,
       "notes": ""
     },
     {
       "id": "REG-04",
       "category": "regression",
-      "name": "Internal transfer between own accounts",
+      "name": "Same-currency transfer charges 0.1% fee",
       "status": "PASS",
-      "expected": "200",
-      "actual": 200,
+      "expected": "200, fee=0.01, debit=10.01",
+      "actual": "200 fee=0.01 debit=10.01",
+      "durationMs": 10,
+      "notes": ""
+    },
+    {
+      "id": "REG-04X",
+      "category": "regression",
+      "name": "Transfer rejects insufficient funds including fees",
+      "status": "PASS",
+      "expected": "400 insufficient funds",
+      "actual": "400 Insufficient funds. You need $1,001,000.00 including the $1,000.00 fee.",
       "durationMs": 8,
+      "notes": ""
+    },
+    {
+      "id": "REG-04A",
+      "category": "regression",
+      "name": "Cross-currency transfer requires explicit conversion",
+      "status": "PASS",
+      "expected": "400 CURRENCY_MISMATCH",
+      "actual": "400 CURRENCY_MISMATCH",
+      "durationMs": 4,
+      "notes": ""
+    },
+    {
+      "id": "REG-04B",
+      "category": "regression",
+      "name": "Exchange quote uses development rates and 0.4% fee",
+      "status": "PASS",
+      "expected": "quote, development label, fee=0.40",
+      "actual": "200 fee=0.4",
+      "durationMs": 6,
+      "notes": ""
+    },
+    {
+      "id": "REG-04C",
+      "category": "regression",
+      "name": "Quoted conversion credits destination wallet",
+      "status": "PASS",
+      "expected": "200 and NGN 155,000",
+      "actual": "200 amount=155000",
+      "durationMs": 14,
+      "notes": ""
+    },
+    {
+      "id": "REG-04D",
+      "category": "regression",
+      "name": "Exchange quote cannot be reused",
+      "status": "PASS",
+      "expected": "409",
+      "actual": 409,
+      "durationMs": 5,
+      "notes": ""
+    },
+    {
+      "id": "REG-04E",
+      "category": "regression",
+      "name": "Conversion rejects insufficient source balance",
+      "status": "PASS",
+      "expected": "400 insufficient funds",
+      "actual": "400 Insufficient funds. You need $1,004,000.00 including the $4,000.00 fee.",
+      "durationMs": 5,
       "notes": ""
     },
     {
@@ -103,7 +183,7 @@
       "status": "PASS",
       "expected": "found:true with name",
       "actual": "found=true name=Admin User",
-      "durationMs": 8,
+      "durationMs": 5,
       "notes": ""
     },
     {
@@ -113,6 +193,26 @@
       "status": "PASS",
       "expected": "200",
       "actual": 200,
+      "durationMs": 8,
+      "notes": ""
+    },
+    {
+      "id": "REG-06A",
+      "category": "regression",
+      "name": "Ghana-to-Nigeria GHS transfer is supported",
+      "status": "PASS",
+      "expected": "200 GHS transfer",
+      "actual": "200 GHS",
+      "durationMs": 10,
+      "notes": ""
+    },
+    {
+      "id": "REG-06B",
+      "category": "regression",
+      "name": "Nigeria-to-Ghana GHS transfer is rejected",
+      "status": "PASS",
+      "expected": "400 CROSS_BORDER_CURRENCY_NOT_SUPPORTED",
+      "actual": "400 CROSS_BORDER_CURRENCY_NOT_SUPPORTED",
       "durationMs": 6,
       "notes": ""
     },
@@ -123,37 +223,47 @@
       "status": "PASS",
       "expected": "404",
       "actual": 404,
-      "durationMs": 7,
+      "durationMs": 4,
       "notes": ""
     },
     {
       "id": "REG-08",
       "category": "regression",
-      "name": "Wire countries list available",
+      "name": "Wire countries restricted to Nigeria and Ghana",
       "status": "PASS",
-      "expected": "grouped countries",
-      "actual": "200",
-      "durationMs": 3,
+      "expected": "NG and GH only",
+      "actual": "200 NG,GH",
+      "durationMs": 4,
       "notes": ""
     },
     {
       "id": "REG-09",
       "category": "regression",
-      "name": "Wire quote returns rate + fee",
+      "name": "External bank wire quote is unavailable",
       "status": "PASS",
-      "expected": "rate>0 fee>0",
-      "actual": "rate=0.7344 fee=30",
-      "durationMs": 2019,
+      "expected": "503 provider unavailable",
+      "actual": "503 External bank wire quotes are unavailable. Use a same-currency transfer to an eligible Kapita user.",
+      "durationMs": 6,
       "notes": ""
     },
     {
       "id": "REG-10",
       "category": "regression",
-      "name": "Receive wire from foreign bank credits USD",
+      "name": "USD wire development simulation credits USD account",
       "status": "PASS",
-      "expected": "200",
+      "expected": "200 simulated USD credit",
       "actual": "200 ",
-      "durationMs": 11,
+      "durationMs": 9,
+      "notes": ""
+    },
+    {
+      "id": "REG-10A",
+      "category": "regression",
+      "name": "Incoming wire rejects non-USD destination",
+      "status": "PASS",
+      "expected": "400",
+      "actual": 400,
+      "durationMs": 6,
       "notes": ""
     },
     {
@@ -162,7 +272,7 @@
       "name": "Beneficiary save (upsert)",
       "status": "PASS",
       "expected": "201 + id",
-      "actual": "201 id=10",
+      "actual": "201 id=1",
       "durationMs": 6,
       "notes": ""
     },
@@ -173,7 +283,7 @@
       "status": "PASS",
       "expected": ">=1 match",
       "actual": "1 hits",
-      "durationMs": 4,
+      "durationMs": 5,
       "notes": ""
     },
     {
@@ -193,7 +303,7 @@
       "status": "PASS",
       "expected": "user.email",
       "actual": "email=john@example.com",
-      "durationMs": 3,
+      "durationMs": 4,
       "notes": ""
     },
     {
@@ -203,7 +313,7 @@
       "status": "PASS",
       "expected": "alert_min_amount=5",
       "actual": "got=5",
-      "durationMs": 8,
+      "durationMs": 6,
       "notes": ""
     },
     {
@@ -212,18 +322,18 @@
       "name": "Bill payee created",
       "status": "PASS",
       "expected": "201",
-      "actual": "201 id=8",
+      "actual": "201 id=1",
       "durationMs": 6,
       "notes": ""
     },
     {
       "id": "REG-17",
       "category": "regression",
-      "name": "Pay-now debits checking",
+      "name": "Bill payment and scheduling fail closed without provider",
       "status": "PASS",
-      "expected": "200",
-      "actual": 200,
-      "durationMs": 5,
+      "expected": "503 provider unavailable, no balance or schedule changes",
+      "actual": "pay=503 schedule=503 balance=5580.58→5580.58",
+      "durationMs": 11,
       "notes": ""
     },
     {
@@ -233,7 +343,17 @@
       "status": "PASS",
       "expected": "array",
       "actual": "object",
-      "durationMs": 5,
+      "durationMs": 7,
+      "notes": ""
+    },
+    {
+      "id": "REG-18A",
+      "category": "regression",
+      "name": "Wire transfer history filter is accepted",
+      "status": "PASS",
+      "expected": "200 and only wire transfers",
+      "actual": "200, 1 rows",
+      "durationMs": 9,
       "notes": ""
     },
     {
@@ -242,8 +362,8 @@
       "name": "Currency rates fetch",
       "status": "PASS",
       "expected": "rates.EUR is number",
-      "actual": "0.849377",
-      "durationMs": 325,
+      "actual": "0.890292",
+      "durationMs": 918,
       "notes": ""
     },
     {
@@ -252,8 +372,8 @@
       "name": "Card top-up credits account",
       "status": "PASS",
       "expected": "200 + balance up",
-      "actual": "200 bal=528372.1199999962",
-      "durationMs": 6,
+      "actual": "200 bal=5630.58",
+      "durationMs": 9,
       "notes": ""
     },
     {
@@ -262,8 +382,8 @@
       "name": "Bank top-up credits account",
       "status": "PASS",
       "expected": "200 + balance up",
-      "actual": "200 bal=528447.1199999962",
-      "durationMs": 4,
+      "actual": "200 bal=5705.58",
+      "durationMs": 6,
       "notes": ""
     },
     {
@@ -272,8 +392,8 @@
       "name": "Crypto top-up credits account",
       "status": "PASS",
       "expected": "200 + balance up",
-      "actual": "200 bal=528477.1199999962",
-      "durationMs": 4,
+      "actual": "200 bal=5735.58",
+      "durationMs": 7,
       "notes": ""
     },
     {
@@ -283,7 +403,7 @@
       "status": "PASS",
       "expected": "400",
       "actual": "400",
-      "durationMs": 3,
+      "durationMs": 5,
       "notes": ""
     },
     {
@@ -293,7 +413,7 @@
       "status": "PASS",
       "expected": "200 or 400 already-locked",
       "actual": "400 Savings account is already locked",
-      "durationMs": 3,
+      "durationMs": 5,
       "notes": ""
     },
     {
@@ -313,28 +433,28 @@
       "status": "PASS",
       "expected": "400",
       "actual": "400",
-      "durationMs": 2,
+      "durationMs": 4,
       "notes": ""
     },
     {
       "id": "SAN-01",
       "category": "sanity",
       "name": "Welcome notification mentions Kapita",
-      "status": "WARN",
+      "status": "PASS",
       "expected": "Kapita in message",
-      "actual": "not found",
-      "durationMs": 3,
-      "notes": "Demo data was seeded before rename — expected on existing DB"
+      "actual": "found",
+      "durationMs": 4,
+      "notes": ""
     },
     {
       "id": "SAN-02",
       "category": "sanity",
       "name": "Welcome notification carries slogan",
-      "status": "WARN",
+      "status": "PASS",
       "expected": "move money, make moves",
-      "actual": "not found",
-      "durationMs": 3,
-      "notes": "Existing DB still has old slogan"
+      "actual": "found",
+      "durationMs": 4,
+      "notes": ""
     },
     {
       "id": "SAN-03",
@@ -343,7 +463,7 @@
       "status": "PASS",
       "expected": "200",
       "actual": 200,
-      "durationMs": 3,
+      "durationMs": 8,
       "notes": "Alert delivery is logged to console + alert_log; verified by REG-15 prefs"
     },
     {
@@ -357,5 +477,5 @@
       "notes": ""
     }
   ],
-  "timestamp": "2026-05-10T23:12:23.557Z"
+  "timestamp": "2026-10-22T11:31:41.593Z"
 }

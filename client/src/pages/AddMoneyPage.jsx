@@ -34,8 +34,9 @@ export default function AddMoneyPage() {
 
   useEffect(() => {
     getAccounts().then(res => {
-      setAccounts(res.data.accounts);
-      if (res.data.accounts.length > 0) setAccountId(res.data.accounts[0].id.toString());
+      const usdAccounts = res.data.accounts.filter(account => account.currency === 'USD');
+      setAccounts(usdAccounts);
+      if (usdAccounts.length > 0) setAccountId(usdAccounts[0].id.toString());
     });
   }, []);
 
@@ -114,7 +115,7 @@ export default function AddMoneyPage() {
             <div className="flex justify-between"><span className="text-t-tertiary">Method</span><span className="text-t-primary capitalize">{receipt.method}</span></div>
             <div className="flex justify-between"><span className="text-t-tertiary">External ref</span><span className="text-t-primary font-mono text-xs truncate max-w-[60%]">{receipt.externalRef}</span></div>
             <div className="flex justify-between"><span className="text-t-tertiary">Reference</span><span className="text-t-primary font-mono text-xs truncate max-w-[60%]">{receipt.referenceId}</span></div>
-            <div className="flex justify-between"><span className="text-t-tertiary">New balance</span><span className="text-t-primary font-semibold">{formatCurrency(receipt.newBalance)}</span></div>
+            <div className="flex justify-between"><span className="text-t-tertiary">New balance</span><span className="text-t-primary font-semibold">{formatCurrency(receipt.newBalance, selectedAccount?.currency || 'USD')}</span></div>
           </div>
           <div className="flex gap-3">
             <button onClick={reset} className="flex-1 py-2.5 bg-elevated text-t-secondary rounded-lg hover:bg-hover font-medium">Add more</button>
@@ -163,7 +164,7 @@ export default function AddMoneyPage() {
               className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
               {accounts.map(a => (
                 <option key={a.id} value={a.id}>
-                  {a.account_type.charAt(0).toUpperCase() + a.account_type.slice(1)} (****{a.account_number.slice(-4)}) — {formatCurrency(a.balance)}
+                  {a.currency} {a.account_type} (****{a.account_number.slice(-4)}) — {formatCurrency(a.balance, a.currency)}
                 </option>
               ))}
             </select>

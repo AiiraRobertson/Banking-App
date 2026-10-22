@@ -96,6 +96,9 @@ router.post('/topup', [
     'SELECT * FROM accounts WHERE id = ? AND user_id = ? AND is_active = 1'
   ).get(account_id, req.user.id);
   if (!account) return res.status(404).json({ error: 'Account not found' });
+  if (account.currency !== 'USD') {
+    return res.status(400).json({ error: 'The configured funding methods currently support USD accounts only.' });
+  }
 
   let sourceRow;
   let counterpartyLabel;
@@ -150,8 +153,8 @@ router.post('/topup', [
 
     const refId = uuidv4();
     const txInsert = db.prepare(`
-      INSERT INTO transactions (from_account_id, to_account_id, transaction_type, amount, balance_after, description, reference_id)
-      VALUES (NULL, ?, 'deposit', ?, ?, ?, ?)
+      INSERT INTO transactions (from_account_id, to_account_id, transaction_type, amount, balance_after, description, reference_id, currency)
+      VALUES (NULL, ?, 'deposit', ?, ?, ?, ?, 'USD')
     `).run(account_id, amt, newBalance, description, refId);
     const transactionId = txInsert.lastInsertRowid;
 
@@ -185,7 +188,8 @@ router.post('/topup', [
     accountNumber: account.account_number,
     balanceAfter: topUp.newBalance,
     counterparty: counterpartyLabel,
-    referenceId: topUp.referenceId
+    referenceId: topUp.referenceId,
+    currency: account.currency
   });
 
   res.json({
