@@ -1,4 +1,4 @@
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '../../context/useTheme';
 
 export default function ThemeToggle({ className = '', floating = false }) {
   const { theme, toggleTheme } = useTheme();
@@ -13,7 +13,8 @@ export default function ThemeToggle({ className = '', floating = false }) {
       onClick={toggleTheme}
       className={`${base} ${float} ${className}`}
       title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-      aria-label="Toggle theme"
+      aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      aria-pressed={theme === 'dark'}
     >
       {theme === 'dark' ? (
         <svg

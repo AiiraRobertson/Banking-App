@@ -121,8 +121,8 @@ export default function LoanCalculatorPage() {
                     </button>
                   </div>
                   {showSchedule && (
-                    <div className="max-h-96 overflow-y-auto">
-                      <table className="w-full text-sm">
+                    <div className="max-h-96 overflow-auto">
+                      <table className="w-full min-w-[560px] text-sm">
                         <thead className="bg-elevated sticky top-0">
                           <tr>
                             <th className="px-3 py-2 text-left text-xs font-medium text-t-tertiary">Month</th>

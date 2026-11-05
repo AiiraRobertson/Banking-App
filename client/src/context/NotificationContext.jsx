@@ -1,8 +1,7 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useAuth } from './AuthContext';
+import { useState, useEffect, useCallback } from 'react';
+import NotificationContext from './NotificationContextValue';
+import { useAuth } from './useAuth';
 import * as notificationService from '../services/notificationService';
-
-const NotificationContext = createContext(null);
 
 export function NotificationProvider({ children }) {
   const { isAuthenticated } = useAuth();
@@ -13,28 +12,31 @@ export function NotificationProvider({ children }) {
     try {
       const res = await notificationService.getUnreadCount();
       setUnreadCount(res.data.count);
-    } catch { /* ignore */ }
+    } catch (error) {
+      console.error('Failed to refresh notification count:', error);
+    }
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      setUnreadCount(0);
-      return;
-    }
-    refreshCount();
+    if (!isAuthenticated) return undefined;
+    let active = true;
+    notificationService.getUnreadCount()
+      .then(res => {
+        if (active) setUnreadCount(res.data.count);
+      })
+      .catch(error => {
+        console.error('Failed to refresh notification count:', error);
+      });
     const interval = setInterval(refreshCount, 30000);
-    return () => clearInterval(interval);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
   }, [isAuthenticated, refreshCount]);
 
   return (
-    <NotificationContext.Provider value={{ unreadCount, refreshCount }}>
+    <NotificationContext.Provider value={{ unreadCount: isAuthenticated ? unreadCount : 0, refreshCount }}>
       {children}
     </NotificationContext.Provider>
   );
-}
-
-export function useNotifications() {
-  const context = useContext(NotificationContext);
-  if (!context) throw new Error('useNotifications must be used within NotificationProvider');
-  return context;
 }

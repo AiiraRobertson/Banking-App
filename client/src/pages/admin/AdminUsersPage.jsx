@@ -10,19 +10,50 @@ export default function AdminUsersPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const fetchUsers = () => {
-    setLoading(true);
+  const fetchUsers = async () => {
     const params = { page, limit: 15 };
     if (search) params.search = search;
-    getUsers(params).then(res => { setUsers(res.data.users); setPagination(res.data.pagination); }).finally(() => setLoading(false));
+    try {
+      const res = await getUsers(params);
+      setUsers(res.data.users);
+      setPagination(res.data.pagination);
+      setError('');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Could not load users.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { fetchUsers(); }, [page, search]);
+  useEffect(() => {
+    let active = true;
+    const params = { page, limit: 15 };
+    if (search) params.search = search;
+    getUsers(params)
+      .then(res => {
+        if (!active) return;
+        setUsers(res.data.users);
+        setPagination(res.data.pagination);
+        setError('');
+      })
+      .catch(err => {
+        if (active) setError(err.response?.data?.error || 'Could not load users.');
+      })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [page, search]);
 
   const handleToggleStatus = async (id) => {
-    await toggleUserStatus(id);
-    fetchUsers();
+    setError('');
+    try {
+      await toggleUserStatus(id);
+      setLoading(true);
+      await fetchUsers();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Could not update user status.');
+    }
   };
 
   return (
@@ -30,12 +61,13 @@ export default function AdminUsersPage() {
       <h1 className="text-2xl font-bold text-t-primary">User Management</h1>
 
       <div className="flex gap-3">
-        <input type="text" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
+        <input type="text" value={search} onChange={e => { setLoading(true); setSearch(e.target.value); setPage(1); }}
           placeholder="Search by name or email..."
           className="flex-1 max-w-md px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
       </div>
 
       <div className="bg-surface rounded-xl shadow-sm border border-b-secondary overflow-hidden">
+        {error && <div role="alert" className="p-3 text-sm text-red-700 bg-red-50">{error}</div>}
         {loading ? (
           <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>
         ) : (
@@ -95,8 +127,8 @@ export default function AdminUsersPage() {
         <div className="flex items-center justify-between">
           <p className="text-sm text-t-tertiary">Showing {((page - 1) * pagination.limit) + 1}-{Math.min(page * pagination.limit, pagination.total)} of {pagination.total}</p>
           <div className="flex gap-2">
-            <button onClick={() => setPage(p => p - 1)} disabled={page === 1} className="px-3 py-1.5 text-sm border border-b-input rounded-lg disabled:opacity-50 hover:bg-hover">Prev</button>
-            <button onClick={() => setPage(p => p + 1)} disabled={page === pagination.pages} className="px-3 py-1.5 text-sm border border-b-input rounded-lg disabled:opacity-50 hover:bg-hover">Next</button>
+            <button onClick={() => { setLoading(true); setPage(p => p - 1); }} disabled={page === 1} className="px-3 py-1.5 text-sm border border-b-input rounded-lg disabled:opacity-50 hover:bg-hover">Prev</button>
+            <button onClick={() => { setLoading(true); setPage(p => p + 1); }} disabled={page === pagination.pages} className="px-3 py-1.5 text-sm border border-b-input rounded-lg disabled:opacity-50 hover:bg-hover">Next</button>
           </div>
         </div>
       )}

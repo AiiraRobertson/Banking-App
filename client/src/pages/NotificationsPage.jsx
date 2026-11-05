@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getNotifications, markRead, markAllRead } from '../services/notificationService';
-import { useNotifications } from '../context/NotificationContext';
+import { useNotifications } from '../context/useNotifications';
 import { timeAgo } from '../utils/formatDate';
 
 const typeIcons = {
@@ -23,20 +23,28 @@ export default function NotificationsPage() {
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const { refreshCount } = useNotifications();
 
-  const fetchNotifications = () => {
-    setLoading(true);
+  useEffect(() => {
+    let active = true;
     const params = { page, limit: 15 };
     if (filter === 'unread') params.unread_only = true;
     if (filter !== 'all' && filter !== 'unread') params.type = filter;
 
     getNotifications(params)
-      .then(res => { setNotifications(res.data.notifications); setPagination(res.data.pagination); })
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => { fetchNotifications(); }, [page, filter]);
+      .then(res => {
+        if (!active) return;
+        setNotifications(res.data.notifications);
+        setPagination(res.data.pagination);
+        setError('');
+      })
+      .catch(err => {
+        if (active) setError(err.response?.data?.error || 'Could not load notifications.');
+      })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [page, filter]);
 
   const handleMarkRead = async (id) => {
     await markRead(id);
@@ -62,9 +70,11 @@ export default function NotificationsPage() {
         </button>
       </div>
 
+      {error && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+
       <div className="flex gap-2 flex-wrap">
         {['all', 'unread', 'transaction', 'alert', 'info', 'security'].map(f => (
-          <button key={f} onClick={() => { setFilter(f); setPage(1); }}
+          <button key={f} onClick={() => { setLoading(true); setFilter(f); setPage(1); }}
             className={`px-3 py-1.5 text-sm rounded-full capitalize ${filter === f ? 'bg-indigo-600 text-white' : 'bg-elevated text-t-secondary hover:bg-hover'}`}>
             {f}
           </button>
@@ -105,10 +115,10 @@ export default function NotificationsPage() {
 
       {pagination.pages > 1 && (
         <div className="flex items-center justify-center gap-2">
-          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+          <button onClick={() => { setLoading(true); setPage(p => Math.max(1, p - 1)); }} disabled={page === 1}
             className="px-3 py-1.5 text-sm border border-b-input rounded-lg disabled:opacity-50 hover:bg-hover">Prev</button>
           <span className="text-sm text-t-tertiary">Page {page} of {pagination.pages}</span>
-          <button onClick={() => setPage(p => Math.min(pagination.pages, p + 1))} disabled={page === pagination.pages}
+          <button onClick={() => { setLoading(true); setPage(p => Math.min(pagination.pages, p + 1)); }} disabled={page === pagination.pages}
             className="px-3 py-1.5 text-sm border border-b-input rounded-lg disabled:opacity-50 hover:bg-hover">Next</button>
         </div>
       )}

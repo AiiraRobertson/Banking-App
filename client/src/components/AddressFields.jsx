@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { COUNTRIES, STATES_BY_COUNTRY, POSTAL_API_COUNTRIES, lookupPostal } from '../utils/countryStates';
 
 /**
@@ -21,55 +21,57 @@ export default function AddressFields({
   inputClass = '',
   required = true,
 }) {
-  const v = value || {};
+  const v = useMemo(() => value || {}, [value]);
   const [lookupStatus, setLookupStatus] = useState('idle');
   const lastLookupRef = useRef('');
 
-  const set = (patch) => onChange({ ...v, ...patch });
+  const set = useCallback((patch) => onChange({ ...v, ...patch }), [onChange, v]);
 
-  const states = STATES_BY_COUNTRY[v.country] || [];
+  const states = useMemo(() => STATES_BY_COUNTRY[v.country] || [], [v.country]);
   const supportsPostal = v.country && POSTAL_API_COUNTRIES.has(v.country);
 
   useEffect(() => {
-    if (!v.country || !v.zip_code) {
-      setLookupStatus('idle');
-      return;
-    }
-    if (!supportsPostal) {
-      setLookupStatus('unsupported');
-      return;
-    }
+    if (!v.country || !v.zip_code || !supportsPostal) return;
     const key = `${v.country}|${v.zip_code.trim()}`;
     if (key === lastLookupRef.current) return;
     const handle = setTimeout(async () => {
       lastLookupRef.current = key;
       setLookupStatus('loading');
-      const found = await lookupPostal(v.country, v.zip_code);
-      if (!found) {
-        setLookupStatus('not-found');
-        return;
-      }
-      const patch = {};
-      if (!v.city) patch.city = found.city;
-      if (!v.state && (found.state || found.stateAbbr)) {
-        const stateName = found.state || found.stateAbbr;
-        if (states.length === 0 || states.includes(stateName)) {
-          patch.state = stateName;
-        } else if (found.stateAbbr && states.includes(found.stateAbbr)) {
-          patch.state = found.stateAbbr;
+      try {
+        const found = await lookupPostal(v.country, v.zip_code);
+        if (!found) {
+          setLookupStatus('not-found');
+          return;
         }
+        const patch = {};
+        if (!v.city) patch.city = found.city;
+        if (!v.state && (found.state || found.stateAbbr)) {
+          const stateName = found.state || found.stateAbbr;
+          if (states.length === 0 || states.includes(stateName)) {
+            patch.state = stateName;
+          } else if (found.stateAbbr && states.includes(found.stateAbbr)) {
+            patch.state = found.stateAbbr;
+          }
+        }
+        if (Object.keys(patch).length) set(patch);
+        setLookupStatus('found');
+      } catch {
+        setLookupStatus('error');
       }
-      if (Object.keys(patch).length) set(patch);
-      setLookupStatus('found');
     }, 500);
     return () => clearTimeout(handle);
-  }, [v.country, v.zip_code]);
+  }, [v.country, v.zip_code, v.city, v.state, supportsPostal, states, set]);
 
   const onCountry = (e) => {
     const country = e.target.value;
     set({ country, state: '' });
     lastLookupRef.current = '';
+    setLookupStatus('idle');
   };
+
+  const visibleLookupStatus = !v.country || !v.zip_code
+    ? 'idle'
+    : supportsPostal ? lookupStatus : 'unsupported';
 
   return (
     <div className="space-y-3">
@@ -108,13 +110,13 @@ export default function AddressFields({
         <div>
           <label className="block text-sm font-medium text-t-secondary mb-1">
             Postal / ZIP Code
-            {lookupStatus === 'loading' && (
+            {visibleLookupStatus === 'loading' && (
               <span className="ml-2 text-xs text-indigo-600">looking up…</span>
             )}
-            {lookupStatus === 'found' && (
+            {visibleLookupStatus === 'found' && (
               <span className="ml-2 text-xs text-green-600">✓ matched</span>
             )}
-            {lookupStatus === 'not-found' && v.zip_code && (
+            {(visibleLookupStatus === 'not-found' || visibleLookupStatus === 'error') && v.zip_code && (
               <span className="ml-2 text-xs text-amber-600">not found</span>
             )}
           </label>

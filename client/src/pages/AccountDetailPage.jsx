@@ -59,28 +59,28 @@ export default function AccountDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
+      <div className="flex items-start gap-3 min-w-0">
         <Link to="/accounts" className="text-t-muted hover:text-t-secondary">&larr;</Link>
-        <div>
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold text-t-primary">Account Details</h1>
-          <p className="text-t-tertiary">{account.account_number}</p>
+          <p className="text-t-tertiary break-all">{account.account_number}</p>
         </div>
       </div>
 
-      <div className="bg-surface rounded-xl shadow-sm border border-b-secondary p-6">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="bg-surface rounded-xl shadow-sm border border-b-secondary p-4 sm:p-6 min-w-0">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <div>
             <p className="text-sm text-t-tertiary">Type</p>
             <p className="text-lg font-semibold text-t-primary capitalize">{account.account_type}</p>
           </div>
           <div>
             <p className="text-sm text-t-tertiary">Balance</p>
-            <p className="text-lg font-semibold text-t-primary">{formatCurrency(account.balance, account.currency)}</p>
+            <p className="text-lg font-semibold text-t-primary break-words">{formatCurrency(account.balance, account.currency)}</p>
             <p className="text-xs text-t-muted">{account.currency}</p>
           </div>
           <div>
             <p className="text-sm text-t-tertiary">Account Number</p>
-            <p className="text-lg font-semibold text-t-primary">{account.account_number}</p>
+            <p className="text-lg font-semibold text-t-primary break-all">{account.account_number}</p>
           </div>
           <div>
             <p className="text-sm text-t-tertiary">Opened</p>
@@ -174,7 +174,8 @@ export default function AccountDetailPage() {
           {transactions.length === 0 ? (
             <div className="p-8 text-center text-t-muted">No transactions for this account</div>
           ) : (
-            <table className="w-full">
+            <div className="overflow-x-auto">
+            <table className="w-full min-w-[680px]">
               <thead className="bg-elevated">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Date</th>
@@ -212,6 +213,7 @@ export default function AccountDetailPage() {
                 })}
               </tbody>
             </table>
+            </div>
           )}
         </div>
         {pagination.pages > 1 && (

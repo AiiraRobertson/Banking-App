@@ -103,7 +103,8 @@ export default function BillPayPage() {
           <div className="bg-surface rounded-xl shadow-sm border border-b-secondary p-8 text-center text-t-muted">No scheduled payments</div>
         ) : (
           <div className="bg-surface rounded-xl shadow-sm border border-b-secondary overflow-hidden">
-            <table className="w-full">
+            <div className="overflow-x-auto">
+            <table className="w-full min-w-[680px]">
               <thead className="bg-elevated">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-t-tertiary uppercase">Payee</th>
@@ -133,6 +134,7 @@ export default function BillPayPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </div>

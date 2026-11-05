@@ -1,7 +1,6 @@
-import { createContext, useContext, useReducer, useEffect } from 'react';
+import { useReducer, useEffect } from 'react';
 import * as authService from '../services/authService';
-
-const AuthContext = createContext(null);
+import AuthContext from './AuthContextValue';
 
 const initialState = {
   user: null,
@@ -29,17 +28,22 @@ export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
   useEffect(() => {
+    let active = true;
     if (state.token) {
       authService.getMe()
-        .then(res => dispatch({ type: 'LOGIN', payload: { user: res.data.user, token: state.token } }))
+        .then(res => {
+          if (active) dispatch({ type: 'LOGIN', payload: { user: res.data.user, token: state.token } });
+        })
         .catch(() => {
+          if (!active) return;
           localStorage.removeItem('token');
           dispatch({ type: 'LOGOUT' });
         });
     } else {
       dispatch({ type: 'LOADED' });
     }
-  }, []);
+    return () => { active = false; };
+  }, [state.token]);
 
   const login = async (email, password) => {
     const res = await authService.login(email, password);
@@ -69,10 +73,4 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within AuthProvider');
-  return context;
 }

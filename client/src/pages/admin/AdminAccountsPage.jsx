@@ -8,12 +8,22 @@ export default function AdminAccountsPage() {
   const [pagination, setPagination] = useState({});
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    setLoading(true);
+    let active = true;
     getAdminAccounts({ page, limit: 20 })
-      .then(res => { setAccounts(res.data.accounts); setPagination(res.data.pagination); })
-      .finally(() => setLoading(false));
+      .then(res => {
+        if (!active) return;
+        setAccounts(res.data.accounts);
+        setPagination(res.data.pagination);
+        setError('');
+      })
+      .catch(err => {
+        if (active) setError(err.response?.data?.error || 'Could not load accounts.');
+      })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [page]);
 
   return (
@@ -21,6 +31,7 @@ export default function AdminAccountsPage() {
       <h1 className="text-2xl font-bold text-t-primary">All Accounts</h1>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        {error && <div role="alert" className="p-3 text-sm text-red-700 bg-red-50">{error}</div>}
         {loading ? (
           <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>
         ) : (
@@ -68,8 +79,8 @@ export default function AdminAccountsPage() {
         <div className="flex items-center justify-between">
           <p className="text-sm text-t-tertiary">Page {page} of {pagination.pages} ({pagination.total} total)</p>
           <div className="flex gap-2">
-            <button onClick={() => setPage(p => p - 1)} disabled={page === 1} className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 hover:bg-gray-50">Prev</button>
-            <button onClick={() => setPage(p => p + 1)} disabled={page === pagination.pages} className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 hover:bg-gray-50">Next</button>
+            <button onClick={() => { setLoading(true); setPage(p => p - 1); }} disabled={page === 1} className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 hover:bg-gray-50">Prev</button>
+            <button onClick={() => { setLoading(true); setPage(p => p + 1); }} disabled={page === pagination.pages} className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg disabled:opacity-50 hover:bg-gray-50">Next</button>
           </div>
         </div>
       )}

@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', end: true },
@@ -16,23 +16,23 @@ export default function Sidebar({ open, onClose }) {
 
   return (
     <>
-      {open && <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={onClose} />}
-      <aside className={`fixed top-0 left-0 z-50 h-full w-64 bg-surface border-r border-b-primary transform transition-transform lg:translate-x-0 lg:static lg:z-auto ${open ? 'translate-x-0' : '-translate-x-full'}`}>
+      {open && <button type="button" aria-label="Close navigation menu" className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-40 lg:hidden" onClick={onClose} />}
+      <aside id="primary-sidebar" className={`fixed top-0 left-0 z-50 h-full w-64 bg-surface border-r border-b-primary transform transition-transform duration-200 lg:translate-x-0 lg:sticky lg:z-20 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-6 border-b border-b-secondary">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-[#7B5CFF] rounded-xl flex items-center justify-center shadow-sm">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-bold text-t-primary leading-tight">Kapita</span>
+              <span className="text-xl font-bold tracking-tight text-t-primary leading-tight">Kapita</span>
               <span className="text-[10px] text-t-tertiary uppercase tracking-wider">Move money. Make moves.</span>
             </div>
           </div>
         </div>
 
-        <nav className="p-4 space-y-1">
+        <nav aria-label="Primary navigation" className="p-4 space-y-1">
           {navItems.map(item => (
             <NavLink
               key={item.to}
@@ -41,7 +41,7 @@ export default function Sidebar({ open, onClose }) {
               onClick={onClose}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group ${
-                  isActive ? 'bg-[var(--color-nav-active-bg)] text-[var(--color-nav-active-text)] border-l-3 border-indigo-600' : 'text-t-secondary hover:bg-hover hover:text-[var(--color-nav-active-text)] hover:translate-x-1'
+                  isActive ? 'bg-[var(--color-nav-active-bg)] text-[var(--color-nav-active-text)] border-l-3 border-[#7B5CFF]' : 'text-t-secondary hover:bg-hover hover:text-[var(--color-nav-active-text)]'
                 }`
               }
             >
@@ -58,7 +58,7 @@ export default function Sidebar({ open, onClose }) {
               onClick={onClose}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group ${
-                  isActive ? 'bg-[var(--color-nav-active-bg)] text-[var(--color-nav-active-text)] border-l-3 border-indigo-600' : 'text-t-secondary hover:bg-hover hover:text-[var(--color-nav-active-text)] hover:translate-x-1'
+                  isActive ? 'bg-[var(--color-nav-active-bg)] text-[var(--color-nav-active-text)] border-l-3 border-[#7B5CFF]' : 'text-t-secondary hover:bg-hover hover:text-[var(--color-nav-active-text)]'
                 }`
               }
             >

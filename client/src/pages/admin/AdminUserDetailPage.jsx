@@ -30,7 +30,7 @@ export default function AdminUserDetailPage() {
 
       <div className="bg-surface rounded-xl shadow-sm border border-b-secondary p-6">
         <h2 className="text-lg font-semibold text-t-primary mb-4">User Information</h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             ['Email', user.email], ['Phone', user.phone || '-'], ['Role', user.role],
             ['Joined', formatDate(user.created_at)], ['Address', user.address || '-'],

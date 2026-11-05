@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { getProfile, updateProfile, changePassword } from '../services/profileService';
 import AddressFields from '../components/AddressFields';
 import PhotoCapture from '../components/PhotoCapture';
@@ -117,7 +117,7 @@ export default function ProfilePage() {
               value={form.profile_photo || null}
               onChange={(photo) => setForm((f) => ({ ...f, profile_photo: photo }))}
             />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-t-secondary mb-1">First Name</label>
                 <input type="text" value={form.first_name || ''} onChange={e => setForm({ ...form, first_name: e.target.value })}
@@ -185,7 +185,7 @@ export default function ProfilePage() {
                 )}
               </div>
             </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
               ['First Name', profile.first_name], ['Last Name', profile.last_name],
               ['Email', profile.email], ['Phone', profile.phone || '-'],

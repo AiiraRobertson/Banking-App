@@ -1,6 +1,6 @@
 # SecureBank — International Banking Made Simple
 
-A full-featured banking web application built with React and Node.js, supporting international wire transfers across 28+ countries in North America, Europe, and Africa.
+A banking web application built with React and Node.js, with USD, NGN, and GHS accounts and restricted Nigeria–Ghana transfer flows.
 
 ## Tech Stack
 
@@ -13,10 +13,13 @@ A full-featured banking web application built with React and Node.js, supporting
 ## Features
 
 - **User Authentication** — Register, login, JWT-based sessions
-- **Account Management** — Checking & savings accounts with real-time balances
-- **Transfers** — Internal transfers between accounts with atomic transactions
-- **International Wire Transfers** — Send money to 28+ countries with currency conversion and fee calculation
-- **Bill Pay** — Manage payees and schedule recurring payments
+- **Account Management** — Existing USD checking/savings balances plus NGN and GHS wallets
+- **Transfers** — Atomic same-currency transfers with a 0.1% sender-paid fee
+- **Currency Conversion** — Explicitly quoted conversions between USD, NGN, and GHS, with a 0.4% sender-paid fee
+- **Nigeria–Ghana Flows** — Kapita transfers only; GHS can move from Ghana to Nigeria and is credited in GHS
+- **USD Wire Handling** — Incoming USD is credited only to USD accounts; development simulation is not external settlement, and external outbound wires are unavailable
+- **Bill Payee Management** — Manage saved payee details; payment execution is unavailable until a verified provider is integrated
+- **Mobile Services** — Airtime and data entry points for Nigeria and Ghana; purchases are unavailable until a verified provider is integrated
 - **Transaction History** — Full history with filters (type, account, date range)
 - **Notifications** — Real-time alerts for transactions, low balances, and security events
 - **Loan Calculator** — Monthly payment and amortization calculator
@@ -24,11 +27,21 @@ A full-featured banking web application built with React and Node.js, supporting
 - **Admin Dashboard** — User management, transaction monitoring, account overview
 - **Landing Page** — Public marketing page with feature showcase
 
-## Supported Countries
+## Multi-Currency Development Rates
 
-**North America:** United States, Canada  
-**Europe:** United Kingdom, Germany, France, Netherlands, Spain, Italy, Portugal, Belgium, Ireland, Switzerland, Sweden, Norway, Denmark, Poland  
-**Africa:** Nigeria, Kenya, South Africa, Ghana, Egypt, Tanzania, Ethiopia, Rwanda, Uganda, Cameroon, Senegal, Morocco
+Conversion quotes use server-configured development test rates only and are disabled when `NODE_ENV=production`. Defaults are `1 USD = 1,550 NGN` and `1 USD = 14.80 GHS`. Override them on the server with `DEV_FX_NGN_PER_USD` and `DEV_FX_GHS_PER_USD`. These rates are not live market prices and must not be used to settle real transactions.
+
+Transfers require matching source and destination currencies. Currency conversion is a separate quoted action. Cross-border Kapita transfers are limited to users identified as Nigerian or Ghanaian by their registration nationality; GHS cross-border transfers are allowed from Ghana to Nigeria. External bank settlement is not integrated. The incoming USD wire form is a development-only simulator and is disabled in production.
+
+## Airtime, Data, and Bill Payments
+
+No licensed airtime, data, or bill-payment provider is currently integrated. No mobile network operators or data plans are enabled for Nigeria or Ghana, and no external billers are supported. The Services page reports these products as unavailable rather than simulating a completed purchase.
+
+The existing bill-pay API supports saved-payee management only. Bill-payment and scheduled-payment submissions return `503 BILL_PAYMENT_PROVIDER_UNAVAILABLE`; they do not debit accounts or create a payment schedule. Existing schedule records are historical/user-managed records and are not automatically processed.
+
+To enable these services, select and onboard an approved aggregator that supports the required country and product, implement its server-side adapter and verified status/callback flow, and add provider-backed validation, idempotency, ledger/reversal handling, and tests before enabling payment actions. Provider credentials must remain in server environment variables; adding credentials alone does not enable purchases.
+
+No provider has been selected for these services, so provider-specific credential names and settings are intentionally not invented.
 
 ## Getting Started
 

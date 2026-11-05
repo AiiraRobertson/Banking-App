@@ -38,14 +38,14 @@ export default function PhotoCapture({ value, onChange, label = 'Verification Ph
   const [mode, setMode] = useState('idle');
   const [error, setError] = useState('');
 
-  useEffect(() => () => stopCamera(), []);
-
   const stopCamera = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     }
   };
+
+  useEffect(() => () => stopCamera(), []);
 
   const handleFile = async (e) => {
     const file = e.target.files?.[0];
@@ -81,7 +81,9 @@ export default function PhotoCapture({ value, onChange, label = 'Verification Ph
       setTimeout(() => {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          videoRef.current.play().catch(() => {});
+          videoRef.current.play().catch((playError) => {
+            setError(playError.message || 'Could not start the camera preview.');
+          });
         }
       }, 0);
     } catch {

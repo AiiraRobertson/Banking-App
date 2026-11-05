@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { useNotifications } from '../../context/NotificationContext';
+import { useAuth } from '../../context/useAuth';
+import { useNotifications } from '../../context/useNotifications';
 import ResourcesDropdown from './ResourcesDropdown';
 import ThemeToggle from '../ui/ThemeToggle';
 
-export default function Navbar({ onMenuToggle }) {
+export default function Navbar({ onMenuToggle, sidebarOpen }) {
   const { user, logout } = useAuth();
   const { unreadCount } = useNotifications();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -17,20 +17,20 @@ export default function Navbar({ onMenuToggle }) {
   };
 
   return (
-    <header className="bg-surface border-b border-b-primary px-4 lg:px-6 h-16 flex items-center justify-between sticky top-0 z-30">
-      <button onClick={onMenuToggle} className="lg:hidden p-2 rounded-lg hover:bg-hover">
+    <header className="bg-surface/95 backdrop-blur border-b border-b-primary px-3 sm:px-4 lg:px-8 h-16 flex items-center justify-between gap-2 sticky top-0 z-30">
+      <button onClick={onMenuToggle} aria-label={sidebarOpen ? 'Close navigation menu' : 'Open navigation menu'} aria-controls="primary-sidebar" aria-expanded={sidebarOpen} className="lg:hidden p-2 rounded-lg hover:bg-hover">
         <svg className="w-6 h-6 text-t-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
 
       <div className="hidden lg:block">
-        <h2 className="text-lg font-semibold text-t-primary">
+        <h2 className="text-lg font-semibold tracking-tight text-t-primary">
           Welcome back, {user?.first_name}
         </h2>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1 sm:gap-3 shrink-0">
         <div className="hidden md:block">
           <ResourcesDropdown align="right" compact />
         </div>
@@ -51,6 +51,9 @@ export default function Navbar({ onMenuToggle }) {
         <div className="relative">
           <button
             onClick={() => setDropdownOpen(!dropdownOpen)}
+            aria-expanded={dropdownOpen}
+            aria-haspopup="menu"
+            aria-label="Open account menu"
             className="flex items-center gap-2 p-2 rounded-lg hover:bg-hover transition-colors"
           >
             <div className="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full overflow-hidden flex items-center justify-center text-sm font-semibold hover:bg-indigo-200 transition-colors duration-200">

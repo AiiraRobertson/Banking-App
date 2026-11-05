@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import PasswordInput from '../components/ui/PasswordInput';
 import PasswordRequirements from '../components/ui/PasswordRequirements';
 import ThemeToggle from '../components/ui/ThemeToggle';
@@ -80,7 +80,7 @@ export default function RegisterPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-t-secondary mb-1">First Name</label>
                 <input type="text" name="first_name" value={form.first_name} onChange={handleChange} className={inputClass} required />

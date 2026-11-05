@@ -57,7 +57,7 @@ export default function ResourcesDropdown({ align = 'right', compact = false }) 
     closeTimer.current = setTimeout(() => setOpen(false), 120);
   };
 
-  const panelAlign = align === 'left' ? 'left-0' : 'right-0';
+  const panelAlign = align === 'left' ? 'lg:left-0 lg:right-auto' : 'lg:right-0 lg:left-auto';
   const btnPadding = compact ? 'px-2.5 py-1.5' : 'px-4 py-2';
 
   return (
@@ -76,11 +76,11 @@ export default function ResourcesDropdown({ align = 'right', compact = false }) 
       </button>
 
       <div
-        className={`absolute ${panelAlign} top-full pt-3 w-[42rem] max-w-[calc(100vw-2rem)] z-50 transition-all duration-200 ${
+        className={`fixed left-1/2 top-16 z-50 w-[min(42rem,calc(100vw-2rem))] -translate-x-1/2 pt-2 transition-all duration-200 lg:absolute ${panelAlign} lg:top-full lg:w-[42rem] lg:max-w-[calc(100vw-2rem)] lg:translate-x-0 lg:pt-3 ${
           open ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-1 pointer-events-none'
         }`}
       >
-        <div className="bg-surface border border-b-secondary rounded-2xl shadow-2xl p-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-surface border border-b-secondary rounded-2xl shadow-2xl p-4 sm:p-5 max-h-[calc(100dvh-5rem)] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {resourceGroups.map(group => (
             <div key={group.heading}>
               <p className="text-[11px] font-semibold uppercase tracking-wider text-t-tertiary mb-2 px-2">{group.heading}</p>

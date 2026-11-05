@@ -14,7 +14,7 @@ export default function CurrencyPage() {
   const navigate = useNavigate();
   const [base, setBase] = useState('USD');
   const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
 
@@ -23,16 +23,45 @@ export default function CurrencyPage() {
   const [amount, setAmount] = useState(100);
 
   const load = async (b) => {
-    setLoading(true); setError('');
     try {
       const res = await getRates(b);
       setData(res.data);
+      setError('');
     } catch (err) {
       setError(err.response?.data?.error || 'Could not load rates');
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { load(base); }, [base]);
+  useEffect(() => {
+    let active = true;
+    getRates(base)
+      .then(res => {
+        if (!active) return;
+        setData(res.data);
+        setError('');
+      })
+      .catch(err => {
+        if (active) setError(err.response?.data?.error || 'Could not load rates');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, [base]);
+
+  const refreshRates = () => {
+    setLoading(true);
+    setError('');
+    load(base);
+  };
+
+  const changeBase = (value) => {
+    setLoading(true);
+    setError('');
+    setBase(value);
+  };
 
   const allCodes = useMemo(() => (data ? Object.keys(data.rates).sort() : []), [data]);
 
@@ -59,9 +88,9 @@ export default function CurrencyPage() {
 
   return (
     <div className="min-h-screen bg-3d">
-      <div className="max-w-5xl mx-auto p-4 lg:p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
+      <div className="max-w-5xl mx-auto p-3 sm:p-4 lg:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+          <div className="min-w-0">
             <h1 className="text-2xl font-bold text-t-primary">Currency Rates & Converter</h1>
             <p className="text-t-tertiary">Live exchange rates and instant conversion</p>
           </div>
@@ -71,10 +100,10 @@ export default function CurrencyPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-surface rounded-xl shadow-sm border border-b-secondary p-6">
+          <div className="bg-surface rounded-xl shadow-sm border border-b-secondary p-4 sm:p-6 min-w-0">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-t-primary">Live Rates</h2>
-              <button onClick={() => load(base)} disabled={loading}
+              <button onClick={refreshRates} disabled={loading}
                 className="text-sm text-indigo-600 hover:text-indigo-700 font-medium disabled:opacity-50">
                 {loading ? 'Refreshing…' : 'Refresh'}
               </button>
@@ -85,7 +114,7 @@ export default function CurrencyPage() {
             <div className="space-y-3 mb-4">
               <div>
                 <label className="block text-sm font-medium text-t-secondary mb-1">Base Currency</label>
-                <select value={base} onChange={e => setBase(e.target.value)}
+                <select value={base} onChange={e => changeBase(e.target.value)}
                   className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
                   {POPULAR_BASES.map(c => <option key={c} value={c}>{c}</option>)}
                   {allCodes.filter(c => !POPULAR_BASES.includes(c)).map(c => <option key={c} value={c}>{c}</option>)}
@@ -100,15 +129,15 @@ export default function CurrencyPage() {
 
             {data && (
               <>
-                <div className="flex items-center justify-between text-xs text-t-muted mb-2">
+                <div className="flex flex-wrap items-center justify-between gap-1 text-xs text-t-muted mb-2">
                   <span>1 {data.base} = X target</span>
                   <span>
                     Updated {new Date(data.updatedAt).toLocaleString()}
                     {data.stale && <span className="ml-2 px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded">cached</span>}
                   </span>
                 </div>
-                <div className="max-h-96 overflow-y-auto border border-b-secondary rounded-lg">
-                  <table className="w-full text-sm">
+                <div className="max-h-96 overflow-auto border border-b-secondary rounded-lg">
+                  <table className="w-full min-w-[280px] text-sm">
                     <thead className="bg-elevated sticky top-0">
                       <tr>
                         <th className="px-3 py-2 text-left text-xs font-medium text-t-tertiary">Code</th>
@@ -132,7 +161,7 @@ export default function CurrencyPage() {
             )}
           </div>
 
-          <div className="bg-surface rounded-xl shadow-sm border border-b-secondary p-6 self-start">
+          <div className="bg-surface rounded-xl shadow-sm border border-b-secondary p-4 sm:p-6 self-start min-w-0">
             <h2 className="text-lg font-semibold text-t-primary mb-4">Currency Converter</h2>
 
             <div className="space-y-4">
@@ -143,7 +172,7 @@ export default function CurrencyPage() {
                   className="w-full px-3 py-2 border border-b-input rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
               </div>
 
-              <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-1 sm:gap-2">
                 <div>
                   <label className="block text-sm font-medium text-t-secondary mb-1">From</label>
                   <select value={from} onChange={e => setFrom(e.target.value)}
@@ -155,7 +184,7 @@ export default function CurrencyPage() {
                 </div>
                 <button type="button" onClick={swap}
                   title="Swap"
-                  className="px-3 py-2 text-t-secondary bg-elevated border border-b-input rounded-lg hover:bg-hover">
+                  className="px-2 sm:px-3 py-2 text-t-secondary bg-elevated border border-b-input rounded-lg hover:bg-hover">
                   ⇄
                 </button>
                 <div>

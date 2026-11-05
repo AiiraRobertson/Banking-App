@@ -9,14 +9,24 @@ export default function AdminTransactionsPage() {
   const [page, setPage] = useState(1);
   const [typeFilter, setTypeFilter] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    setLoading(true);
+    let active = true;
     const params = { page, limit: 20 };
     if (typeFilter) params.type = typeFilter;
     getAdminTransactions(params)
-      .then(res => { setTransactions(res.data.transactions); setPagination(res.data.pagination); })
-      .finally(() => setLoading(false));
+      .then(res => {
+        if (!active) return;
+        setTransactions(res.data.transactions);
+        setPagination(res.data.pagination);
+        setError('');
+      })
+      .catch(err => {
+        if (active) setError(err.response?.data?.error || 'Could not load transactions.');
+      })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [page, typeFilter]);
 
   return (
@@ -24,7 +34,7 @@ export default function AdminTransactionsPage() {
       <h1 className="text-2xl font-bold text-t-primary">All Transactions</h1>
 
       <div className="flex gap-3">
-        <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(1); }}
+        <select value={typeFilter} onChange={e => { setLoading(true); setTypeFilter(e.target.value); setPage(1); }}
           className="px-3 py-2 border border-b-input rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
           <option value="">All Types</option>
           <option value="deposit">Deposit</option>
@@ -36,6 +46,7 @@ export default function AdminTransactionsPage() {
       </div>
 
       <div className="bg-surface rounded-xl shadow-sm border border-b-secondary overflow-hidden">
+        {error && <div role="alert" className="p-3 text-sm text-red-700 bg-red-50">{error}</div>}
         {loading ? (
           <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>
         ) : (
@@ -97,8 +108,8 @@ export default function AdminTransactionsPage() {
         <div className="flex items-center justify-between">
           <p className="text-sm text-t-tertiary">Page {page} of {pagination.pages} ({pagination.total} total)</p>
           <div className="flex gap-2">
-            <button onClick={() => setPage(p => p - 1)} disabled={page === 1} className="px-3 py-1.5 text-sm border border-b-input rounded-lg disabled:opacity-50 hover:bg-hover">Prev</button>
-            <button onClick={() => setPage(p => p + 1)} disabled={page === pagination.pages} className="px-3 py-1.5 text-sm border border-b-input rounded-lg disabled:opacity-50 hover:bg-hover">Next</button>
+            <button onClick={() => { setLoading(true); setPage(p => p - 1); }} disabled={page === 1} className="px-3 py-1.5 text-sm border border-b-input rounded-lg disabled:opacity-50 hover:bg-hover">Prev</button>
+            <button onClick={() => { setLoading(true); setPage(p => p + 1); }} disabled={page === pagination.pages} className="px-3 py-1.5 text-sm border border-b-input rounded-lg disabled:opacity-50 hover:bg-hover">Next</button>
           </div>
         </div>
       )}

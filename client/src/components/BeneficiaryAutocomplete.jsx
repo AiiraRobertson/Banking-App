@@ -13,22 +13,26 @@ export default function BeneficiaryAutocomplete({
   const [suggestions, setSuggestions] = useState([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [highlight, setHighlight] = useState(-1);
   const wrapperRef = useRef(null);
   const debounceRef = useRef(null);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (value.length < 1) {
-      setSuggestions([]);
-      return;
-    }
-    setLoading(true);
+    if (value.length < 1) return;
     debounceRef.current = setTimeout(() => {
       listBeneficiaries({ q: value, type, limit: 8 })
-        .then(res => setSuggestions(res.data.beneficiaries || []))
-        .catch(() => setSuggestions([]))
+        .then(res => {
+          setSuggestions(res.data.beneficiaries || []);
+          setError('');
+        })
+        .catch(err => {
+          setSuggestions([]);
+          setError(err.response?.data?.error || 'Could not load saved beneficiaries.');
+        })
         .finally(() => setLoading(false));
+      setLoading(true);
     }, 180);
     return () => clearTimeout(debounceRef.current);
   }, [value, type]);
@@ -47,16 +51,23 @@ export default function BeneficiaryAutocomplete({
     onSelect?.(b);
     setOpen(false);
     setHighlight(-1);
-    try { await touchBeneficiary(b.id); } catch {}
+    try {
+      await touchBeneficiary(b.id);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Could not update beneficiary activity.');
+    }
   };
 
   const handleDelete = async (e, id) => {
     e.stopPropagation();
     if (!confirm('Remove this beneficiary?')) return;
+    setError('');
     try {
       await deleteBeneficiary(id);
       setSuggestions(s => s.filter(b => b.id !== id));
-    } catch {}
+    } catch (err) {
+      setError(err.response?.data?.error || 'Could not remove this beneficiary.');
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -80,7 +91,17 @@ export default function BeneficiaryAutocomplete({
       <input
         type="text"
         value={value}
-        onChange={e => { onChange(e.target.value); setOpen(true); setHighlight(-1); }}
+        onChange={e => {
+          const nextValue = e.target.value;
+          onChange(nextValue);
+          setOpen(true);
+          setHighlight(-1);
+          setError('');
+          if (!nextValue) {
+            setSuggestions([]);
+            setLoading(false);
+          }
+        }}
         onFocus={() => setOpen(true)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
@@ -91,6 +112,7 @@ export default function BeneficiaryAutocomplete({
       />
       {open && value.length >= 1 && (
         <div className="absolute z-30 w-full mt-1 bg-surface border border-b-primary rounded-lg shadow-lg max-h-72 overflow-y-auto">
+          {error && <div role="alert" className="px-3 py-2 text-xs text-red-600">{error}</div>}
           {loading && suggestions.length === 0 && (
             <div className="px-3 py-2 text-xs text-t-muted">Searching...</div>
           )}

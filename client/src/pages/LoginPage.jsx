@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import PasswordInput from '../components/ui/PasswordInput';
 import PasswordRequirements from '../components/ui/PasswordRequirements';
 import ThemeToggle from '../components/ui/ThemeToggle';
@@ -90,7 +90,7 @@ export default function LoginPage() {
             </Link>
           </p>
 
-          {process.env.NODE_ENV === 'development' && (
+          {import.meta.env.DEV && (
             <div className="mt-4 p-3 bg-elevated rounded-lg text-xs text-t-tertiary">
               <p className="font-medium mb-1">Demo accounts (Dev Only):</p>
               <p>Admin: admin@bank.com / Admin123!</p>

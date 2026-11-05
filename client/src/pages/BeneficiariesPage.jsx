@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   listBeneficiaries,
@@ -23,30 +23,25 @@ export default function BeneficiariesPage() {
   const [editValue, setEditValue] = useState('');
   const [confirmId, setConfirmId] = useState(null);
 
-  const load = async () => {
-    setLoading(true);
-    setError('');
+  const load = useCallback(async () => {
     try {
       const params = {};
       if (search.trim()) params.q = search.trim();
       if (typeFilter) params.type = typeFilter;
       const { data } = await listBeneficiaries(params);
       setItems(data.beneficiaries || []);
+      setError('');
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to load beneficiaries');
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    load();
-  }, []);
-
-  useEffect(() => {
-    const t = setTimeout(load, 250);
-    return () => clearTimeout(t);
   }, [search, typeFilter]);
+
+  useEffect(() => {
+    const t = setTimeout(() => { void load(); }, 250);
+    return () => clearTimeout(t);
+  }, [load]);
 
   const startEdit = (b) => {
     setEditingId(b.id);
@@ -57,7 +52,8 @@ export default function BeneficiariesPage() {
     try {
       await updateBeneficiary(id, { nickname: editValue });
       setEditingId(null);
-      load();
+      setLoading(true);
+      await load();
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to update nickname');
     }
@@ -97,7 +93,7 @@ export default function BeneficiariesPage() {
               <input
                 type="text"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => { setLoading(true); setSearch(e.target.value); }}
                 placeholder="Name, account number, bank, or nickname"
                 className="w-full px-3 py-2 border border-b-input rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
               />
@@ -106,7 +102,7 @@ export default function BeneficiariesPage() {
               <label className="block text-xs font-medium text-t-tertiary mb-1">Type</label>
               <select
                 value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
+                onChange={(e) => { setLoading(true); setTypeFilter(e.target.value); }}
                 className="w-full px-3 py-2 border border-b-input rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
               >
                 <option value="">All</option>

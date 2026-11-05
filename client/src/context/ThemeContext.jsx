@@ -1,11 +1,10 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-
-const ThemeContext = createContext();
+import { useState, useEffect } from 'react';
+import ThemeContext from './ThemeContextValue';
 
 function getInitialTheme() {
   const stored = localStorage.getItem('theme');
   if (stored === 'dark' || stored === 'light') return stored;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return 'light';
 }
 
 export function ThemeProvider({ children }) {
@@ -28,10 +27,4 @@ export function ThemeProvider({ children }) {
       {children}
     </ThemeContext.Provider>
   );
-}
-
-export function useTheme() {
-  const ctx = useContext(ThemeContext);
-  if (!ctx) throw new Error('useTheme must be used within ThemeProvider');
-  return ctx;
 }

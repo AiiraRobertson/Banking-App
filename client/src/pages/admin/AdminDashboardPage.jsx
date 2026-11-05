@@ -36,7 +36,7 @@ export default function AdminDashboardPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-t-primary">Admin Dashboard</h1>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map(c => (
           <div key={c.label} className="bg-surface rounded-xl shadow-sm border border-b-secondary p-5">
             <p className="text-sm text-t-tertiary">{c.label}</p>
