@@ -37,6 +37,7 @@ export default function PhotoCapture({ value, onChange, label = 'Verification Ph
   const streamRef = useRef(null);
   const [mode, setMode] = useState('idle');
   const [error, setError] = useState('');
+  const [videoReady, setVideoReady] = useState(false);
 
   const stopCamera = () => {
     if (streamRef.current) {
@@ -46,6 +47,25 @@ export default function PhotoCapture({ value, onChange, label = 'Verification Ph
   };
 
   useEffect(() => () => stopCamera(), []);
+
+  useEffect(() => {
+    if (mode !== 'camera' || !streamRef.current || !videoRef.current) return;
+
+    const video = videoRef.current;
+    video.srcObject = streamRef.current;
+    video.play().catch((playError) => {
+      setError(playError.message || 'Could not start the camera preview.');
+    });
+
+    return () => {
+      video.srcObject = null;
+    };
+  }, [mode]);
+
+  const handleVideoReady = () => {
+    const video = videoRef.current;
+    if (video?.videoWidth > 0 && video?.videoHeight > 0) setVideoReady(true);
+  };
 
   const handleFile = async (e) => {
     const file = e.target.files?.[0];
@@ -71,6 +91,12 @@ export default function PhotoCapture({ value, onChange, label = 'Verification Ph
 
   const startCamera = async () => {
     setError('');
+    setVideoReady(false);
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError('Camera access is not available in this browser or connection.');
+      return;
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 640 } },
@@ -78,23 +104,19 @@ export default function PhotoCapture({ value, onChange, label = 'Verification Ph
       });
       streamRef.current = stream;
       setMode('camera');
-      setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.play().catch((playError) => {
-            setError(playError.message || 'Could not start the camera preview.');
-          });
-        }
-      }, 0);
     } catch {
       setError('Camera access denied or unavailable');
       setMode('idle');
     }
   };
 
-  const snap = async () => {
-    if (!videoRef.current) return;
+  const snap = () => {
     const video = videoRef.current;
+    if (!videoReady || !video || video.videoWidth === 0 || video.videoHeight === 0) {
+      setError('Camera preview is not ready yet. Please wait for the video to appear.');
+      return;
+    }
+
     const side = Math.min(video.videoWidth, video.videoHeight);
     const sx = (video.videoWidth - side) / 2;
     const sy = (video.videoHeight - side) / 2;
@@ -102,6 +124,10 @@ export default function PhotoCapture({ value, onChange, label = 'Verification Ph
     canvas.width = TARGET_SIZE;
     canvas.height = TARGET_SIZE;
     const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      setError('Could not capture the photo. Please try again.');
+      return;
+    }
     ctx.drawImage(video, sx, sy, side, side, 0, 0, TARGET_SIZE, TARGET_SIZE);
     const dataUrl = canvas.toDataURL('image/jpeg', JPEG_QUALITY);
     onChange(dataUrl);
@@ -111,6 +137,7 @@ export default function PhotoCapture({ value, onChange, label = 'Verification Ph
 
   const cancelCamera = () => {
     stopCamera();
+    setVideoReady(false);
     setMode('idle');
   };
 
@@ -128,13 +155,16 @@ export default function PhotoCapture({ value, onChange, label = 'Verification Ph
             ref={videoRef}
             playsInline
             muted
+            onLoadedData={handleVideoReady}
+            onCanPlay={handleVideoReady}
             className="w-full max-w-xs mx-auto rounded-lg bg-black aspect-square object-cover"
           />
           <div className="mt-3 flex justify-center gap-2">
             <button
               type="button"
               onClick={snap}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700"
+              disabled={!videoReady}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Capture
             </button>
@@ -146,6 +176,9 @@ export default function PhotoCapture({ value, onChange, label = 'Verification Ph
               Cancel
             </button>
           </div>
+          {!videoReady && !error && (
+            <p className="mt-2 text-center text-xs text-t-tertiary">Starting camera…</p>
+          )}
         </div>
       ) : (
         <div className="flex items-center gap-4">
