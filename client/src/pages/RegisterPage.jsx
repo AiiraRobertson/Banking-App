@@ -50,7 +50,12 @@ export default function RegisterPage() {
       navigate('/');
     } catch (err) {
       const data = err.response?.data;
-      setError(data?.error || data?.errors?.[0]?.message || 'Registration failed');
+      setError(
+        data?.error
+        || data?.errors?.[0]?.message
+        || (err.request && 'Unable to reach the server. Check your connection and try again.')
+        || 'Registration failed'
+      );
     } finally {
       setLoading(false);
     }

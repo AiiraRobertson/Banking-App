@@ -21,7 +21,11 @@ export default function LoginPage() {
       await login(email, password);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed');
+      setError(
+        err.response?.data?.error
+        || (err.request && 'Unable to reach the server. Check your connection and try again.')
+        || 'Login failed'
+      );
     } finally {
       setLoading(false);
     }

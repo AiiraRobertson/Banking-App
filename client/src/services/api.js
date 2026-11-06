@@ -30,7 +30,8 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      const isAuthSubmission = /\/auth\/(login|register)\/?$/.test(error.config?.url || '');
+      if (!isAuthSubmission) window.location.href = '/login';
     }
     return Promise.reject(error);
   }
